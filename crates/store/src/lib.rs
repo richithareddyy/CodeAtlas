@@ -7,6 +7,7 @@
 
 mod config;
 mod error;
+mod load;
 mod queries;
 mod schema;
 mod writer;
@@ -63,6 +64,19 @@ impl GraphStore {
     /// Replaces the stored graph of `analysis.repository` with `analysis`.
     pub async fn index(&self, analysis: &RepositoryAnalysis) -> Result<IndexSummary> {
         writer::write_repository(&self.graph, analysis).await
+    }
+
+    /// Overwrites the stored format version (to exercise version checks).
+    #[doc(hidden)]
+    pub async fn set_format_version_for_tests(&self, repo_id: &str, version: i64) -> Result<()> {
+        self.graph
+            .run(
+                query("MATCH (r:Repository {id: $repo}) SET r.format_version = $version")
+                    .param("repo", repo_id)
+                    .param("version", version),
+            )
+            .await?;
+        Ok(())
     }
 
     /// Deletes a repository's graph; returns the number of deleted nodes.

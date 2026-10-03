@@ -9,12 +9,17 @@
 use std::collections::{BTreeMap, HashMap};
 use std::time::Instant;
 
-use codeatlas_analyzer::dependencies::{derive_dependencies, Dependency};
+use codeatlas_analyzer::dependencies::{derive_dependencies, locate_symbols, Dependency};
 use codeatlas_analyzer::model::{EdgeKind, Symbol, SymbolKind, Visibility};
 use codeatlas_analyzer::RepositoryAnalysis;
 use neo4rs::{query, BoltType, Graph, Txn};
 
 use crate::error::Result;
+
+/// Version of the stored graph layout. Bump it whenever the writer stores
+/// new facts that readers depend on; graphs with another version are
+/// rejected by `load_graph` instead of producing silently wrong results.
+pub const GRAPH_FORMAT_VERSION: i64 = 2;
 
 /// Rows sent per `UNWIND` statement.
 const BATCH_SIZE: usize = 1_000;
@@ -150,6 +155,7 @@ impl Writer<'_> {
         };
         let props = map([
             ("id", r.id.clone().into()),
+            ("format_version", GRAPH_FORMAT_VERSION.into()),
             ("name", r.name.clone().into()),
             ("root", r.root.to_string_lossy().into_owned().into()),
             ("origin_url", r.origin_url.clone().into()),
@@ -245,6 +251,7 @@ impl Writer<'_> {
                 .push(format!("{}|{}|{}", call.line, call.callee, call.reason.as_str()).into());
         }
 
+        let locations = locate_symbols(&a.files);
         let mut by_kind: BTreeMap<SymbolKind, Vec<BoltType>> = BTreeMap::new();
         let mut tests = Vec::new();
         for file in &a.files {
@@ -252,6 +259,7 @@ impl Writer<'_> {
                 let row = symbol_row(
                     symbol,
                     &file.crate_name,
+                    locations.get(&symbol.id).map(|l| l.module.as_str()),
                     unresolved.remove(symbol.id.as_str()),
                 );
                 by_kind.entry(symbol.kind).or_default().push(row);
@@ -402,16 +410,21 @@ impl Writer<'_> {
         let rows = |deps: &[Dependency]| -> Vec<BoltType> {
             deps.iter()
                 .map(|d| {
-                    let via: Vec<BoltType> = d
-                        .via
+                    let via: Vec<BoltType> = d.via.iter().map(|k| k.as_str().into()).collect();
+                    // `from|to|KIND|line` per sample edge.
+                    let evidence: Vec<BoltType> = d
+                        .evidence
                         .iter()
-                        .map(|k| format!("{k:?}").to_uppercase().into())
+                        .map(|e| {
+                            format!("{}|{}|{}|{}", e.from, e.to, e.kind.as_str(), e.line).into()
+                        })
                         .collect();
                     map([
                         ("from", d.from.clone().into()),
                         ("to", d.to.clone().into()),
                         ("weight", i64::from(d.weight).into()),
                         ("via", via.into()),
+                        ("evidence", evidence.into()),
                     ])
                 })
                 .collect()
@@ -419,19 +432,27 @@ impl Writer<'_> {
         self.create_relationships(
             "UNWIND $rows AS row MATCH (a:File {repo_id: $repo, path: row.from}) \
              MATCH (b:File {repo_id: $repo, path: row.to}) \
-             CREATE (a)-[:DEPENDS_ON {weight: row.weight, via: row.via}]->(b)",
+             CREATE (a)-[:DEPENDS_ON {weight: row.weight, via: row.via, evidence: row.evidence}]->(b)",
             rows(&deps.files),
         )
         .await?;
         self.create_relationships(
-            &symbol_rel("DEPENDS_ON", "{weight: row.weight, via: row.via}"),
+            &symbol_rel(
+                "DEPENDS_ON",
+                "{weight: row.weight, via: row.via, evidence: row.evidence}",
+            ),
             rows(&deps.modules),
         )
         .await
     }
 }
 
-fn symbol_row(symbol: &Symbol, crate_name: &str, unresolved: Option<Vec<BoltType>>) -> BoltType {
+fn symbol_row(
+    symbol: &Symbol,
+    crate_name: &str,
+    module: Option<&str>,
+    unresolved: Option<Vec<BoltType>>,
+) -> BoltType {
     let visibility = match &symbol.visibility {
         Visibility::Public => "pub".to_string(),
         Visibility::Crate => "pub(crate)".to_string(),
@@ -441,7 +462,8 @@ fn symbol_row(symbol: &Symbol, crate_name: &str, unresolved: Option<Vec<BoltType
     };
     map([
         ("id", symbol.id.as_str().into()),
-        ("kind", label(symbol.kind).to_lowercase().into()),
+        ("kind", symbol.kind.as_str().into()),
+        ("module", module.map(str::to_string).into()),
         ("name", symbol.name.clone().into()),
         ("qualified_name", symbol.qualified_name.clone().into()),
         ("file", symbol.file.clone().into()),

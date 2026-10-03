@@ -10,6 +10,7 @@ pub mod dependencies;
 pub mod error;
 pub mod evaluation;
 pub mod git;
+pub mod graph;
 pub mod ingest;
 pub mod layout;
 pub mod model;

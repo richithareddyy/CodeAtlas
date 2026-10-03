@@ -14,7 +14,7 @@ Git repository
   → resolver    (references → symbol IDs, with explicit outcomes)
   → dependencies (derived file / module DEPENDS_ON aggregates)
   → store       (Neo4j code graph, bounded queries)
-  → algorithms / impact                                                       [M4]
+  → graph       (in-memory CodeGraph: algorithms, impact, architecture)
   → GraphQL API                                                               [M5]
   → SvelteKit UI                                                              [M6]
 ```
@@ -23,8 +23,8 @@ Git repository
 
 | Crate | Responsibility | Depends on |
 |---|---|---|
-| `crates/analyzer` | Ingestion, layout, parsing, extraction, resolution and its evaluation; later graph algorithms, impact and diff analysis. Pure library; no database or network code beyond invoking `git`. | tree-sitter, ignore, toml |
-| `crates/store` | Neo4j schema, batched writes, bounded queries (traversals with evidence paths, shortest path, search, file/module dependencies). | analyzer, neo4rs, tokio |
+| `crates/analyzer` | Ingestion, layout, parsing, extraction, resolution and its evaluation, derived dependencies, graph algorithms, impact and architecture analyses; later diff analysis. Pure library; no database or network code beyond invoking `git`. | tree-sitter, ignore, toml |
+| `crates/store` | Neo4j schema, batched writes, bounded queries (traversals with evidence paths, shortest path, search, file/module dependencies), loading a stored graph back into a `CodeGraph`. | analyzer, neo4rs, tokio |
 | `crates/server` *(M5)* | GraphQL API over the store and analyzer. | analyzer, store, async-graphql, axum, tokio |
 | `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `index`, `query`, `remove`, `ast`; later `bench`. | analyzer, store |
 | `web/` *(M6)* | SvelteKit + TypeScript + Cytoscape.js workspace UI. | GraphQL API |
@@ -170,6 +170,17 @@ and the query catalogue. Choices worth noting:
   via `.env`). The password is required and never logged; `StoreConfig`'s
   `Debug` output redacts it.
 
+## Graph analyses (`analyzer/src/graph`)
+
+See [impact-analysis.md](impact-analysis.md). `algorithms.rs` is generic
+(BFS, Tarjan SCC, shortest paths and cycles, topological order, layering,
+degree and betweenness centrality) and unit-tested on hand-built graphs.
+`impact.rs` and `architecture.rs` give it code semantics. All of it runs on
+the in-memory `CodeGraph`, which is built from an analysis or loaded from
+Neo4j; both produce identical graphs. Whole-graph algorithms such as SCC
+and betweenness run in Rust rather than in Neo4j, so the Graph Data
+Science plugin is not needed.
+
 ## Milestones
 
 | # | Scope | Status |
@@ -177,7 +188,7 @@ and the query catalogue. Choices worth noting:
 | 1 | Workspace, ingestion, discovery, metadata, layout, parsing, extraction, CLI | Done |
 | 2 | Module tree, symbol resolution with explicit outcomes, receiver-type inference, ground-truth evaluation | Done |
 | 3 | Neo4j store, derived dependencies, bounded queries, `index` / `query` CLI | Done |
-| 4 | Graph algorithms (BFS with evidence, Tarjan SCC, centrality, topological order) and the impact engine | Planned |
+| 4 | Graph algorithms, impact engine with evidence chains and a decomposable score, cycles, hotspots and layers | Done |
 | 5 | GraphQL API | Planned |
 | 6 | SvelteKit workspace UI (completes the MVP) | Planned |
 | 7 | Git diff analysis and PR impact reports | Planned |

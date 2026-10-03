@@ -26,6 +26,12 @@ impl SymbolId {
         &self.0
     }
 
+    /// Wraps an ID read back from storage. IDs are opaque; only the
+    /// analyzer creates new ones.
+    pub fn from_stored(id: String) -> Self {
+        Self(id)
+    }
+
     pub(crate) fn with_suffix(&self, n: u32) -> Self {
         Self(format!("{}#{n}", self.0))
     }
@@ -49,6 +55,30 @@ pub enum SymbolKind {
 }
 
 impl SymbolKind {
+    /// Lower-case name, as stored in the graph (`function`, `method`, ...).
+    pub fn as_str(self) -> &'static str {
+        match self {
+            SymbolKind::Module => "module",
+            SymbolKind::Struct => "struct",
+            SymbolKind::Enum => "enum",
+            SymbolKind::Trait => "trait",
+            SymbolKind::Function => "function",
+            SymbolKind::Method => "method",
+        }
+    }
+
+    pub fn parse(text: &str) -> Option<Self> {
+        Some(match text {
+            "module" => SymbolKind::Module,
+            "struct" => SymbolKind::Struct,
+            "enum" => SymbolKind::Enum,
+            "trait" => SymbolKind::Trait,
+            "function" => SymbolKind::Function,
+            "method" => SymbolKind::Method,
+            _ => return None,
+        })
+    }
+
     pub fn tag(self) -> &'static str {
         match self {
             SymbolKind::Module => "mod",
@@ -427,6 +457,37 @@ impl ResolutionMethod {
             ResolutionMethod::ReceiverType => "receiver_type",
             ResolutionMethod::ImplBlock => "impl_block",
         }
+    }
+
+    pub fn parse(text: &str) -> Option<Self> {
+        Some(match text {
+            "scope" => ResolutionMethod::Scope,
+            "import" => ResolutionMethod::Import,
+            "path" => ResolutionMethod::Path,
+            "self_type" => ResolutionMethod::SelfType,
+            "receiver_type" => ResolutionMethod::ReceiverType,
+            "impl_block" => ResolutionMethod::ImplBlock,
+            _ => return None,
+        })
+    }
+}
+
+impl EdgeKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            EdgeKind::Calls => "CALLS",
+            EdgeKind::Imports => "IMPORTS",
+            EdgeKind::Implements => "IMPLEMENTS",
+        }
+    }
+
+    pub fn parse(text: &str) -> Option<Self> {
+        Some(match text {
+            "CALLS" => EdgeKind::Calls,
+            "IMPORTS" => EdgeKind::Imports,
+            "IMPLEMENTS" => EdgeKind::Implements,
+            _ => return None,
+        })
     }
 }
 

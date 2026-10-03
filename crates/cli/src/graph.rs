@@ -4,7 +4,11 @@ use std::fmt::Write as _;
 
 use anyhow::{bail, Context, Result};
 use clap::Subcommand;
+use codeatlas_analyzer::graph::{architecture, impact, impact::ImpactOptions};
+use codeatlas_analyzer::model::SymbolId;
 use codeatlas_analyzer::RepositoryAnalysis;
+
+use crate::views::{self, LevelArg};
 use codeatlas_store::{
     AggregateDependency, Direction, GraphEdge, GraphStore, RepositoryNode, StoreConfig, SymbolNode,
     Traversal,
@@ -58,6 +62,42 @@ pub enum Query {
     ModuleDependents { module: String },
     /// Modules a module depends on.
     ModuleDependencies { module: String },
+    /// What could be affected by changing a symbol (or every symbol in a file), and why.
+    Impact {
+        /// Symbol to change; types, traits and modules include their members.
+        #[arg(required_unless_present = "file")]
+        symbol: Option<String>,
+        /// Treat every symbol defined in this file as changed.
+        #[arg(long, conflicts_with = "symbol")]
+        file: Option<String>,
+        #[arg(long, default_value_t = 8)]
+        depth: u32,
+        /// Also follow ambiguous calls; results are marked as possible.
+        #[arg(long)]
+        include_ambiguous: bool,
+        /// Affected symbols listed in text output.
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+    },
+    /// Circular dependencies with the edges that form them.
+    Cycles {
+        #[arg(long, value_enum, default_value_t = LevelArg::Module)]
+        level: LevelArg,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+    },
+    /// Most central symbols, files or modules (betweenness, fan-in, fan-out).
+    Hotspots {
+        #[arg(long, value_enum, default_value_t = LevelArg::Function)]
+        level: LevelArg,
+        #[arg(long, default_value_t = 15)]
+        limit: usize,
+    },
+    /// Dependency layers, foundations first.
+    Layers {
+        #[arg(long, value_enum, default_value_t = LevelArg::Module)]
+        level: LevelArg,
+    },
 }
 
 pub async fn connect() -> Result<GraphStore> {
@@ -184,6 +224,62 @@ pub async fn query(repo: Option<&str>, json: bool, query: Query) -> Result<Strin
                     .await?,
             ))
         }
+        Query::Impact {
+            symbol,
+            file,
+            depth,
+            include_ambiguous,
+            limit,
+        } => {
+            if depth == 0 || depth > store.limits().max_depth {
+                bail!("--depth must be between 1 and {}", store.limits().max_depth);
+            }
+            let options = ImpactOptions {
+                max_depth: depth,
+                include_ambiguous,
+                ..Default::default()
+            };
+            let target = match &symbol {
+                Some(text) => Some(callable(&store, r, text).await?),
+                None => None,
+            };
+            let graph = store.load_graph(r).await?;
+            let report = match (target, file) {
+                (Some(id), _) => {
+                    impact::impact_of_symbol(&graph, &SymbolId::from_stored(id), options)?
+                }
+                (None, Some(path)) => impact::impact_of_file(&graph, &path, options)?,
+                (None, None) => bail!("give a symbol or --file"),
+            };
+            output(json, &report, || views::impact(&report, limit))
+        }
+        Query::Cycles { level, limit } => {
+            let graph = store.load_graph(r).await?;
+            let found = architecture::cycles(&graph, level.into());
+            output(json, &found, || views::cycles(&found, level.into(), limit))
+        }
+        Query::Hotspots { level, limit } => {
+            let graph = store.load_graph(r).await?;
+            let spots = architecture::hotspots(&graph, level.into(), limit);
+            output(json, &spots, || views::hotspots(&spots))
+        }
+        Query::Layers { level } => {
+            let graph = store.load_graph(r).await?;
+            let found = architecture::layers(&graph, level.into());
+            output(json, &found, || views::layers(&found))
+        }
+    }
+}
+
+fn output<T: serde::Serialize>(
+    json: bool,
+    value: &T,
+    text: impl FnOnce() -> String,
+) -> Result<String> {
+    if json {
+        Ok(serde_json::to_string_pretty(value)?)
+    } else {
+        Ok(text())
     }
 }
 

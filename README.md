@@ -8,11 +8,12 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 3 of 11.** Ingestion, Rust module-tree construction,
+> **Status: Milestone 4 of 11.** Ingestion, Rust module-tree construction,
 > tree-sitter parsing, symbol extraction, symbol resolution (with measured
-> quality), the Neo4j code graph and bounded graph queries are implemented
-> and tested. The impact engine, graph algorithms, the GraphQL API and the
-> web UI are not built yet. See [docs/architecture.md](docs/architecture.md#milestones).
+> quality), the Neo4j code graph, bounded graph queries, graph algorithms
+> and the change-impact engine are implemented and tested. The GraphQL API
+> and the web UI are not built yet. See
+> [docs/architecture.md](docs/architecture.md#milestones).
 
 ## Why static analysis
 
@@ -27,7 +28,7 @@ a high share of references to be resolved without full type inference.
 
 ```
 ingest → module tree → tree-sitter parse → extract → resolve → Neo4j + queries → algorithms / impact → GraphQL → SvelteKit
-└──────────────────────────────── implemented ────────────────────────────────┘
+└────────────────────────────────────── implemented ──────────────────────────────────────┘
 ```
 
 * `crates/analyzer`: the analysis core, a pure library with no database code.
@@ -36,8 +37,9 @@ ingest → module tree → tree-sitter parse → extract → resolve → Neo4j +
 * `fixtures/`: small Rust repositories with hand-written ground truth
   (`expected.json`).
 * `docs/`: [architecture](docs/architecture.md),
-  [graph model](docs/graph-model.md) and
-  [symbol resolution](docs/symbol-resolution.md).
+  [graph model](docs/graph-model.md),
+  [symbol resolution](docs/symbol-resolution.md) and
+  [change impact and graph algorithms](docs/impact-analysis.md).
 
 ## What it does today
 
@@ -73,6 +75,22 @@ this transitively*, *which tests reach this*, *how are A and B connected*
 and *which files or modules depend on this*. Every query has depth and size
 limits, and every result carries the edges and source lines that justify
 it. Schema and queries: [docs/graph-model.md](docs/graph-model.md).
+
+**Change impact.** Given a changed function, method, type, module or file,
+CodeAtlas lists every symbol that could be affected, with depth, the
+affected files, modules and tests, and for each one the chain of facts
+connecting it to the change: *`test_checkout` calls `checkout` (line 16),
+which calls `authorize` (line 5), which calls `validate_amount` (line 13)*.
+Impact follows resolved calls and trait dispatch. Ambiguous calls are
+followed only on request and reported as *possible*. A blast-radius score
+summarises the reach and is broken down into its six factors; it measures
+reach, not the likelihood of breakage. Details:
+[docs/impact-analysis.md](docs/impact-analysis.md).
+
+**Architecture.** Circular dependencies (Tarjan SCC) at module, file and
+function level, each with a shortest cycle and the source lines of every
+hop; hotspots by betweenness centrality and fan-in/fan-out; and dependency
+layers with cycles collapsed.
 
 ## Installation
 
@@ -201,11 +219,62 @@ fn:checkout_test::checkout_succeeds_for_small_orders  (depth 4, tests/checkout_t
     method:simple_repo::payments::PaymentService::authorize -[CALLS scope @21]-> fn:simple_repo::payments::gateway::stripe_call
 ```
 
+Impact of a change:
+
+```bash
+./target/release/codeatlas query -r change-impact impact validate_amount
+```
+
+```
+Impact of fn:change_impact::payments::validate_amount (src/payments.rs:18)
+Affected    4 symbols (1 direct, 3 indirect) in 3 files and 3 modules; 2 tests
+Score       41.2 / 100 (Medium): size of the affected graph, not a probability of breakage
+  direct_dependents          1  saturates at 10   weight 0.20  ->   5.8
+  transitive_dependents      4  saturates at 100  weight 0.25  ->   8.7
+  affected_modules           3  saturates at 10   weight 0.20  ->  11.6
+  affected_tests             2  saturates at 25   weight 0.15  ->   5.1
+  fan_in                     1  saturates at 10   weight 0.10  ->   2.9
+  dependency_depth           3  saturates at 6    weight 0.10  ->   7.1
+
+Affected symbols (depth, symbol, location, then why)
+   1  method:change_impact::payments::PaymentService::authorize src/payments.rs:12
+        change_impact::payments::PaymentService::authorize calls change_impact::payments::validate_amount  (src/payments.rs:13)
+   …
+   3  fn:payment_tests::test_checkout tests/payment_tests.rs:14  [test]
+        payment_tests::test_checkout calls change_impact::checkout::checkout  (tests/payment_tests.rs:16)
+        change_impact::checkout::checkout calls change_impact::payments::PaymentService::authorize  (src/checkout.rs:5)
+        change_impact::payments::PaymentService::authorize calls change_impact::payments::validate_amount  (src/payments.rs:13)
+…
+Tests to run
+  fn:payment_tests::test_authorize_valid
+  fn:payment_tests::test_checkout
+```
+
+`impact` also takes `--file <path>`, `--depth n`, `--include-ambiguous` and
+`--limit n`. Circular dependencies, with the lines behind each hop:
+
+```bash
+./target/release/codeatlas query -r circular-dependency cycles --level module
+```
+
+```
+1 Module-level cycles
+
+1. 3 members: mod:circular_dependency::checkout, mod:circular_dependency::orders, mod:circular_dependency::payments
+   mod:circular_dependency::checkout -> mod:circular_dependency::payments  (2 edges: CALLS, IMPORTS)
+       CALLS      fn:circular_dependency::checkout::checkout -> fn:circular_dependency::payments::charge  src/checkout.rs:5
+       IMPORTS    mod:circular_dependency::checkout -> mod:circular_dependency::payments  src/checkout.rs:1
+   …
+```
+
 Other queries: `repos`, `search <text> [--kind method]`, `symbol <s>`,
 `callees <s> [--depth n]`, `path <from> <to>`, `file-dependents <path>`,
 `file-dependencies <path>`, `module-dependents <module>`,
-`module-dependencies <module>`. Remove an indexed repository with
-`codeatlas remove <repo>`.
+`module-dependencies <module>`, `hotspots [--level function|file|module]`,
+`layers [--level …]`, `cycles --level function|file|module`. Remove an
+indexed repository with `codeatlas remove <repo>`. If a repository was
+indexed by an older version of CodeAtlas, the graph-based analyses ask you
+to index it again.
 
 ### Debugging the extractor
 
@@ -247,14 +316,25 @@ cargo test
 * `crates/analyzer/tests/resolution.rs` compares resolution on every
   fixture with its `expected.json` and fails on any missing or unexpected
   edge, ambiguous call or unresolved call.
+* `crates/analyzer/tests/impact.rs` checks impact results on the
+  `change-impact` fixture (call chains, trait dispatch, trait-method
+  changes, type/module/file expansion, ambiguous calls, score inputs,
+  limits) and cycles, layers and hotspots on `circular-dependency`. All
+  expected values were derived by hand.
+* `crates/analyzer/src/graph/algorithms.rs` unit-tests each algorithm on
+  hand-built graphs, including a 200,000-node chain for the iterative
+  Tarjan.
 * `crates/analyzer/tests/git_ingest.rs` builds Git repositories in temporary
   directories (branch/SHA detection, detached HEAD, cloning, updating a
   clone, clone failures). These tests need `git`.
 * `crates/store/tests/neo4j.rs` indexes fixtures into a real Neo4j and checks
   stored counts against the analysis, re-indexing, callers and callees with
   evidence paths, related tests, shortest paths, file and module
-  dependencies, search, ambiguous and unresolved calls, limits and
-  deletion. Each test uses its own repository ID. They run when
+  dependencies, search, ambiguous and unresolved calls, limits,
+  deletion, format-version checks, and that the graph loaded back from
+  Neo4j equals the graph built from the analysis on every fixture. With
+  `CODEATLAS_EQUIVALENCE_REPO=<path>` that equivalence check also runs on a
+  real repository. Each test uses its own repository ID. They run when
   `CODEATLAS_NEO4J_PASSWORD` is set (directly or via `.env`) and print
   `skipping` otherwise; if Neo4j is configured but unreachable they fail.
   CI runs them against a Neo4j service container.
@@ -274,7 +354,7 @@ cargo clippy --all-targets -- -D warnings
 Measured, not estimated; full details and method in
 [docs/symbol-resolution.md](docs/symbol-resolution.md#measured-quality).
 
-* All four fixtures match their hand-written ground truth exactly. They
+* All six fixtures match their hand-written ground truth exactly. They
   were written alongside the resolver, so this shows the rules work as
   designed rather than accuracy on unfamiliar code.
 * On ripgrep (commit `3fce3b5`, ~51k non-blank lines), a single run
@@ -291,8 +371,9 @@ only figures in this repository are single-run measurements quoted with
 their conditions. For example, indexing ripgrep (commit `3fce3b5`) wrote
 3,668 nodes and 19,010 relationships in 0.76–0.91 s over two runs. Warm
 `codeatlas query` invocations on that graph took 31–42 ms end to end,
-including process start and connection. Machine: Apple Silicon Mac, local
-Docker Neo4j 5.26.
+including process start and connection. Impact, cycle and hotspot queries,
+which load the whole stored graph (3,536 symbols) into memory, took
+103–126 ms end to end. Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
 
 ## Known limitations
 
@@ -310,14 +391,16 @@ Docker Neo4j 5.26.
 * LOC counts non-blank lines, including comments.
 * Indexing replaces a repository's whole graph; incremental updates are
   planned (Milestone 8).
-* `query tests` follows resolved `CALLS` only; tests reaching an
-  implementation through a trait method are not found yet.
+* `query tests` follows resolved `CALLS` only; use `query impact`, which
+  also follows trait dispatch.
+* Type usage is not tracked yet, so changing a struct reaches the callers
+  of its methods but not code that only constructs it or reads its fields.
 * Search matches name prefixes (`store` finds `Store` and its methods, not
   `MemoryStore`).
 
 ## Roadmap
 
-Graph algorithms and change-impact engine → GraphQL API → SvelteKit workspace UI (MVP) → Git diff impact →
+GraphQL API → SvelteKit workspace UI (MVP) → Git diff impact →
 incremental indexing → test-impact evaluation → architecture and cycle
 views with benchmarks → optional local-model explanations grounded in graph
 evidence. Details are in [docs/architecture.md](docs/architecture.md).

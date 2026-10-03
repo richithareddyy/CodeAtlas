@@ -17,12 +17,13 @@ repositories can share one database; every query is scoped to one of them.
 
 Every code symbol carries the `:Symbol` label plus one kind label, and the
 shared properties `id`, `repo_id`, `kind`, `name`, `qualified_name`, `file`,
-`crate`, `start_line`, `end_line`, `visibility`, `signature`, `parent_id`,
-`is_test`, `cfg_test` and `unresolved_calls`.
+`crate`, `module` (the module the code is written in), `start_line`,
+`end_line`, `visibility`, `signature`, `parent_id`, `is_test`, `cfg_test`
+and `unresolved_calls`.
 
 | Label | Why it exists | Specific properties |
 |---|---|---|
-| `Repository` | Root of a graph; holds index metadata. | `id`, `name`, `root`, `origin_url`, `branch`, `head_sha`, `indexed_sha`, `analyzed_at`, `indexed_at`, `languages` / `language_files` / `language_loc` (parallel lists), `source_files`, `loc`, `calls_total`, `calls_resolved`, `calls_ambiguous`, `calls_unresolved`, `resolution_rate` |
+| `Repository` | Root of a graph; holds index metadata. | `id`, `format_version`, `name`, `root`, `origin_url`, `branch`, `head_sha`, `indexed_sha`, `analyzed_at`, `indexed_at`, `languages` / `language_files` / `language_loc` (parallel lists), `source_files`, `loc`, `calls_total`, `calls_resolved`, `calls_ambiguous`, `calls_unresolved`, `resolution_rate` |
 | `Crate` | The *package* level of the architecture view. `id` is `crate:<package>:<name>`, because two packages may both have a test target named `integration`. | `name`, `package`, `target_kind`, `root_file` |
 | `File` | Unit of incremental re-indexing; anchors file-level dependencies. | `path`, `crate`, `loc`, `syntax_errors`, `content_hash` |
 | `Module` | Rust namespace; module-level dependencies and cycles are computed here. | — |
@@ -45,7 +46,7 @@ the function that contains them without creating a node per external call
 | `CALLS_CANDIDATE` | callable → callable | One edge per candidate of an ambiguous call. Never followed unless a query asks for it explicitly. | `reason`, `candidates` (total candidate count), `lines` |
 | `IMPORTS` | Module/Function → Symbol | `use` declarations; module coupling. | `resolution`, `lines` |
 | `IMPLEMENTS` | Struct/Enum → Trait, Method → trait Method | A change to a trait method reaches every implementation. | `resolution`, `lines` |
-| `DEPENDS_ON` | File→File, Module→Module | Derived aggregation of `CALLS`, `IMPORTS` and `IMPLEMENTS` between symbols written in different files or modules (`analyzer/src/dependencies.rs`); input for cycle detection and the architecture view. | `weight` (number of underlying edges), `via` (their types) |
+| `DEPENDS_ON` | File→File, Module→Module | Derived aggregation of `CALLS`, `IMPORTS` and `IMPLEMENTS` between symbols written in different files or modules (`analyzer/src/dependencies.rs`); input for cycle detection and the architecture view. | `weight` (number of underlying edges), `via` (their types), `evidence` (up to five `from\|to\|TYPE\|line` samples) |
 
 `resolution` records how the target was determined: `scope` (defined in the
 enclosing scope), `import`, `path` (anchored at `crate`, `self`, `super` or
@@ -102,6 +103,18 @@ as success.
 If step 2 fails, the repository is absent rather than half-written; running
 `codeatlas index` again restores it.
 
+`format_version` records the layout written (currently 2).
+`GraphStore::load_graph` rejects other versions and asks for a re-index, so
+a graph written by an older CodeAtlas never yields silently wrong results.
+
+## Loading for algorithms
+
+`GraphStore::load_graph` reads a repository's symbols, symbol relationships
+and `DEPENDS_ON` aggregates back into the analyzer's in-memory `CodeGraph`,
+where the impact engine and the architecture analyses run (see
+[impact-analysis.md](impact-analysis.md)). The loaded graph is tested to be
+identical to the one built directly from the analysis.
+
 ## Queries
 
 All read queries are scoped to one repository and bounded
@@ -125,7 +138,6 @@ node once. Recording the edge that first reached each node also gives a
 shortest evidence path for every result (`Traversal::path_to`), which is
 what makes a result explainable.
 
-Known gap: `related_tests` follows `CALLS` only. A test that calls a trait
-method does not yet reach that method's implementations through
-`IMPLEMENTS`; the impact engine (Milestone 4) handles mixed-direction
-traversal.
+`related_tests` follows `CALLS` only. Impact analysis
+(`codeatlas query impact`) also follows trait dispatch and reports the
+tests that reach a changed implementation through its trait method.

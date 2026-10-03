@@ -203,3 +203,9 @@ fn derives_file_and_module_dependencies_from_resolved_edges() {
         |d| d.from == "mod:simple_repo::payments::tests" && d.to == "mod:simple_repo::payments"
     ));
 }
+
+#[test]
+fn change_impact_and_circular_fixtures_match_ground_truth() {
+    assert_exact("change-impact");
+    assert_exact("circular-dependency");
+}

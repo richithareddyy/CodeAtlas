@@ -435,3 +435,91 @@ async fn deleting_a_repository_removes_its_graph() {
         Err(StoreError::NotFound(_))
     ));
 }
+
+#[tokio::test]
+async fn loaded_graph_equals_the_analysis_graph() {
+    use codeatlas_analyzer::graph::architecture::{cycles, Level};
+    use codeatlas_analyzer::graph::impact::{impact_of_symbol, ImpactOptions};
+    use codeatlas_analyzer::graph::CodeGraph;
+    use codeatlas_analyzer::model::SymbolId;
+
+    let Some(store) = store().await else { return };
+    for name in [
+        "simple-repo",
+        "duplicate-symbols",
+        "cross-module",
+        "unresolved",
+        "change-impact",
+        "circular-dependency",
+    ] {
+        let analysis = fixture(name);
+        let repo = analysis.repository.id.clone();
+        store.index(&analysis).await.unwrap();
+        let loaded = store.load_graph(&repo).await.unwrap();
+        let direct = CodeGraph::from_analysis(&analysis);
+        store.delete_repository(&repo).await.unwrap();
+        assert!(
+            loaded == direct,
+            "{name}: stored graph differs from analysis graph"
+        );
+
+        if name == "change-impact" {
+            let symbol =
+                SymbolId::from_stored("fn:change_impact::payments::validate_amount".to_string());
+            let options = ImpactOptions::default();
+            assert_eq!(
+                impact_of_symbol(&loaded, &symbol, options).unwrap(),
+                impact_of_symbol(&direct, &symbol, options).unwrap()
+            );
+        }
+        if name == "circular-dependency" {
+            assert_eq!(
+                cycles(&loaded, Level::Module),
+                cycles(&direct, Level::Module)
+            );
+            assert_eq!(cycles(&loaded, Level::Module).len(), 1);
+        }
+    }
+}
+
+#[tokio::test]
+async fn loading_an_unknown_repository_fails() {
+    let Some(store) = store().await else { return };
+    assert!(matches!(
+        store.load_graph("does-not-exist").await,
+        Err(StoreError::NotFound(_))
+    ));
+}
+
+/// Opt-in check on a real repository: `CODEATLAS_EQUIVALENCE_REPO=<path>`.
+#[tokio::test]
+async fn loaded_graph_equals_analysis_graph_on_a_real_repository() {
+    let Ok(path) = std::env::var("CODEATLAS_EQUIVALENCE_REPO") else {
+        eprintln!("skipping: CODEATLAS_EQUIVALENCE_REPO not set");
+        return;
+    };
+    let Some(store) = store().await else { return };
+    let mut analysis =
+        analyze_source(&RepoSource::Local(path.into()), &IngestOptions::default()).unwrap();
+    analysis.repository.id = format!("test-equivalence-{}", std::process::id());
+    let repo = analysis.repository.id.clone();
+    store.index(&analysis).await.unwrap();
+    let loaded = store.load_graph(&repo).await.unwrap();
+    store.delete_repository(&repo).await.unwrap();
+    let direct = codeatlas_analyzer::graph::CodeGraph::from_analysis(&analysis);
+    assert_eq!(loaded.len(), direct.len());
+    assert_eq!(loaded.edges().len(), direct.edges().len());
+    assert!(loaded == direct, "stored graph differs from analysis graph");
+}
+
+#[tokio::test]
+async fn graphs_written_by_another_format_version_are_rejected() {
+    with_indexed!("simple-repo", |store, _analysis, repo| {
+        assert!(store.load_graph(&repo).await.is_ok());
+        store.set_format_version_for_tests(&repo, 1).await.unwrap();
+        assert!(matches!(
+            store.load_graph(&repo).await,
+            Err(StoreError::OutdatedIndex { found: 1, .. })
+        ));
+    });
+}
