@@ -7,11 +7,14 @@
 
 pub mod analysis;
 pub mod error;
+pub mod evaluation;
 pub mod git;
 pub mod ingest;
 pub mod layout;
 pub mod model;
+pub mod module_tree;
 pub mod parser;
+pub mod resolver;
 pub mod symbols;
 
 pub use analysis::{analyze, analyze_source, AnalysisStats, RepositoryAnalysis};

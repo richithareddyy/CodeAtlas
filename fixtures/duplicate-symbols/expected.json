@@ -1,0 +1,20 @@
+{
+  "calls": [
+    ["method:duplicate_symbols::admin::<AdminService as Authorizer>::authorize", "method:duplicate_symbols::admin::AdminService::authorize"],
+    ["method:duplicate_symbols::auth::OAuthService::authorize", "fn:duplicate_symbols::auth::authorize"],
+    ["fn:duplicate_symbols::payments::charge", "fn:duplicate_symbols::auth::authorize"],
+    ["fn:duplicate_symbols::payments::charge", "method:duplicate_symbols::payments::PaymentService::authorize"]
+  ],
+  "implements": [
+    ["struct:duplicate_symbols::admin::AdminService", "trait:duplicate_symbols::Authorizer"],
+    ["method:duplicate_symbols::admin::<AdminService as Authorizer>::authorize", "method:duplicate_symbols::Authorizer::authorize"]
+  ],
+  "ambiguous": [
+    {
+      "caller": "method:duplicate_symbols::payments::PaymentService::authorize",
+      "callee": "platform_fee",
+      "reason": "multiple_definitions"
+    }
+  ],
+  "unresolved": []
+}

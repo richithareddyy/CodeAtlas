@@ -15,8 +15,8 @@ use super::syntax::{
 use super::use_tree::flatten_use;
 use crate::ingest::discovery::count_loc;
 use crate::model::{
-    CallSite, Callee, FileAnalysis, ImplBlock, Import, ModuleDecl, Receiver, Span, Symbol,
-    SymbolId, SymbolKind, Visibility,
+    BindingSource, CallSite, Callee, FieldDecl, FileAnalysis, ImplBlock, Import, LocalBinding,
+    ModuleDecl, Receiver, Span, Symbol, SymbolId, SymbolKind, TypeAlias, TypeRef, Visibility,
 };
 use crate::parser::{count_syntax_errors, RustParser};
 
@@ -71,6 +71,8 @@ struct Scope {
     /// Symbol that owns calls and imports found here.
     owner: SymbolId,
     cfg_test: bool,
+    /// Generic type parameters visible here (from enclosing impl / trait / fn).
+    type_params: Vec<String>,
 }
 
 /// The text being walked: the file itself or a re-parsed macro body.
@@ -126,6 +128,8 @@ impl Extractor<'_> {
             signature: None,
             is_test: false,
             cfg_test: attrs.cfg_test,
+            return_type: None,
+            type_params: Vec::new(),
         });
         self.out.module = Some(id.clone());
 
@@ -134,6 +138,7 @@ impl Extractor<'_> {
             prefix: qualified_name,
             owner: id,
             cfg_test: attrs.cfg_test,
+            type_params: Vec::new(),
         };
         let text = Text {
             src,
@@ -160,7 +165,19 @@ impl Extractor<'_> {
             }
             "mod_item" if declares_items => self.module(node, scope, t),
             "struct_item" | "union_item" if declares_items => {
-                self.type_item(node, scope, t, SymbolKind::Struct);
+                if let Some(id) = self.type_item(node, scope, t, SymbolKind::Struct) {
+                    self.struct_fields(node, &id, t);
+                }
+            }
+            // Bindings are recorded inside macro bodies too: they are not
+            // items, only inputs to receiver-type inference.
+            "let_declaration" => {
+                self.let_binding(node, scope, t);
+                self.visit_children(node, scope, t);
+            }
+            "closure_expression" => {
+                self.closure_bindings(node, scope, t);
+                self.visit_children(node, scope, t);
             }
             "enum_item" if declares_items => {
                 self.type_item(node, scope, t, SymbolKind::Enum);
@@ -168,6 +185,8 @@ impl Extractor<'_> {
             "trait_item" if declares_items => self.trait_item(node, scope, t),
             "impl_item" if declares_items => self.impl_item(node, scope, t),
             "use_declaration" if declares_items => self.use_declaration(node, scope, t),
+            "extern_crate_declaration" if declares_items => self.extern_crate(node, scope, t),
+            "type_item" if declares_items => self.type_alias(node, scope, t),
             "call_expression" => {
                 self.call(node, scope, t);
                 self.visit_children(node, scope, t);
@@ -200,6 +219,8 @@ impl Extractor<'_> {
         };
         let qualified_name = format!("{prefix}::{name}");
         let cfg_test = scope.cfg_test || attrs.cfg_test;
+        let mut type_params = scope.type_params.clone();
+        type_params.extend(type_parameters(node, t.src));
         let id = self.add_symbol(Symbol {
             id: SymbolId::new(kind, &qualified_name),
             kind,
@@ -212,18 +233,135 @@ impl Extractor<'_> {
             signature: Some(signature(node, t.src)),
             is_test: attrs.is_test,
             cfg_test,
+            return_type: node
+                .child_by_field_name("return_type")
+                .and_then(|r| type_ref(r, t.src)),
+            type_params: type_params.clone(),
         });
 
+        if !t.in_macro() {
+            self.parameter_bindings(node, &id, t);
+        }
         if let Some(body) = node.child_by_field_name("body") {
             let inner = Scope {
                 module: scope.module.clone(),
                 prefix: qualified_name,
                 owner: id.clone(),
                 cfg_test,
+                type_params,
             };
             self.visit_children(body, &inner, t);
         }
         Some(id)
+    }
+
+    /// Parameters with path types (`repo: &Repo`, `auth: Box<dyn Authorizer>`).
+    fn parameter_bindings(&mut self, function: Node<'_>, id: &SymbolId, t: Text<'_>) {
+        let Some(params) = function.child_by_field_name("parameters") else {
+            return;
+        };
+        let mut cursor = params.walk();
+        for param in params.named_children(&mut cursor) {
+            let (Some(pattern), Some(ty)) = (
+                param.child_by_field_name("pattern"),
+                param.child_by_field_name("type"),
+            ) else {
+                continue;
+            };
+            if pattern.kind() != "identifier" {
+                continue;
+            }
+            let source = type_ref(ty, t.src)
+                .map_or(BindingSource::Untyped, |ty| BindingSource::Annotated { ty });
+            self.out.bindings.push(LocalBinding {
+                scope: id.clone(),
+                name: text(pattern, t.src).to_string(),
+                source,
+                line: t.line(function),
+            });
+        }
+    }
+
+    /// Closure parameters: typed ones (`|cmd: TestCommand|`) feed receiver
+    /// inference; untyped ones mark the name as a local.
+    fn closure_bindings(&mut self, node: Node<'_>, scope: &Scope, t: Text<'_>) {
+        let Some(params) = node.child_by_field_name("parameters") else {
+            return;
+        };
+        let line = t.line(node);
+        let mut cursor = params.walk();
+        for param in params.named_children(&mut cursor) {
+            let (name, source) = match param.kind() {
+                "identifier" => (param, BindingSource::Untyped),
+                "parameter" => {
+                    let Some(pattern) = param
+                        .child_by_field_name("pattern")
+                        .filter(|p| p.kind() == "identifier")
+                    else {
+                        continue;
+                    };
+                    let source = param
+                        .child_by_field_name("type")
+                        .and_then(|ty| type_ref(ty, t.src))
+                        .map_or(BindingSource::Untyped, |ty| BindingSource::Annotated { ty });
+                    (pattern, source)
+                }
+                _ => continue,
+            };
+            self.out.bindings.push(LocalBinding {
+                scope: scope.owner.clone(),
+                name: text(name, t.src).to_string(),
+                source,
+                line,
+            });
+        }
+    }
+
+    /// `let x: T = ..`, `let x = T::new(..)?`, `let x = T { .. }`.
+    fn let_binding(&mut self, node: Node<'_>, scope: &Scope, t: Text<'_>) {
+        let Some(pattern) = node
+            .child_by_field_name("pattern")
+            .filter(|p| p.kind() == "identifier")
+        else {
+            return;
+        };
+        let source = if let Some(ty) = node.child_by_field_name("type") {
+            type_ref(ty, t.src).map(|ty| BindingSource::Annotated { ty })
+        } else {
+            node.child_by_field_name("value")
+                .and_then(|value| binding_from_value(value, t.src))
+        };
+        self.out.bindings.push(LocalBinding {
+            scope: scope.owner.clone(),
+            name: text(pattern, t.src).to_string(),
+            source: source.unwrap_or(BindingSource::Untyped),
+            line: t.line(node),
+        });
+    }
+
+    fn struct_fields(&mut self, node: Node<'_>, owner: &SymbolId, t: Text<'_>) {
+        let Some(body) = node
+            .child_by_field_name("body")
+            .filter(|b| b.kind() == "field_declaration_list")
+        else {
+            return;
+        };
+        let mut cursor = body.walk();
+        for field in body.named_children(&mut cursor) {
+            let (Some(name), Some(ty)) = (
+                field.child_by_field_name("name"),
+                field.child_by_field_name("type"),
+            ) else {
+                continue;
+            };
+            if let Some(ty) = type_ref(ty, t.src) {
+                self.out.fields.push(FieldDecl {
+                    owner: owner.clone(),
+                    name: text(name, t.src).to_string(),
+                    ty,
+                });
+            }
+        }
     }
 
     fn module(&mut self, node: Node<'_>, scope: &Scope, t: Text<'_>) {
@@ -260,12 +398,15 @@ impl Extractor<'_> {
             signature: None,
             is_test: false,
             cfg_test,
+            return_type: None,
+            type_params: Vec::new(),
         });
         let inner = Scope {
             module: id.clone(),
             prefix: qualified_name,
             owner: id,
             cfg_test,
+            type_params: Vec::new(),
         };
         self.visit_children(body, &inner, t);
     }
@@ -292,6 +433,8 @@ impl Extractor<'_> {
             signature: Some(signature(node, t.src)),
             is_test: false,
             cfg_test: scope.cfg_test || attrs.cfg_test,
+            return_type: None,
+            type_params: type_parameters(node, t.src),
         }))
     }
 
@@ -303,11 +446,14 @@ impl Extractor<'_> {
             return;
         };
         let trait_symbol = &self.out.symbols[self.out.symbols.len() - 1];
+        let mut type_params = scope.type_params.clone();
+        type_params.extend(type_parameters(node, t.src));
         let inner = Scope {
             module: scope.module.clone(),
             prefix: trait_symbol.qualified_name.clone(),
             owner: id,
             cfg_test: trait_symbol.cfg_test,
+            type_params,
         };
         let mut cursor = body.walk();
         let children: Vec<Node<'_>> = body.named_children(&mut cursor).collect();
@@ -342,17 +488,20 @@ impl Extractor<'_> {
             None => format!("{}::{type_name}", scope.prefix),
         };
 
+        let mut impl_scope = scope.clone();
+        impl_scope.type_params.extend(type_parameters(node, t.src));
+
         let mut methods = Vec::new();
         if let Some(body) = node.child_by_field_name("body") {
             let mut cursor = body.walk();
             let children: Vec<Node<'_>> = body.named_children(&mut cursor).collect();
             for child in children {
                 if child.kind() == "function_item" {
-                    if let Some(id) = self.function(child, scope, t, FnOwner::Impl, &prefix) {
+                    if let Some(id) = self.function(child, &impl_scope, t, FnOwner::Impl, &prefix) {
                         methods.push(id);
                     }
                 } else {
-                    self.visit(child, scope, t);
+                    self.visit(child, &impl_scope, t);
                 }
             }
         }
@@ -379,6 +528,39 @@ impl Extractor<'_> {
                 line,
             });
         }
+    }
+
+    fn type_alias(&mut self, node: Node<'_>, scope: &Scope, t: Text<'_>) {
+        let (Some(name), Some(target)) = (
+            node.child_by_field_name("name"),
+            node.child_by_field_name("type")
+                .and_then(|ty| type_ref(ty, t.src)),
+        ) else {
+            return;
+        };
+        self.out.type_aliases.push(TypeAlias {
+            scope: scope.owner.clone(),
+            name: text(name, t.src).to_string(),
+            target,
+            line: t.line(node),
+        });
+    }
+
+    /// `extern crate name as alias;` binds a crate name like a `use`.
+    fn extern_crate(&mut self, node: Node<'_>, scope: &Scope, t: Text<'_>) {
+        let Some(name) = node.child_by_field_name("name") else {
+            return;
+        };
+        self.out.imports.push(Import {
+            scope: scope.owner.clone(),
+            path: vec![text(name, t.src).to_string()],
+            alias: node
+                .child_by_field_name("alias")
+                .map(|a| text(a, t.src).to_string()),
+            glob: false,
+            visibility: visibility(node, t.src),
+            line: t.line(node),
+        });
     }
 
     fn call(&mut self, node: Node<'_>, scope: &Scope, t: Text<'_>) {
@@ -505,15 +687,162 @@ fn method_callee(field_expr: Node<'_>, src: &str) -> Callee {
     ) else {
         return dynamic(field_expr, src);
     };
-    let receiver = if value.kind() == "self" {
-        Receiver::SelfValue
-    } else {
-        Receiver::Expr(truncate(&normalize_ws(text(value, src))))
-    };
+    let receiver = receiver(value, src);
     Callee::Method {
         receiver,
         name: text(field, src).to_string(),
     }
+}
+
+fn receiver(value: Node<'_>, src: &str) -> Receiver {
+    match value.kind() {
+        "self" => return Receiver::SelfValue,
+        "identifier" => return Receiver::Variable(text(value, src).to_string()),
+        "field_expression" => {
+            let base = value.child_by_field_name("value");
+            let field = value.child_by_field_name("field");
+            if let (Some(base), Some(field)) = (base, field) {
+                if base.kind() == "self" && field.kind() == "field_identifier" {
+                    return Receiver::SelfField(text(field, src).to_string());
+                }
+            }
+        }
+        "call_expression" => {
+            if let Some(function) = value.child_by_field_name("function") {
+                let function = match function.kind() {
+                    "generic_function" => {
+                        function.child_by_field_name("function").unwrap_or(function)
+                    }
+                    _ => function,
+                };
+                if function.kind() == "field_expression" {
+                    let inner = function.child_by_field_name("value");
+                    let method = function.child_by_field_name("field");
+                    if let (Some(inner), Some(method)) = (inner, method) {
+                        return Receiver::MethodCall {
+                            receiver: Box::new(receiver(inner, src)),
+                            method: text(method, src).to_string(),
+                        };
+                    }
+                } else if let Some(path) = path_segments(function, src) {
+                    return Receiver::PathCall(path);
+                }
+            }
+        }
+        "try_expression" => {
+            if let Some(inner) = value.named_child(0) {
+                return Receiver::Try(Box::new(receiver(inner, src)));
+            }
+        }
+        "parenthesized_expression" => {
+            if let Some(inner) = value.named_child(0) {
+                return receiver(inner, src);
+            }
+        }
+        _ => {}
+    }
+    Receiver::Expr(truncate(&normalize_ws(text(value, src))))
+}
+
+fn binding_from_value(value: Node<'_>, src: &str) -> Option<BindingSource> {
+    let (value, unwrapped) = match value.kind() {
+        "try_expression" => (value.named_child(0)?, true),
+        _ => (value, false),
+    };
+    match value.kind() {
+        "call_expression" => {
+            let function = value.child_by_field_name("function")?;
+            if function.kind() == "field_expression" {
+                return None;
+            }
+            Some(BindingSource::CallResult {
+                callee: path_segments(function, src)?,
+                unwrapped,
+            })
+        }
+        "struct_expression" if !unwrapped => Some(BindingSource::StructLiteral {
+            ty: path_segments(value.child_by_field_name("name")?, src)?,
+        }),
+        // Standard collection / formatting macros have a known result type.
+        "macro_invocation" if !unwrapped => {
+            let name = text(value.child_by_field_name("macro")?, src);
+            let ty = match name {
+                "vec" => "Vec",
+                "format" => "String",
+                _ => return None,
+            };
+            Some(BindingSource::Annotated {
+                ty: TypeRef {
+                    path: vec![ty.to_string()],
+                    args: vec![],
+                },
+            })
+        }
+        _ => None,
+    }
+}
+
+/// Reduces a type node to a [`TypeRef`], looking through references,
+/// smart pointers and `dyn` / `impl` trait types.
+pub(crate) fn type_ref(node: Node<'_>, src: &str) -> Option<TypeRef> {
+    match node.kind() {
+        "reference_type" | "pointer_type" => type_ref(node.child_by_field_name("type")?, src),
+        "dynamic_type" | "abstract_type" => type_ref(node.child_by_field_name("trait")?, src),
+        "generic_type" => {
+            let path = path_segments(node.child_by_field_name("type")?, src)?;
+            let arg_nodes: Vec<Node<'_>> = node
+                .child_by_field_name("type_arguments")
+                .map(|args| {
+                    let mut cursor = args.walk();
+                    args.named_children(&mut cursor).collect()
+                })
+                .unwrap_or_default();
+            let is_pointer = matches!(path.last().map(String::as_str), Some("Box" | "Rc" | "Arc"));
+            if is_pointer {
+                if let Some(inner) = arg_nodes.first() {
+                    return type_ref(*inner, src);
+                }
+            }
+            let args = arg_nodes
+                .iter()
+                .filter_map(|arg| type_ref(*arg, src).map(|t| t.path))
+                .collect();
+            Some(TypeRef { path, args })
+        }
+        "type_identifier" | "scoped_type_identifier" => Some(TypeRef {
+            path: path_segments(node, src)?,
+            args: vec![],
+        }),
+        "primitive_type" => Some(TypeRef {
+            path: vec![text(node, src).to_string()],
+            args: vec![],
+        }),
+        // Slices and arrays: only their element type could carry methods
+        // of interest, and method calls on them dispatch to `[T]` / `[T; N]`.
+        "array_type" => Some(TypeRef {
+            path: vec!["[]".to_string()],
+            args: vec![],
+        }),
+        _ => None,
+    }
+}
+
+/// Names of the generic type parameters declared on an item.
+fn type_parameters(item: Node<'_>, src: &str) -> Vec<String> {
+    let Some(params) = item.child_by_field_name("type_parameters") else {
+        return Vec::new();
+    };
+    let mut cursor = params.walk();
+    params
+        .named_children(&mut cursor)
+        .filter(|p| matches!(p.kind(), "type_parameter" | "constrained_type_parameter"))
+        .filter_map(|p| {
+            p.child_by_field_name("name")
+                .or_else(|| p.child_by_field_name("left"))
+                .or_else(|| p.named_child(0))
+        })
+        .map(|name| text(name, src).to_string())
+        .collect()
 }
 
 fn dynamic(node: Node<'_>, src: &str) -> Callee {

@@ -1,5 +1,5 @@
 use super::{extract_file, FileContext};
-use crate::model::{CallSite, Callee, FileAnalysis, Receiver, Symbol, SymbolKind, Visibility};
+use crate::model::{CallSite, Callee, FileAnalysis, Symbol, SymbolKind, Visibility};
 use crate::parser::RustParser;
 
 fn extract(src: &str) -> FileAnalysis {
@@ -31,18 +31,8 @@ fn calls(fa: &FileAnalysis) -> Vec<String> {
 
 fn render_call(c: &CallSite) -> String {
     let callee = match &c.callee {
-        Callee::Path { segments, as_trait } => match as_trait {
-            Some(tr) => {
-                let (name, ty) = segments.split_last().unwrap();
-                format!("<{} as {}>::{name}", ty.join("::"), tr.join("::"))
-            }
-            None => segments.join("::"),
-        },
-        Callee::Method { receiver, name } => match receiver {
-            Receiver::SelfValue => format!("self.{name}"),
-            Receiver::Expr(e) => format!("({e}).{name}"),
-        },
         Callee::Dynamic { expression } => format!("dyn {expression}"),
+        other => other.display(),
     };
     let caller = c.caller.as_str().rsplit("::").next().unwrap();
     let macro_flag = if c.in_macro { " [macro]" } else { "" };
@@ -147,8 +137,8 @@ fn extracts_call_forms() {
             "run -> Self::assoc @4",
             "run -> Vec::with_capacity @5",
             "run -> self.method @6",
-            "run -> (self.repo.save()).unwrap @7",
-            "run -> (self.repo).save @7",
+            "run -> self.repo.save(..).unwrap @7",
+            "run -> self.repo.save @7",
             "run -> generic @8",
             "run -> <Money as Display>::fmt @9",
             "run -> dyn (make_closure()) @10",

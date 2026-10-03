@@ -1,0 +1,32 @@
+{
+  "calls": [
+    ["method:cross_module::storage::Store::exists", "method:cross_module::storage::Store::load"],
+    ["method:cross_module::services::billing::Billing::issue", "method:cross_module::model::Invoice::new"],
+    ["method:cross_module::services::billing::Billing::issue", "method:cross_module::storage::memory::<MemoryStore as Store>::save"],
+    ["method:cross_module::services::billing::Billing::issue", "method:cross_module::services::billing::Billing::audit"],
+    ["method:cross_module::services::billing::Billing::audit", "fn:cross_module::services::reporting::record"],
+    ["method:cross_module::services::billing::<Billing as Default>::default", "method:cross_module::services::billing::Billing::new"],
+    ["fn:cross_module::services::reporting::summarize", "method:cross_module::storage::Store::exists"],
+    ["fn:cross_module::services::reporting::total", "method:cross_module::storage::Store::load"],
+    ["fn:cross_module::services::reporting::first_saved", "method:cross_module::model::Invoice::new"],
+    ["fn:cross_module::services::reporting::discounted_total", "method:cross_module::model::Invoice::discounted"],
+    ["fn:billing_test::issues_and_stores_invoices", "method:cross_module::services::billing::Billing::new"],
+    ["fn:billing_test::issues_and_stores_invoices", "method:cross_module::services::billing::Billing::issue"],
+    ["fn:billing_test::memory_store_round_trip", "method:cross_module::model::Invoice::new"],
+    ["fn:billing_test::memory_store_round_trip", "method:cross_module::storage::memory::<MemoryStore as Store>::save"],
+    ["fn:billing_test::memory_store_round_trip", "method:cross_module::storage::Store::exists"]
+  ],
+  "implements": [
+    ["struct:cross_module::storage::memory::MemoryStore", "trait:cross_module::storage::Store"],
+    ["method:cross_module::storage::memory::<MemoryStore as Store>::save", "method:cross_module::storage::Store::save"],
+    ["method:cross_module::storage::memory::<MemoryStore as Store>::load", "method:cross_module::storage::Store::load"]
+  ],
+  "ambiguous": [
+    {
+      "caller": "fn:cross_module::services::reporting::first_saved",
+      "callee": "store.save",
+      "reason": "generic_parameter"
+    }
+  ],
+  "unresolved": []
+}

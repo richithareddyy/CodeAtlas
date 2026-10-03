@@ -8,10 +8,10 @@ independently testable:
 ```
 Git repository
   → ingest      (local path or clone, file discovery, repository metadata)
-  → layout      (Cargo targets and module paths)
+  → layout      (Cargo targets; module tree from `mod` declarations)
   → parser      (tree-sitter syntax trees)
-  → symbols     (declarations, imports, impl blocks, call sites)
-  → resolver    (call sites → symbol IDs, with explicit resolution status)   [M2]
+  → symbols     (declarations, imports, impl blocks, call sites, bindings)
+  → resolver    (references → symbol IDs, with explicit outcomes)
   → store       (Neo4j code graph)                                           [M3]
   → algorithms / impact                                                       [M4]
   → GraphQL API                                                               [M5]
@@ -22,10 +22,10 @@ Git repository
 
 | Crate | Responsibility | Depends on |
 |---|---|---|
-| `crates/analyzer` | Ingestion, layout, parsing, extraction, resolution, graph algorithms, impact and diff analysis. Pure library; no database or network code beyond invoking `git`. | tree-sitter, ignore, toml |
+| `crates/analyzer` | Ingestion, layout, parsing, extraction, resolution and its evaluation; later graph algorithms, impact and diff analysis. Pure library; no database or network code beyond invoking `git`. | tree-sitter, ignore, toml |
 | `crates/store` *(M3)* | Neo4j schema, batched writes, bounded Cypher queries. | analyzer, neo4rs |
 | `crates/server` *(M5)* | GraphQL API over the store and analyzer. | analyzer, store, async-graphql, axum, tokio |
-| `crates/cli` | `codeatlas` binary: `analyze`, `ast`, and later `index` and `bench`. | analyzer |
+| `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `ast`, and later `index` and `bench`. | analyzer |
 | `web/` *(M6)* | SvelteKit + TypeScript + Cytoscape.js workspace UI. | GraphQL API |
 
 The analyzer is kept free of storage concerns so that extraction, resolution
@@ -50,7 +50,11 @@ and complexity limits, which are required to stop clients from requesting
 unbounded traversals. Juniper was the alternative; its async support and
 release cadence are weaker.
 
-**Parallelism.** Parsing is CPU-bound and currently sequential. It will be
+**Parallelism and memory.** Parsing is CPU-bound and currently sequential.
+Analysis makes two passes (module declarations, then extraction) and
+re-parses in the second pass instead of keeping every syntax tree alive:
+on ripgrep this raised parse time from about 77 ms to 147 ms but lowered
+peak memory from about 89 MB to 38 MB in single runs. Parsing will be
 parallelised once the benchmark harness can show the effect; Tokio is
 reserved for the server's I/O.
 
@@ -76,16 +80,23 @@ reserved for the server's I/O.
 
 ## Layout (`analyzer/src/layout.rs`)
 
-Each Rust file is assigned to a Cargo target and a module path, following
-Cargo's conventions (`src/lib.rs`, `src/main.rs`, `src/bin/*`, `tests/*`,
-`examples/*`, `benches/*`, `build.rs`) and any non-conventional `path` keys in
-`[lib]`, `[[bin]]`, `[[test]]`, `[[example]]` and `[[bench]]`. Module paths
-come from file paths (`a/b.rs` and `a/b/mod.rs` → `a::b`).
+Targets come from Cargo's conventions (`src/lib.rs`, `src/main.rs`,
+`src/bin/*`, `tests/*`, `examples/*`, `benches/*`, `build.rs`) and from
+`[lib]`, `[[bin]]`, `[[test]]`, `[[example]]` and `[[bench]]` entries in
+`Cargo.toml` (names and paths). Dependency names are collected from every
+`[*dependencies]` table for the resolver.
 
-Known gaps: `#[path = "..."]` attributes, `include!`, and files that are
-never reached by a `mod` declaration are mapped by path alone. When a package
-has both a library and `src/main.rs`, the binary crate is named
-`<package>_bin` so its symbols cannot collide with the library's.
+Module paths are then computed as the compiler does, by following
+`mod name;` declarations from each crate root (`module_tree.rs`), including
+`#[path = "..."]` and inline modules. A file that another file declares as
+a module is never treated as its own crate root (`tests/util.rs` declared by
+`tests/tests.rs`), and a file declared only by `main.rs` belongs to the
+binary. Files no crate root reaches fall back to a path-based mapping
+(`a/b.rs` and `a/b/mod.rs` → `a::b`).
+
+When a package has both a library and `src/main.rs`, the binary crate is
+named `<package>_bin` so its symbols cannot collide with the library's.
+`include!` is not followed.
 
 ## Extraction (`analyzer/src/symbols`)
 
@@ -100,36 +111,51 @@ The extractor walks the syntax tree and records what is written in source:
 | `fn` in `impl` / `trait` | `Method`, plus an `ImplBlock` recording self type and trait |
 | `#[test]`, `#[tokio::test]`, `#[rstest]`, … | `is_test = true` |
 | `#[cfg(test)]` on an item or enclosing module | `cfg_test = true` |
-| `use` trees | one `Import` per bound name (groups, aliases, globs, `self`) |
+| `use` trees, `extern crate a as b` | one `Import` per bound name (groups, aliases, globs, `self`) |
+| `type A = B;` | `TypeAlias` |
+| parameters, `let`, closure parameters | `LocalBinding` with the written type, constructor call or literal, if any |
+| struct fields | `FieldDecl` with the declared type |
+| generic parameters | `type_params` on functions, methods and types |
 | calls | `CallSite` with the innermost enclosing symbol as caller |
 
 **Symbol IDs** are `<kind>:<qualified name>`, e.g.
 `method:shop::payments::PaymentService::authorize`. Trait-impl methods use
 Rust's qualified form, `shop::money::<Money as std::fmt::Display>::fmt`, so
 methods of different trait impls do not collide. IDs contain no line numbers,
-so they are stable across edits that move code. Genuine duplicates (for
+so they are stable across edits that move code. Impl methods are named
+after their self type once the resolver has located it, wherever the
+`impl` block is written. Genuine duplicates (for
 example `#[cfg(unix)]` and `#[cfg(not(unix))]` versions of one function) get
 a `#2`, `#3`, … suffix in path and source order.
 
 **Call sites** are classified as paths (`f()`, `a::b::f()`, `Type::f()`,
-`<T as Trait>::f()`), method calls (`receiver.f()`, with `self` receivers
-marked) or dynamic calls (closures and other expressions, which cannot be
-resolved without type information).
+`<T as Trait>::f()`), method calls or dynamic calls (closures stored in
+fields and other expressions). Method receivers are recorded structurally
+(`self`, `self.field`, a variable, a constructor call, a method-call chain,
+`expr?`) so the resolver can infer their types.
 
 **Macros.** Tree-sitter does not parse macro arguments; they arrive as raw
 token trees. For `(..)` and `[..]` macros the extractor re-parses the
 arguments as an array expression and maps the lines back, so calls in
 `assert_eq!(compute(x), 1)` or `vec![build(); n]` are recorded with
-`in_macro = true`. Brace-delimited macros (`my_dsl! { .. }`) are DSLs more
-often than expressions and are not re-parsed. Macro-generated items are not
-seen.
+`in_macro = true`, together with `let` and closure-parameter bindings
+inside them. Brace-delimited macros (`my_dsl! { .. }`) are DSLs more often
+than expressions and are not re-parsed. Macro-generated items are not seen.
+
+## Resolution (`analyzer/src/resolver`)
+
+See [symbol-resolution.md](symbol-resolution.md). Every call site ends in
+one outcome: resolved, ambiguous (with candidates and a reason),
+unresolved (with a reason), external, constructor or local. Only resolved
+targets become `CALLS` edges. `evaluation.rs` compares the output with
+hand-written ground truth and reports precision and recall.
 
 ## Milestones
 
 | # | Scope | Status |
 |---|---|---|
 | 1 | Workspace, ingestion, discovery, metadata, layout, parsing, extraction, CLI | Done |
-| 2 | Symbol resolution with explicit resolved / ambiguous / unresolved status and a resolution-rate metric | Planned |
+| 2 | Module tree, symbol resolution with explicit outcomes, receiver-type inference, ground-truth evaluation | Done |
 | 3 | Neo4j store and bounded Cypher queries | Planned |
 | 4 | Graph algorithms (BFS with evidence, Tarjan SCC, centrality, topological order) and the impact engine | Planned |
 | 5 | GraphQL API | Planned |

@@ -1,0 +1,15 @@
+{
+  "calls": [
+    ["fn:simple_repo::checkout::checkout", "fn:simple_repo::inventory::reserve"],
+    ["fn:simple_repo::checkout::checkout", "fn:simple_repo::payments::process_payment"],
+    ["fn:simple_repo::payments::process_payment", "method:simple_repo::payments::PaymentService::new"],
+    ["fn:simple_repo::payments::process_payment", "method:simple_repo::payments::PaymentService::authorize"],
+    ["method:simple_repo::payments::PaymentService::authorize", "fn:simple_repo::payments::gateway::stripe_call"],
+    ["fn:simple_repo::payments::tests::rejects_amounts_over_limit", "method:simple_repo::payments::PaymentService::new"],
+    ["fn:simple_repo::payments::tests::rejects_amounts_over_limit", "method:simple_repo::payments::PaymentService::authorize"],
+    ["fn:checkout_test::checkout_succeeds_for_small_orders", "fn:simple_repo::checkout::checkout"]
+  ],
+  "implements": [],
+  "ambiguous": [],
+  "unresolved": []
+}
