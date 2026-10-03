@@ -1,0 +1,23 @@
+[package]
+name = "codeatlas-analyzer"
+description = "Static analysis core for CodeAtlas: ingestion, parsing, symbol extraction"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+chrono.workspace = true
+ignore.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tree-sitter.workspace = true
+tree-sitter-rust.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true
