@@ -1,0 +1,14 @@
+{
+  "calls": [
+    ["fn:circular_dependency::checkout::checkout", "fn:circular_dependency::payments::charge"],
+    ["fn:circular_dependency::checkout::confirm", "fn:circular_dependency::util::clamp"],
+    ["fn:circular_dependency::payments::charge", "fn:circular_dependency::orders::record"],
+    ["fn:circular_dependency::orders::record", "fn:circular_dependency::checkout::confirm"],
+    ["fn:circular_dependency::math::is_even", "fn:circular_dependency::math::is_odd"],
+    ["fn:circular_dependency::math::is_odd", "fn:circular_dependency::math::is_even"],
+    ["fn:circular_dependency::math::factorial", "fn:circular_dependency::math::factorial"]
+  ],
+  "implements": [],
+  "ambiguous": [],
+  "unresolved": []
+}

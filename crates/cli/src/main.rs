@@ -1,4 +1,5 @@
 mod graph;
+mod views;
 
 use std::fs;
 use std::io::Write;

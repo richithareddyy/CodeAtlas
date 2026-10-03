@@ -131,6 +131,8 @@ has that name, in which case it is external.
 | duplicate-symbols | 4 | 2 | 1 | 0 | exact |
 | cross-module | 15 | 3 | 1 | 0 | exact |
 | unresolved | 0 | 4 | 2 | 3 | exact |
+| change-impact | 11 | 6 | 0 | 0 | exact |
+| circular-dependency | 7 | 0 | 0 | 0 | exact |
 
 These fixtures were written alongside the resolver, so an exact match shows
 the rules behave as designed. It is not evidence of accuracy on unfamiliar

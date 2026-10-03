@@ -19,6 +19,8 @@ pub struct RepositoryNode {
     pub head_sha: Option<String>,
     pub indexed_sha: Option<String>,
     pub indexed_at: String,
+    /// Graph format version the repository was written with (0 if unknown).
+    pub format_version: i64,
     pub source_files: i64,
     pub loc: i64,
     pub languages: Vec<String>,
@@ -623,7 +625,7 @@ impl GraphStore {
         Ok(())
     }
 
-    async fn rows(&self, q: neo4rs::Query) -> Result<Vec<Row>> {
+    pub(crate) async fn rows(&self, q: neo4rs::Query) -> Result<Vec<Row>> {
         let mut stream = self.graph.execute(q).await?;
         let mut rows = Vec::new();
         while let Some(row) = stream.next().await? {
@@ -660,6 +662,7 @@ fn repository_node(node: &Node) -> Result<RepositoryNode> {
         head_sha: node.get("head_sha").ok(),
         indexed_sha: node.get("indexed_sha").ok(),
         indexed_at: node.get("indexed_at")?,
+        format_version: node.get("format_version").unwrap_or(0),
         source_files: node.get("source_files")?,
         loc: node.get("loc")?,
         languages: node.get("languages").unwrap_or_default(),

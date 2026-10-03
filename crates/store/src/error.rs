@@ -21,4 +21,14 @@ pub enum StoreError {
 
     #[error("{0}")]
     Ambiguous(String),
+
+    #[error(
+        "repository `{repo}` was indexed with graph format {found}, this version reads \
+         format {expected}; run `codeatlas index` on it again"
+    )]
+    OutdatedIndex {
+        repo: String,
+        found: i64,
+        expected: i64,
+    },
 }

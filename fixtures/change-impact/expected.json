@@ -1,0 +1,25 @@
+{
+  "calls": [
+    ["method:change_impact::payments::PaymentService::authorize", "fn:change_impact::payments::validate_amount"],
+    ["method:change_impact::payments::PaymentService::authorize", "method:change_impact::gateway::Gateway::charge"],
+    ["fn:change_impact::checkout::checkout", "fn:change_impact::checkout::apply_discount"],
+    ["fn:change_impact::checkout::checkout", "method:change_impact::payments::PaymentService::authorize"],
+    ["fn:change_impact::refunds::refund_order", "method:change_impact::gateway::Gateway::refund"],
+    ["fn:payment_tests::test_authorize_valid", "method:change_impact::payments::PaymentService::new"],
+    ["fn:payment_tests::test_authorize_valid", "method:change_impact::payments::PaymentService::authorize"],
+    ["fn:payment_tests::test_checkout", "method:change_impact::payments::PaymentService::new"],
+    ["fn:payment_tests::test_checkout", "fn:change_impact::checkout::checkout"],
+    ["fn:payment_tests::test_refund", "fn:change_impact::refunds::refund_order"],
+    ["fn:payment_tests::test_daily_total", "fn:change_impact::reports::daily_total"]
+  ],
+  "implements": [
+    ["struct:change_impact::gateway::StripeGateway", "trait:change_impact::gateway::Gateway"],
+    ["struct:change_impact::gateway::FakeGateway", "trait:change_impact::gateway::Gateway"],
+    ["method:change_impact::gateway::<StripeGateway as Gateway>::charge", "method:change_impact::gateway::Gateway::charge"],
+    ["method:change_impact::gateway::<StripeGateway as Gateway>::refund", "method:change_impact::gateway::Gateway::refund"],
+    ["method:change_impact::gateway::<FakeGateway as Gateway>::charge", "method:change_impact::gateway::Gateway::charge"],
+    ["method:change_impact::gateway::<FakeGateway as Gateway>::refund", "method:change_impact::gateway::Gateway::refund"]
+  ],
+  "ambiguous": [],
+  "unresolved": []
+}
