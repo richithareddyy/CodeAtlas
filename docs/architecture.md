@@ -15,7 +15,7 @@ Git repository
   → dependencies (derived file / module DEPENDS_ON aggregates)
   → store       (Neo4j code graph, bounded queries)
   → graph       (in-memory CodeGraph: algorithms, impact, architecture)
-  → GraphQL API                                                               [M5]
+  → server      (GraphQL API)
   → SvelteKit UI                                                              [M6]
 ```
 
@@ -25,7 +25,7 @@ Git repository
 |---|---|---|
 | `crates/analyzer` | Ingestion, layout, parsing, extraction, resolution and its evaluation, derived dependencies, graph algorithms, impact and architecture analyses; later diff analysis. Pure library; no database or network code beyond invoking `git`. | tree-sitter, ignore, toml |
 | `crates/store` | Neo4j schema, batched writes, bounded queries (traversals with evidence paths, shortest path, search, file/module dependencies), loading a stored graph back into a `CodeGraph`. | analyzer, neo4rs, tokio |
-| `crates/server` *(M5)* | GraphQL API over the store and analyzer. | analyzer, store, async-graphql, axum, tokio |
+| `crates/server` | GraphQL API over the store and analyzer, graph cache, guarded source reads. | analyzer, store, async-graphql, axum, tokio |
 | `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `index`, `query`, `remove`, `ast`; later `bench`. | analyzer, store |
 | `web/` *(M6)* | SvelteKit + TypeScript + Cytoscape.js workspace UI. | GraphQL API |
 
@@ -45,11 +45,12 @@ strips credentials from remote URLs before they are stored.
 still yields a usable tree for the valid regions), fast, and gives a concrete
 syntax tree with field names, which keeps extraction rules explicit.
 
-**GraphQL: async-graphql** *(M5)*. Actively maintained, derives schema types
-from Rust types, supports cursor connections, and has built-in query depth
-and complexity limits, which are required to stop clients from requesting
-unbounded traversals. Juniper was the alternative; its async support and
-release cadence are weaker.
+**GraphQL: async-graphql 7.2.1 (pinned) on axum 0.8.** Actively
+maintained, derives schema types from Rust types, supports cursor
+connections, and has built-in query depth and complexity limits, which are
+required to stop clients from requesting unbounded traversals. Juniper was
+the alternative; its async support and release cadence are weaker. 8.0 was
+still a release candidate. See [api.md](api.md).
 
 **Parallelism and memory.** Parsing is CPU-bound and currently sequential.
 Analysis makes two passes (module declarations, then extraction) and
@@ -189,7 +190,7 @@ Science plugin is not needed.
 | 2 | Module tree, symbol resolution with explicit outcomes, receiver-type inference, ground-truth evaluation | Done |
 | 3 | Neo4j store, derived dependencies, bounded queries, `index` / `query` CLI | Done |
 | 4 | Graph algorithms, impact engine with evidence chains and a decomposable score, cycles, hotspots and layers | Done |
-| 5 | GraphQL API | Planned |
+| 5 | GraphQL API: queries, mutations, pagination, error codes, limits, graph cache | Done |
 | 6 | SvelteKit workspace UI (completes the MVP) | Planned |
 | 7 | Git diff analysis and PR impact reports | Planned |
 | 8 | Incremental indexing | Planned |

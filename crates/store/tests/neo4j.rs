@@ -343,6 +343,27 @@ async fn search_and_symbol_lookup() {
             .unwrap();
         assert_eq!(only_functions.len(), 1);
 
+        // Pages: 7 hits split 4 + 3, no overlap, `has_more` only on the first.
+        let first = store
+            .search_page(&repo, "authorize", None, 4, 0)
+            .await
+            .unwrap();
+        let second = store
+            .search_page(&repo, "authorize", None, 4, 4)
+            .await
+            .unwrap();
+        assert_eq!((first.symbols.len(), first.has_more), (4, true));
+        assert_eq!((second.symbols.len(), second.has_more), (3, false));
+        let mut paged: Vec<&str> = first
+            .symbols
+            .iter()
+            .chain(&second.symbols)
+            .map(|s| s.id.as_str())
+            .collect();
+        paged.sort();
+        paged.dedup();
+        assert_eq!(paged.len(), 7);
+
         let prefix = store.search(&repo, "OAuthServ", None, 20).await.unwrap();
         assert_eq!(prefix[0].id, "struct:duplicate_symbols::auth::OAuthService");
 

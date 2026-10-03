@@ -8,11 +8,11 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 4 of 11.** Ingestion, Rust module-tree construction,
+> **Status: Milestone 5 of 11.** Ingestion, Rust module-tree construction,
 > tree-sitter parsing, symbol extraction, symbol resolution (with measured
-> quality), the Neo4j code graph, bounded graph queries, graph algorithms
-> and the change-impact engine are implemented and tested. The GraphQL API
-> and the web UI are not built yet. See
+> quality), the Neo4j code graph, bounded graph queries, graph algorithms,
+> the change-impact engine and the GraphQL API are implemented and tested.
+> The web UI is not built yet. See
 > [docs/architecture.md](docs/architecture.md#milestones).
 
 ## Why static analysis
@@ -28,18 +28,20 @@ a high share of references to be resolved without full type inference.
 
 ```
 ingest → module tree → tree-sitter parse → extract → resolve → Neo4j + queries → algorithms / impact → GraphQL → SvelteKit
-└────────────────────────────────────── implemented ──────────────────────────────────────┘
+└─────────────────────────────────────────── implemented ───────────────────────────────────────────┘
 ```
 
 * `crates/analyzer`: the analysis core, a pure library with no database code.
 * `crates/store`: Neo4j persistence and bounded graph queries.
+* `crates/server`: the GraphQL API (`codeatlas-server`).
 * `crates/cli`: the `codeatlas` command.
 * `fixtures/`: small Rust repositories with hand-written ground truth
   (`expected.json`).
 * `docs/`: [architecture](docs/architecture.md),
   [graph model](docs/graph-model.md),
-  [symbol resolution](docs/symbol-resolution.md) and
-  [change impact and graph algorithms](docs/impact-analysis.md).
+  [symbol resolution](docs/symbol-resolution.md),
+  [change impact and graph algorithms](docs/impact-analysis.md) and the
+  [GraphQL API](docs/api.md) with its [schema](docs/schema.graphql).
 
 ## What it does today
 
@@ -276,6 +278,22 @@ indexed repository with `codeatlas remove <repo>`. If a repository was
 indexed by an older version of CodeAtlas, the graph-based analyses ask you
 to index it again.
 
+### GraphQL API
+
+```bash
+cargo run --release -p codeatlas-server
+```
+
+The server listens on `http://127.0.0.1:8080`, with GraphiQL at
+`/graphql` and a health check at `/health`. Example:
+
+```bash
+curl -s http://127.0.0.1:8080/graphql -H 'content-type: application/json' -d '{"query":"{ repositories { id name sourceFiles } }"}'
+```
+
+All operations, error codes, limits and configuration are in
+[docs/api.md](docs/api.md).
+
 ### Debugging the extractor
 
 Inspect the tree-sitter syntax tree of a file (useful when extending the
@@ -324,6 +342,15 @@ cargo test
 * `crates/analyzer/src/graph/algorithms.rs` unit-tests each algorithm on
   hand-built graphs, including a 200,000-node chain for the iterative
   Tarjan.
+* `crates/server/tests/api.rs` drives the HTTP router against a real Neo4j:
+  health and CORS, repository lookup and cursor-paginated search,
+  neighbourhoods, paths, source snippets, impact and affected tests through
+  trait dispatch, cycles, layers and hotspots, coded errors (unknown IDs,
+  bad arguments, path traversal, disabled indexing, outdated index) and the
+  index/re-index/remove mutations, including graph-cache invalidation.
+  `crates/server/tests/schema.rs` checks that `docs/schema.graphql` matches
+  the code and that the depth and complexity limits reject oversized
+  queries.
 * `crates/analyzer/tests/git_ingest.rs` builds Git repositories in temporary
   directories (branch/SHA detection, detached HEAD, cloning, updating a
   clone, clone failures). These tests need `git`.
@@ -373,7 +400,9 @@ their conditions. For example, indexing ripgrep (commit `3fce3b5`) wrote
 `codeatlas query` invocations on that graph took 31–42 ms end to end,
 including process start and connection. Impact, cycle and hotspot queries,
 which load the whole stored graph (3,536 symbols) into memory, took
-103–126 ms end to end. Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
+103–126 ms end to end. Through the GraphQL server, the first ripgrep `impact`
+request took 116 ms (graph load included) and cached repeats about 2 ms.
+Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
 
 ## Known limitations
 
@@ -400,7 +429,7 @@ which load the whole stored graph (3,536 symbols) into memory, took
 
 ## Roadmap
 
-GraphQL API → SvelteKit workspace UI (MVP) → Git diff impact →
+SvelteKit workspace UI (MVP) → Git diff impact →
 incremental indexing → test-impact evaluation → architecture and cycle
 views with benchmarks → optional local-model explanations grounded in graph
 evidence. Details are in [docs/architecture.md](docs/architecture.md).

@@ -1,0 +1,450 @@
+type AffectedGroup {
+	"""
+	File path or module ID.
+	"""
+	name: String!
+	symbols: Int!
+	tests: Int!
+}
+
+type AffectedSymbol {
+	symbol: SymbolRef!
+	depth: Int!
+	confidence: Confidence!
+	"""
+	From this symbol to a changed symbol.
+	"""
+	path: [EvidenceStep!]!
+}
+
+type AffectedTest {
+	test: SymbolRef!
+	depth: Int!
+	"""
+	From the test to the changed symbol.
+	"""
+	path: [EvidenceStep!]!
+}
+
+type AggregateDependency {
+	"""
+	File path or module ID on the other end.
+	"""
+	target: String!
+	"""
+	Number of symbol-level edges behind the dependency.
+	"""
+	weight: Int!
+	via: [String!]!
+}
+
+enum Confidence {
+	CERTAIN
+	POSSIBLE
+}
+
+type Cycle {
+	members: [String!]!
+	"""
+	A shortest cycle through the members; the last hop returns to the start.
+	"""
+	hops: [Hop!]!
+}
+
+enum DependencyKind {
+	"""
+	`source` calls `target`.
+	"""
+	CALLS
+	"""
+	Calls to the trait method `source` may dispatch to `target`.
+	"""
+	DISPATCHES_TO
+	"""
+	`source` implements the changed trait method `target`.
+	"""
+	IMPLEMENTS
+	"""
+	`source` has an ambiguous call with `target` as a candidate.
+	"""
+	MAY_CALL
+}
+
+type DependencyPath {
+	nodes: [Symbol!]!
+	edges: [GraphEdge!]!
+}
+
+enum Direction {
+	"""
+	What the symbol depends on (callees).
+	"""
+	DEPENDENCIES
+	"""
+	What depends on the symbol (callers).
+	"""
+	DEPENDENTS
+}
+
+type EvidenceRef {
+	from: ID!
+	to: ID!
+	relation: String!
+	file: String!
+	line: Int!
+}
+
+type EvidenceStep {
+	"""
+	The dependent side (further from the change).
+	"""
+	source: ID!
+	"""
+	The side closer to the change.
+	"""
+	target: ID!
+	kind: DependencyKind!
+	file: String!
+	lines: [Int!]!
+	resolution: String
+}
+
+type GraphEdge {
+	from: ID!
+	to: ID!
+	relation: Relation!
+	"""
+	How the edge was resolved (`import`, `receiver_type`, ...); absent
+	for ambiguous-call candidates.
+	"""
+	resolution: String
+	"""
+	Source lines in the `from` symbol's file.
+	"""
+	lines: [Int!]!
+}
+
+type Hop {
+	from: String!
+	to: String!
+	weight: Int!
+	via: [String!]!
+	evidence: [EvidenceRef!]!
+}
+
+type Hotspot {
+	name: String!
+	fanIn: Int!
+	fanOut: Int!
+	betweenness: Float!
+}
+
+enum ImpactLevel {
+	LOW
+	MEDIUM
+	HIGH
+}
+
+type ImpactReport {
+	changed: [SymbolRef!]!
+	maxDepth: Int!
+	includeAmbiguous: Boolean!
+	directCount: Int!
+	indirectCount: Int!
+	possibleCount: Int!
+	affected: [AffectedSymbol!]!
+	files: [AffectedGroup!]!
+	modules: [AffectedGroup!]!
+	tests: [ID!]!
+	truncated: Boolean!
+	score: ImpactScore!
+}
+
+"""
+Size of the affected graph (0–100) as a sum of factor contributions.
+Not a probability of breakage.
+"""
+type ImpactScore {
+	total: Float!
+	level: ImpactLevel!
+	factors: [ScoreFactor!]!
+}
+
+type IndexResult {
+	repository: Repository!
+	filesAnalyzed: Int!
+	nodes: Int!
+	relationships: Int!
+	resolutionRate: Float
+	analysisMs: Float!
+	writeMs: Float!
+}
+
+type Layer {
+	layer: Int!
+	members: [String!]!
+}
+
+enum Level {
+	FUNCTION
+	FILE
+	MODULE
+}
+
+type Mutation {
+	"""
+	Analyses a local path or Git URL (as seen by the server) and replaces
+	its stored graph.
+	"""
+	indexRepository(source: String!): IndexResult!
+	"""
+	Deletes a repository's graph. Returns `true` when it existed.
+	"""
+	removeRepository(id: ID!): Boolean!
+}
+
+type Neighborhood {
+	root: Symbol!
+	direction: Direction!
+	maxDepth: Int!
+	nodes: [NeighborhoodNode!]!
+	edges: [GraphEdge!]!
+	"""
+	Set when node or row limits cut the traversal short.
+	"""
+	truncated: Boolean!
+}
+
+type NeighborhoodNode {
+	symbol: Symbol!
+	depth: Int!
+	"""
+	The edge through which the node was first reached; following these
+	edges back gives a shortest evidence path to the root.
+	"""
+	via: GraphEdge!
+}
+
+"""
+Information about pagination in a connection
+"""
+type PageInfo {
+	"""
+	When paginating backwards, are there more items?
+	"""
+	hasPreviousPage: Boolean!
+	"""
+	When paginating forwards, are there more items?
+	"""
+	hasNextPage: Boolean!
+	"""
+	When paginating backwards, the cursor to continue.
+	"""
+	startCursor: String
+	"""
+	When paginating forwards, the cursor to continue.
+	"""
+	endCursor: String
+}
+
+type Query {
+	"""
+	All indexed repositories.
+	"""
+	repositories: [Repository!]!
+	"""
+	A repository by ID or unique name; `null` if unknown.
+	"""
+	repository(id: ID!): Repository
+	"""
+	A symbol by exact ID; `null` if unknown.
+	"""
+	symbol(repoId: ID!, id: ID!): Symbol
+	"""
+	Symbols whose name or qualified name matches every term of `query`
+	as a prefix. Exact name matches come first. Cursor-paginated with
+	`first` (at most 50) and `after`.
+	"""
+	searchSymbols(repoId: ID!, query: String!, kinds: [SymbolKind!], first: Int, after: String): SymbolConnection!
+	"""
+	What `symbolId` depends on, breadth-first up to `depth`.
+	"""
+	dependencies(repoId: ID!, symbolId: ID!, depth: Int! = 1, relations: [Relation!]! = [CALLS]): Neighborhood!
+	"""
+	What depends on `symbolId`, breadth-first up to `depth`.
+	"""
+	dependents(repoId: ID!, symbolId: ID!, depth: Int! = 1, relations: [Relation!]! = [CALLS]): Neighborhood!
+	"""
+	Shortest dependency path from `from` to `to` over resolved calls,
+	imports and implementations; `null` if none within `maxDepth`.
+	"""
+	dependencyPath(repoId: ID!, from: ID!, to: ID!, maxDepth: Int! = 10): DependencyPath
+	"""
+	Files depending on `path` (`DEPENDENTS`) or that it depends on.
+	"""
+	fileDependencies(repoId: ID!, path: String!, direction: Direction!): [AggregateDependency!]!
+	"""
+	Modules depending on `moduleId` (`DEPENDENTS`) or that it depends on.
+	"""
+	moduleDependencies(repoId: ID!, moduleId: ID!, direction: Direction!): [AggregateDependency!]!
+	"""
+	What could be affected by changing `symbolId` (types, traits and
+	modules include their members) or every symbol in `file`, and why.
+	"""
+	impact(repoId: ID!, symbolId: ID, file: String, maxDepth: Int! = 8, includeAmbiguous: Boolean! = false): ImpactReport!
+	"""
+	Tests affected by changing `symbolId`, with the chain from each test
+	to the change (follows calls and trait dispatch).
+	"""
+	affectedTests(repoId: ID!, symbolId: ID!, maxDepth: Int! = 8): [AffectedTest!]!
+	"""
+	Strongly connected components at the given level, largest first.
+	"""
+	circularDependencies(repoId: ID!, level: Level! = MODULE): [Cycle!]!
+	"""
+	Most central nodes by betweenness, then fan-in.
+	"""
+	hotspots(repoId: ID!, level: Level! = FUNCTION, first: Int! = 15): [Hotspot!]!
+	"""
+	Dependency layers, foundations (layer 0) first.
+	"""
+	layers(repoId: ID!, level: Level! = MODULE): [Layer!]!
+	"""
+	Source lines of a repository file (at most 400 per request), read
+	from the repository's working tree on the server.
+	"""
+	source(repoId: ID!, file: String!, startLine: Int!, endLine: Int!): SourceSnippet!
+}
+
+enum Relation {
+	CALLS
+	CALLS_CANDIDATE
+	IMPORTS
+	IMPLEMENTS
+}
+
+type Repository {
+	id: ID!
+	name: String!
+	"""
+	Working-tree path on the server.
+	"""
+	root: String!
+	originUrl: String
+	branch: String
+	headSha: String
+	"""
+	Commit the stored graph was built from.
+	"""
+	indexedSha: String
+	indexedAt: String!
+	formatVersion: Int!
+	sourceFiles: Int!
+	loc: Int!
+	languages: [String!]!
+}
+
+type ScoreFactor {
+	name: String!
+	value: Int!
+	saturation: Int!
+	weight: Float!
+	normalized: Float!
+	contribution: Float!
+}
+
+type SourceSnippet {
+	file: String!
+	startLine: Int!
+	endLine: Int!
+	totalLines: Int!
+	lines: [String!]!
+}
+
+type Symbol {
+	id: ID!
+	kind: SymbolKind!
+	name: String!
+	qualifiedName: String!
+	file: String!
+	crateName: String!
+	startLine: Int!
+	endLine: Int!
+	visibility: String!
+	signature: String
+	isTest: Boolean!
+	unresolvedCalls: [UnresolvedCall!]!
+}
+
+type SymbolConnection {
+	"""
+	Information to aid in pagination.
+	"""
+	pageInfo: PageInfo!
+	"""
+	A list of edges.
+	"""
+	edges: [SymbolEdge!]!
+	"""
+	A list of nodes.
+	"""
+	nodes: [Symbol!]!
+}
+
+"""
+An edge in a connection.
+"""
+type SymbolEdge {
+	"""
+	The item at the end of the edge
+	"""
+	node: Symbol!
+	"""
+	A cursor for use in pagination
+	"""
+	cursor: String!
+}
+
+enum SymbolKind {
+	MODULE
+	STRUCT
+	ENUM
+	TRAIT
+	FUNCTION
+	METHOD
+}
+
+type SymbolRef {
+	id: ID!
+	kind: SymbolKind!
+	qualifiedName: String!
+	file: String!
+	line: Int!
+	isTest: Boolean!
+}
+
+"""
+A call inside a symbol that could not be resolved.
+"""
+type UnresolvedCall {
+	line: Int!
+	callee: String!
+	"""
+	e.g. `name_not_in_scope`, `dynamic_call`.
+	"""
+	reason: String!
+}
+
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true.
+"""
+directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
+directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+schema {
+	query: Query
+	mutation: Mutation
+}
+
