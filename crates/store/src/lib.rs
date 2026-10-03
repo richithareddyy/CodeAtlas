@@ -16,9 +16,9 @@ pub use config::{QueryLimits, StoreConfig};
 pub use error::{Result, StoreError};
 pub use queries::{
     AggregateDependency, DependencyPath, Direction, GraphEdge, GraphStats, RelatedTest, Relation,
-    RepositoryNode, SymbolNode, Traversal, TraversalNode,
+    RepositoryNode, SearchPage, SymbolNode, Traversal, TraversalNode,
 };
-pub use writer::IndexSummary;
+pub use writer::{IndexSummary, GRAPH_FORMAT_VERSION};
 
 use codeatlas_analyzer::RepositoryAnalysis;
 use neo4rs::{query, ConfigBuilder, Graph};

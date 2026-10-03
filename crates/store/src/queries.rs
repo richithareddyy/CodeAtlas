@@ -150,6 +150,13 @@ pub struct RelatedTest {
     pub path: Vec<GraphEdge>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct SearchPage {
+    pub symbols: Vec<SymbolNode>,
+    /// Whether results exist beyond this page.
+    pub has_more: bool,
+}
+
 /// Node counts per label and relationship counts per type for one
 /// repository's graph.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
@@ -320,6 +327,19 @@ impl GraphStore {
         kinds: Option<&[String]>,
         limit: usize,
     ) -> Result<Vec<SymbolNode>> {
+        Ok(self.search_page(repo, text, kinds, limit, 0).await?.symbols)
+    }
+
+    /// One page of [`search`](Self::search) results, starting at `offset`.
+    /// `limit` is capped at `QueryLimits::max_results`.
+    pub async fn search_page(
+        &self,
+        repo: &str,
+        text: &str,
+        kinds: Option<&[String]>,
+        limit: usize,
+        offset: usize,
+    ) -> Result<SearchPage> {
         let limit = limit.clamp(1, self.limits.max_results);
         let lucene = lucene_prefix_query(text).ok_or_else(|| {
             StoreError::InvalidArgument("search text has no searchable characters".into())
@@ -331,18 +351,25 @@ impl GraphStore {
                     "CALL db.index.fulltext.queryNodes('symbol_search', $lucene) YIELD node, score \
                      WHERE node.repo_id = $repo AND ($kinds IS NULL OR node.kind IN $kinds) \
                      RETURN node ORDER BY toLower(node.name) = $exact DESC, score DESC, \
-                     size(node.qualified_name), node.qualified_name LIMIT $limit",
+                     size(node.qualified_name), node.qualified_name, node.id \
+                     SKIP $offset LIMIT $limit",
                 )
                 .param("lucene", lucene)
                 .param("repo", repo)
                 .param("kinds", kinds)
                 .param("exact", text.trim().to_lowercase())
-                .param("limit", limit as i64),
+                .param("offset", offset as i64)
+                // One extra row tells whether another page exists.
+                .param("limit", limit as i64 + 1),
             )
             .await?;
-        rows.iter()
+        let mut symbols = rows
+            .iter()
             .map(|row| symbol_node(&row.get("node")?))
-            .collect()
+            .collect::<Result<Vec<_>>>()?;
+        let has_more = symbols.len() > limit;
+        symbols.truncate(limit);
+        Ok(SearchPage { symbols, has_more })
     }
 
     /// Breadth-first traversal from `start`, one Cypher query per level.
