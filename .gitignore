@@ -1,0 +1,8 @@
+/target
+/web/node_modules
+/web/.svelte-kit
+/web/build
+.env
+.DS_Store
+/fixtures/*/target
+/fixtures/*/Cargo.lock
