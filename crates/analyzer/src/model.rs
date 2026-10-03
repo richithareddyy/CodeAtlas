@@ -335,6 +335,8 @@ pub struct FileAnalysis {
     /// Number of ERROR / MISSING nodes tree-sitter produced for this file.
     pub syntax_errors: u32,
     pub loc: u32,
+    /// FNV-1a hash of the file contents (hex), for change detection.
+    pub content_hash: String,
 }
 
 impl FileAnalysis {

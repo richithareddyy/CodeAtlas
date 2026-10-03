@@ -1,0 +1,22 @@
+[package]
+name = "codeatlas-store"
+description = "Neo4j persistence and graph queries for CodeAtlas"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+chrono.workspace = true
+codeatlas-analyzer.workspace = true
+neo4rs.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+dotenvy.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+[lints]
+workspace = true
