@@ -3,6 +3,7 @@
 //! These types are deliberately independent of any storage backend: the store
 //! crate maps them onto Neo4j, and the algorithms operate on them directly.
 
+use std::collections::HashMap;
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
@@ -106,6 +107,37 @@ pub struct Symbol {
     pub is_test: bool,
     /// Declared inside a `#[cfg(test)]` item (test helpers, test modules).
     pub cfg_test: bool,
+    /// Declared return type of functions and methods; used by the resolver
+    /// to infer the type of `let x = Type::new()` bindings.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub return_type: Option<TypeRef>,
+    /// Generic type parameters in scope for a function or method,
+    /// including those of its `impl` or `trait` block.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub type_params: Vec<String>,
+}
+
+impl Symbol {
+    /// `module::Type::method` → `Type::method`; used for compact display.
+    pub fn short_name(&self) -> String {
+        let mut parts = self.qualified_name.rsplitn(3, "::");
+        let last = parts.next().unwrap_or_default();
+        match (self.kind, parts.next()) {
+            (SymbolKind::Method, Some(owner)) => format!("{owner}::{last}"),
+            _ => last.to_string(),
+        }
+    }
+}
+
+/// A type as written in source, reduced to what method resolution needs:
+/// the path and its path-like generic arguments. References, `Box`, `Rc`,
+/// `Arc`, `dyn Trait` and `impl Trait` are unwrapped to the inner type,
+/// since method calls auto-deref through them.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TypeRef {
+    pub path: PathSegments,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<PathSegments>,
 }
 
 /// A path as written in source, with generic arguments stripped.
@@ -157,9 +189,101 @@ pub enum Callee {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "kind", content = "text")]
 pub enum Receiver {
+    /// `self.method()`
     SelfValue,
-    /// Receiver expression text, truncated for display.
+    /// `self.field.method()`
+    SelfField(String),
+    /// `binding.method()` where `binding` is a local variable or parameter.
+    Variable(String),
+    /// `Type::constructor(..).method()`
+    PathCall(PathSegments),
+    /// `receiver.inner(..).method()`: the result of another method call.
+    MethodCall {
+        receiver: Box<Receiver>,
+        method: String,
+    },
+    /// `expr?.method()`
+    Try(Box<Receiver>),
+    /// Any other receiver expression, truncated for display.
     Expr(String),
+}
+
+impl Receiver {
+    pub fn display(&self) -> String {
+        match self {
+            Receiver::SelfValue => "self".into(),
+            Receiver::SelfField(field) => format!("self.{field}"),
+            Receiver::Variable(name) => name.clone(),
+            Receiver::PathCall(path) => format!("{}(..)", path.join("::")),
+            Receiver::MethodCall { receiver, method } => {
+                format!("{}.{method}(..)", receiver.display())
+            }
+            Receiver::Try(inner) => format!("{}?", inner.display()),
+            Receiver::Expr(text) => text.clone(),
+        }
+    }
+}
+
+impl Callee {
+    /// Source-like rendering, e.g. `a::b`, `<T as Tr>::m`, `self.repo.save`.
+    pub fn display(&self) -> String {
+        match self {
+            Callee::Path {
+                segments,
+                as_trait: Some(tr),
+            } => match segments.split_last() {
+                Some((name, ty)) => format!("<{} as {}>::{name}", ty.join("::"), tr.join("::")),
+                None => String::new(),
+            },
+            Callee::Path { segments, .. } => segments.join("::"),
+            Callee::Method { receiver, name } => format!("{}.{name}", receiver.display()),
+            Callee::Dynamic { expression } => expression.clone(),
+        }
+    }
+}
+
+/// How a local name was bound, for receiver-type inference.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum BindingSource {
+    /// `x: Type` (parameter) or `let x: Type = ..`
+    Annotated { ty: TypeRef },
+    /// `let x = path(..)` or `let x = path(..)?`
+    CallResult {
+        callee: PathSegments,
+        unwrapped: bool,
+    },
+    /// `let x = Type { .. }`
+    StructLiteral { ty: PathSegments },
+    /// Any other binding (closures, untyped values, patterns). Recorded so
+    /// that a call such as `f(x)` can be recognised as a call to a local.
+    Untyped,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LocalBinding {
+    /// Function the binding belongs to.
+    pub scope: SymbolId,
+    pub name: String,
+    pub source: BindingSource,
+    pub line: u32,
+}
+
+/// `type Name = Target;`
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TypeAlias {
+    pub scope: SymbolId,
+    pub name: String,
+    pub target: TypeRef,
+    pub line: u32,
+}
+
+/// A named field of a struct, for resolving `self.field.method()`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FieldDecl {
+    pub owner: SymbolId,
+    pub name: String,
+    pub ty: TypeRef,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -205,9 +329,42 @@ pub struct FileAnalysis {
     pub calls: Vec<CallSite>,
     pub impls: Vec<ImplBlock>,
     pub module_decls: Vec<ModuleDecl>,
+    pub bindings: Vec<LocalBinding>,
+    pub fields: Vec<FieldDecl>,
+    pub type_aliases: Vec<TypeAlias>,
     /// Number of ERROR / MISSING nodes tree-sitter produced for this file.
     pub syntax_errors: u32,
     pub loc: u32,
+}
+
+impl FileAnalysis {
+    /// Rewrites every symbol ID in this file according to `renames`.
+    pub(crate) fn remap_ids(&mut self, renames: &HashMap<SymbolId, SymbolId>) {
+        let remap = |id: &mut SymbolId| {
+            if let Some(new) = renames.get(id) {
+                *id = new.clone();
+            }
+        };
+        self.module.iter_mut().for_each(remap);
+        for symbol in &mut self.symbols {
+            remap(&mut symbol.id);
+            symbol.parent.iter_mut().for_each(remap);
+        }
+        self.imports.iter_mut().for_each(|i| remap(&mut i.scope));
+        self.calls.iter_mut().for_each(|c| remap(&mut c.caller));
+        self.module_decls
+            .iter_mut()
+            .for_each(|d| remap(&mut d.parent));
+        self.bindings.iter_mut().for_each(|b| remap(&mut b.scope));
+        self.fields.iter_mut().for_each(|f| remap(&mut f.owner));
+        self.type_aliases
+            .iter_mut()
+            .for_each(|a| remap(&mut a.scope));
+        for block in &mut self.impls {
+            remap(&mut block.scope);
+            block.methods.iter_mut().for_each(remap);
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -228,4 +385,56 @@ pub struct CrateTarget {
     pub package: String,
     pub kind: TargetKind,
     pub root_file: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum EdgeKind {
+    Calls,
+    Imports,
+    Implements,
+}
+
+/// How the target of an edge was determined. Recorded on every edge so that
+/// resolution quality can be measured and filtered per strategy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResolutionMethod {
+    /// Name defined in the enclosing scope (same module or function).
+    Scope,
+    /// Name bound by a `use` declaration.
+    Import,
+    /// Path anchored at `crate`, `self`, `super` or a crate name.
+    Path,
+    /// `Self::f()`, `self.f()` or `self.field.f()`.
+    SelfType,
+    /// Method call whose receiver type was inferred from a parameter,
+    /// annotation, constructor call or struct literal.
+    ReceiverType,
+    /// `impl Trait for Type` and trait-method implementations.
+    ImplBlock,
+}
+
+impl ResolutionMethod {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ResolutionMethod::Scope => "scope",
+            ResolutionMethod::Import => "import",
+            ResolutionMethod::Path => "path",
+            ResolutionMethod::SelfType => "self_type",
+            ResolutionMethod::ReceiverType => "receiver_type",
+            ResolutionMethod::ImplBlock => "impl_block",
+        }
+    }
+}
+
+/// A resolved, statically justified relationship between two symbols.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Edge {
+    pub from: SymbolId,
+    pub to: SymbolId,
+    pub kind: EdgeKind,
+    pub via: ResolutionMethod,
+    /// Source lines (in `from`'s file) that justify the edge.
+    pub lines: Vec<u32>,
 }

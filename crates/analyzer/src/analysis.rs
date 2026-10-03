@@ -1,7 +1,7 @@
 //! Repository-level analysis: parses every Rust file and assembles the
 //! per-file results into a consistent whole.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::time::Instant;
 
@@ -11,7 +11,9 @@ use crate::error::{AnalyzerError, Result};
 use crate::ingest::{self, IngestOptions, IngestedRepository, RepoSource, RepositoryInfo};
 use crate::layout::{build_layout, manifest_reader};
 use crate::model::{CrateTarget, FileAnalysis, SymbolId, SymbolKind};
+use crate::module_tree;
 use crate::parser::RustParser;
+use crate::resolver::{self, Resolution};
 use crate::symbols::{extract_file, FileContext};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,6 +21,7 @@ pub struct RepositoryAnalysis {
     pub repository: RepositoryInfo,
     pub crates: Vec<CrateTarget>,
     pub files: Vec<FileAnalysis>,
+    pub resolution: Resolution,
     pub stats: AnalysisStats,
 }
 
@@ -34,6 +37,7 @@ pub struct AnalysisStats {
     pub call_sites: u32,
     pub macro_call_sites: u32,
     pub parse_ms: f64,
+    pub resolve_ms: f64,
     pub total_ms: f64,
 }
 
@@ -47,7 +51,7 @@ pub fn analyze(repo: &IngestedRepository) -> Result<RepositoryAnalysis> {
     let started = Instant::now();
     let root = &repo.info.root;
     let rust_files: Vec<String> = repo.analyzable_files().map(|f| f.path.clone()).collect();
-    let layout = build_layout(
+    let mut layout = build_layout(
         &repo.info.name.replace('-', "_"),
         &repo.discovery.cargo_manifests,
         &rust_files,
@@ -55,46 +59,67 @@ pub fn analyze(repo: &IngestedRepository) -> Result<RepositoryAnalysis> {
     );
 
     let mut parser = RustParser::new()?;
-    let mut files = Vec::with_capacity(rust_files.len());
     let mut parse_ms = 0.0;
+    let mut parse = |parser: &mut RustParser, path: &str, src: &str| -> Result<_> {
+        let started = Instant::now();
+        let tree = parser.parse(src, path)?;
+        parse_ms += elapsed_ms(started);
+        Ok(tree)
+    };
 
+    // Pass 1: read every file and collect its `mod` declarations. Syntax
+    // trees are dropped immediately; re-parsing in pass 2 is cheaper than
+    // holding every tree in memory on large repositories.
+    let mut sources = Vec::with_capacity(rust_files.len());
+    let mut declarations = BTreeMap::new();
     for file in repo.analyzable_files() {
-        let Some(module) = layout.files.get(&file.path) else {
-            continue;
-        };
         let src = fs::read_to_string(&file.abs_path)
             .map_err(|err| AnalyzerError::io(&file.abs_path, err))?;
+        let tree = parse(&mut parser, &file.path, &src)?;
+        declarations.insert(
+            file.path.clone(),
+            module_tree::declarations(tree.root_node(), &src),
+        );
+        sources.push((file.path.as_str(), src));
+    }
+    module_tree::apply(&mut layout, &declarations);
 
-        let parse_started = Instant::now();
-        let tree = parser.parse(&src, &file.path)?;
-        parse_ms += elapsed_ms(parse_started);
-
+    // Pass 2: extract symbols with the corrected module paths.
+    let mut files = Vec::with_capacity(sources.len());
+    for (path, src) in &sources {
+        let Some(module) = layout.files.get(*path) else {
+            continue;
+        };
+        let tree = parse(&mut parser, path, src)?;
         let ctx = FileContext {
-            path: &file.path,
+            path,
             crate_name: &module.crate_name,
             module_path: &module.module_path,
         };
-        let analysis = extract_file(&ctx, &src, &tree, &mut parser);
+        let analysis = extract_file(&ctx, src, &tree, &mut parser);
         if analysis.syntax_errors > 0 {
             tracing::warn!(
-                file = %file.path,
+                file = %path,
                 errors = analysis.syntax_errors,
                 "file contains syntax errors; affected regions were skipped"
             );
         }
         files.push(analysis);
     }
+    drop(sources);
 
-    dedupe_ids_across_files(&mut files);
-    link_modules(&mut files);
-    attach_impl_methods(&mut files);
+    let resolve_started = Instant::now();
+    let resolution = assemble(&mut files, &layout.targets, &layout.dependencies);
+    let resolve_ms = elapsed_ms(resolve_started);
 
     let mut stats = compute_stats(&files);
     stats.parse_ms = parse_ms;
+    stats.resolve_ms = resolve_ms;
     stats.total_ms = elapsed_ms(started);
     tracing::info!(
         files = stats.files_analyzed,
         call_sites = stats.call_sites,
+        resolved_calls = resolution.stats.calls.resolved,
         ms = stats.total_ms,
         "analysis complete"
     );
@@ -103,8 +128,21 @@ pub fn analyze(repo: &IngestedRepository) -> Result<RepositoryAnalysis> {
         repository: repo.info.clone(),
         crates: layout.targets,
         files,
+        resolution,
         stats,
     })
+}
+
+/// Makes per-file results consistent (unique IDs, linked modules) and
+/// resolves references across files.
+pub(crate) fn assemble(
+    files: &mut [FileAnalysis],
+    crates: &[CrateTarget],
+    dependencies: &BTreeSet<String>,
+) -> Resolution {
+    dedupe_ids_across_files(files);
+    link_modules(files);
+    resolver::resolve(files, crates, dependencies)
 }
 
 /// Files are processed in path order, so the first definition keeps the
@@ -126,30 +164,8 @@ fn dedupe_ids_across_files(files: &mut [FileAnalysis]) {
             }
         }
         if !renames.is_empty() {
-            remap_ids(file, &renames);
+            file.remap_ids(&renames);
         }
-    }
-}
-
-fn remap_ids(file: &mut FileAnalysis, renames: &HashMap<SymbolId, SymbolId>) {
-    let remap = |id: &mut SymbolId| {
-        if let Some(new) = renames.get(id) {
-            *id = new.clone();
-        }
-    };
-    file.module.iter_mut().for_each(remap);
-    for symbol in &mut file.symbols {
-        remap(&mut symbol.id);
-        symbol.parent.iter_mut().for_each(remap);
-    }
-    file.imports.iter_mut().for_each(|i| remap(&mut i.scope));
-    file.calls.iter_mut().for_each(|c| remap(&mut c.caller));
-    file.module_decls
-        .iter_mut()
-        .for_each(|d| remap(&mut d.parent));
-    for block in &mut file.impls {
-        remap(&mut block.scope);
-        block.methods.iter_mut().for_each(remap);
     }
 }
 
@@ -185,44 +201,6 @@ fn link_modules(files: &mut [FileAnalysis]) {
         if let Some(decl) = decls.get(&(parent_id.clone(), symbol.name.clone())) {
             symbol.visibility = decl.visibility.clone();
             symbol.cfg_test |= decl.cfg_test;
-        }
-    }
-}
-
-/// Re-parents impl methods from the enclosing module to the self type when
-/// the type is declared in the same module. Impls of types from other
-/// modules are re-homed by the resolver, which can follow imports.
-fn attach_impl_methods(files: &mut [FileAnalysis]) {
-    let symbols: HashMap<SymbolId, (SymbolKind, String)> = files
-        .iter()
-        .flat_map(|f| &f.symbols)
-        .map(|s| (s.id.clone(), (s.kind, s.qualified_name.clone())))
-        .collect();
-    let types_by_qname: HashMap<String, SymbolId> = symbols
-        .iter()
-        .filter(|(_, (kind, _))| matches!(kind, SymbolKind::Struct | SymbolKind::Enum))
-        .map(|(id, (_, qname))| (qname.clone(), id.clone()))
-        .collect();
-
-    for file in files.iter_mut() {
-        let mut new_parents: HashMap<SymbolId, SymbolId> = HashMap::new();
-        for block in &file.impls {
-            let [type_name] = block.self_type.as_slice() else {
-                continue;
-            };
-            let Some((_, scope_qname)) = symbols.get(&block.scope) else {
-                continue;
-            };
-            if let Some(type_id) = types_by_qname.get(&format!("{scope_qname}::{type_name}")) {
-                for method in &block.methods {
-                    new_parents.insert(method.clone(), type_id.clone());
-                }
-            }
-        }
-        for symbol in &mut file.symbols {
-            if let Some(parent) = new_parents.remove(&symbol.id) {
-                symbol.parent = Some(parent);
-            }
         }
     }
 }

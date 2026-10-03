@@ -8,7 +8,7 @@
 //! Targets with explicit, non-conventional `path` keys in `Cargo.toml`
 //! (`[lib]`, `[[bin]]`, `[[test]]`, ...) take precedence over the defaults.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::Path;
 
 use crate::model::{CrateTarget, TargetKind};
@@ -25,6 +25,10 @@ pub struct CrateLayout {
     pub targets: Vec<CrateTarget>,
     /// Keyed by repository-relative file path.
     pub files: BTreeMap<String, FileModule>,
+    /// Crate names of declared dependencies (normalised, from every
+    /// manifest's `[*dependencies]` tables). A path rooted at one of these
+    /// names that does not resolve inside the repository is external.
+    pub dependencies: BTreeSet<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -42,6 +46,8 @@ struct ExplicitTarget {
     kind: TargetKind,
     /// Root file relative to the package directory.
     root: String,
+    /// Declared at Cargo's default location (only the name is explicit).
+    conventional: bool,
 }
 
 impl ExplicitTarget {
@@ -60,10 +66,13 @@ pub fn build_layout(
     rust_files: &[String],
     read_manifest: impl Fn(&str) -> Option<String>,
 ) -> CrateLayout {
+    let mut dependencies = BTreeSet::new();
     let mut packages: Vec<Package> = manifests
         .iter()
         .filter_map(|manifest| {
-            let (name, explicit) = parse_manifest(&read_manifest(manifest)?)?;
+            let content = read_manifest(manifest)?;
+            dependencies.extend(dependency_names(&content));
+            let (name, explicit) = parse_manifest(&content)?;
             let dir = manifest
                 .strip_suffix("Cargo.toml")
                 .unwrap_or("")
@@ -120,6 +129,7 @@ pub fn build_layout(
     }
 
     layout.targets = targets.into_values().collect();
+    layout.dependencies = dependencies;
     layout
 }
 
@@ -153,7 +163,7 @@ fn classify_explicit(explicit: &[ExplicitTarget], rel: &str) -> Option<Classific
     }
     let (target, rest) = explicit
         .iter()
-        .filter(|t| !t.dir().is_empty())
+        .filter(|t| !t.conventional && !t.dir().is_empty())
         .filter_map(|t| {
             let rest = rel.strip_prefix(t.dir())?.strip_prefix('/')?;
             Some((t, rest))
@@ -268,9 +278,7 @@ fn parse_manifest(manifest: &str) -> Option<(String, Vec<ExplicitTarget>)> {
             return;
         };
         let path = path.trim_start_matches("./").to_string();
-        if is_conventional(kind, &path) {
-            return;
-        }
+        let conventional = is_conventional(kind, &path);
         let name = table
             .get("name")
             .and_then(|n| n.as_str())
@@ -279,6 +287,7 @@ fn parse_manifest(manifest: &str) -> Option<(String, Vec<ExplicitTarget>)> {
             name: name.to_string(),
             kind,
             root: path,
+            conventional,
         });
     };
 
@@ -301,6 +310,30 @@ fn parse_manifest(manifest: &str) -> Option<(String, Vec<ExplicitTarget>)> {
         }
     }
     Some((name, explicit))
+}
+
+/// Keys of `[dependencies]`, `[dev-dependencies]`, `[build-dependencies]`,
+/// their `[target.*]` variants and `[workspace.dependencies]`.
+fn dependency_names(manifest: &str) -> Vec<String> {
+    let Ok(value) = toml::from_str::<toml::Table>(manifest) else {
+        return Vec::new();
+    };
+    let tables = ["dependencies", "dev-dependencies", "build-dependencies"];
+    let mut sections: Vec<&toml::Value> = tables.iter().filter_map(|t| value.get(*t)).collect();
+    if let Some(targets) = value.get("target").and_then(|t| t.as_table()) {
+        for target in targets.values() {
+            sections.extend(tables.iter().filter_map(|t| target.get(*t)));
+        }
+    }
+    if let Some(deps) = value.get("workspace").and_then(|w| w.get("dependencies")) {
+        sections.push(deps);
+    }
+    sections
+        .into_iter()
+        .filter_map(|s| s.as_table())
+        .flat_map(|t| t.keys())
+        .map(|k| normalize(k))
+        .collect()
 }
 
 fn is_conventional(kind: TargetKind, path: &str) -> bool {
@@ -388,6 +421,20 @@ mod tests {
         assert_eq!(module(&l, "src/main.rs"), "my_app");
         assert_eq!(module(&l, "src/cli.rs"), "my_app::cli");
         assert_eq!(l.targets[0].kind, TargetKind::Bin);
+    }
+
+    #[test]
+    fn collects_dependency_names_and_explicit_names_at_default_paths() {
+        let l = layout(
+            &["src/lib.rs", "tests/tests.rs"],
+            &[(
+                "Cargo.toml",
+                "[package]\nname = \"app\"\n[dependencies]\nserde-json = \"1\"\n[dev-dependencies]\nglob = \"0.3\"\n[target.'cfg(unix)'.dependencies]\nlibc = \"0.2\"\n[[test]]\nname = \"integration\"\npath = \"tests/tests.rs\"\n",
+            )],
+        );
+        let deps: Vec<_> = l.dependencies.iter().map(String::as_str).collect();
+        assert_eq!(deps, vec!["glob", "libc", "serde_json"]);
+        assert_eq!(module(&l, "tests/tests.rs"), "integration");
     }
 
     #[test]

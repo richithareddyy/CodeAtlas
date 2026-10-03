@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 
 use codeatlas_analyzer::ingest::IngestOptions;
-use codeatlas_analyzer::model::{Callee, Receiver, Symbol, SymbolKind, TargetKind, Visibility};
+use codeatlas_analyzer::model::{Symbol, SymbolKind, TargetKind, Visibility};
 use codeatlas_analyzer::{analyze_source, RepoSource, RepositoryAnalysis};
 
 fn fixture(name: &str) -> RepositoryAnalysis {
@@ -109,14 +109,7 @@ fn simple_repo_call_sites_and_imports() {
             .iter()
             .flat_map(|f| &f.calls)
             .filter(|c| c.caller.as_str() == caller)
-            .map(|c| match &c.callee {
-                Callee::Path { segments, .. } => segments.join("::"),
-                Callee::Method { receiver, name } => match receiver {
-                    Receiver::SelfValue => format!("self.{name}"),
-                    Receiver::Expr(e) => format!("{e}.{name}"),
-                },
-                Callee::Dynamic { expression } => format!("dyn {expression}"),
-            })
+            .map(|c| c.callee.display())
             .collect()
     };
 

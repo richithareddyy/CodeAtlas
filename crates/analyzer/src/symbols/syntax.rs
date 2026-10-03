@@ -90,10 +90,12 @@ pub fn normalize_ws(s: &str) -> String {
 }
 
 /// Attributes that precede an item, collected from `attribute_item` siblings.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone)]
 pub struct ItemAttributes {
     pub is_test: bool,
     pub cfg_test: bool,
+    /// Value of `#[path = "..."]` on a module declaration.
+    pub path: Option<String>,
 }
 
 impl ItemAttributes {
@@ -143,6 +145,12 @@ impl ItemAttributes {
         }
         if path == "cfg" && cfg_enables_test(args) {
             self.cfg_test = true;
+        }
+        if path == "path" {
+            if let Some(value) = attribute.child_by_field_name("value") {
+                let raw = text(value, src);
+                self.path = Some(raw.trim_matches('"').to_string());
+            }
         }
     }
 }

@@ -1,0 +1,18 @@
+{
+  "calls": [],
+  "implements": [
+    ["struct:unresolved::jobs::Email", "trait:unresolved::jobs::Job"],
+    ["struct:unresolved::jobs::Report", "trait:unresolved::jobs::Job"],
+    ["method:unresolved::jobs::<Email as Job>::run", "method:unresolved::jobs::Job::run"],
+    ["method:unresolved::jobs::<Report as Job>::run", "method:unresolved::jobs::Job::run"]
+  ],
+  "ambiguous": [
+    { "caller": "fn:unresolved::jobs::run_all", "callee": "job.run", "reason": "receiver_type_unknown" },
+    { "caller": "fn:unresolved::jobs::run_generic", "callee": "job.run", "reason": "generic_parameter" }
+  ],
+  "unresolved": [
+    { "caller": "fn:unresolved::uses_closures", "callee": "(pick())", "reason": "dynamic_call" },
+    { "caller": "fn:unresolved::legacy::run", "callee": "normalize", "reason": "name_not_in_scope" },
+    { "caller": "fn:unresolved::legacy::run", "callee": "crate::util::missing", "reason": "path_segment_not_found" }
+  ]
+}

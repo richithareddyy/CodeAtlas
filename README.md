@@ -8,11 +8,11 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 1 of 11.** Ingestion, source discovery, repository
-> metadata, Cargo layout mapping, tree-sitter parsing and symbol/reference
-> extraction for Rust are implemented and tested. Symbol resolution, the
-> Neo4j graph, impact analysis, the GraphQL API and the web UI are not built
-> yet. See [docs/architecture.md](docs/architecture.md#milestones).
+> **Status: Milestone 2 of 11.** Ingestion, source discovery, repository
+> metadata, Rust module-tree construction, tree-sitter parsing, symbol
+> extraction and symbol resolution (with measured quality) are implemented
+> and tested. The Neo4j graph, impact analysis, the GraphQL API and the web
+> UI are not built yet. See [docs/architecture.md](docs/architecture.md#milestones).
 
 ## Why static analysis
 
@@ -26,28 +26,42 @@ a high share of references to be resolved without full type inference.
 ## Architecture
 
 ```
-ingest → layout → tree-sitter parse → extract → resolve → Neo4j → algorithms / impact → GraphQL → SvelteKit
-└──────────────── implemented ────────────────┘
+ingest → module tree → tree-sitter parse → extract → resolve → Neo4j → algorithms / impact → GraphQL → SvelteKit
+└─────────────────────── implemented ───────────────────────┘
 ```
 
 * `crates/analyzer`: the analysis core, a pure library with no database code.
 * `crates/cli`: the `codeatlas` command.
-* `fixtures/`: small Rust repositories whose contents tests assert against.
-* `docs/`: [architecture](docs/architecture.md) and the
-  [graph model](docs/graph-model.md).
+* `fixtures/`: small Rust repositories with hand-written ground truth
+  (`expected.json`).
+* `docs/`: [architecture](docs/architecture.md),
+  [graph model](docs/graph-model.md) and
+  [symbol resolution](docs/symbol-resolution.md).
 
-## What is extracted today
+## What it does today
 
-For each Rust file: modules (file and inline), structs, enums, traits,
-functions, methods (inherent, trait-impl, trait default and required), test
-functions (`#[test]`, `#[tokio::test]`, …), `#[cfg(test)]` scopes, flattened
-`use` imports, impl blocks, and every call site with its enclosing caller.
+**Extraction.** For each Rust file: modules, structs, enums, traits,
+functions, methods (inherent, trait-impl, trait default and required),
+tests (`#[test]`, `#[tokio::test]`, …), `#[cfg(test)]` scopes, imports
+(including `extern crate … as …`), type aliases, impl blocks, local
+bindings, struct field types and every call site with its enclosing caller.
 Calls inside `assert!`-style macros are recovered by re-parsing macro
-arguments.
+arguments. Each symbol has a stable ID
+(`method:shop::payments::PaymentService::authorize`), kind, name, qualified
+name, file, line span, parent, visibility and signature.
 
-Each symbol has a stable ID (`method:shop::payments::PaymentService::authorize`),
-kind, name, qualified name, file, line span, parent, visibility and
-signature. See [Extraction](docs/architecture.md#extraction-analyzersrcsymbols).
+**Module tree.** Files are placed in crates and modules by following `mod`
+declarations from each crate root, including `#[path]`, as the compiler
+does.
+
+**Resolution.** Every call site is classified as *resolved* (one
+definition, becomes a `CALLS` edge), *ambiguous* (candidates and a reason
+are kept), *unresolved* (with a reason), *external*, *constructor* or
+*local*. Paths are resolved with Rust's scoping and visibility rules;
+method calls through the receiver's type where it can be determined from
+parameters, fields, constructor calls, `?` and builder chains. Nothing is
+matched by name similarity. Details:
+[docs/symbol-resolution.md](docs/symbol-resolution.md).
 
 ## Installation
 
@@ -76,7 +90,9 @@ Languages   Rust 6 files / 69 LOC
 Crates      checkout_test (test), simple_repo (lib)
 Symbols     7 modules, 2 structs, 1 enums, 0 traits, 6 functions, 2 methods (2 tests)
 References  14 call sites (5 inside macros), 8 imports, 1 impl blocks
-Parsing     6 files, 69 LOC, 0 with syntax errors, parse 0.7 ms, total 1.1 ms
+Calls       8 resolved, 0 ambiguous, 0 unresolved; 6 external, 0 constructors, 0 local; resolution rate 100.0%
+Imports     8 resolved, 0 external, 0 unresolved
+Parsing     6 files, 69 LOC, 0 with syntax errors, parse 4.6 ms, resolve 0.1 ms, total 5.7 ms
 ```
 
 The fixture lives inside this repository, so its revision line shows the
@@ -88,7 +104,21 @@ Analyse a remote repository (cloned into the clone directory first):
 ./target/release/codeatlas analyze https://github.com/BurntSushi/ripgrep
 ```
 
-Full machine-readable output:
+Resolution breakdown, with the ambiguous and unresolved call sites listed:
+
+```bash
+./target/release/codeatlas analyze fixtures/cross-module --format resolution
+```
+
+Compare resolution against a ground-truth file (exits non-zero on any
+difference):
+
+```bash
+./target/release/codeatlas evaluate fixtures/cross-module
+```
+
+Full machine-readable output (symbols, edges, ambiguous and unresolved
+sites, statistics):
 
 ```bash
 ./target/release/codeatlas analyze . --format json --output analysis.json
@@ -107,6 +137,7 @@ extractor):
 |---|---|---|
 | `CODEATLAS_CLONE_DIR` / `--clone-dir` | `$XDG_CACHE_HOME/codeatlas/repos`, else `~/.cache/codeatlas/repos` | Where remote repositories are cloned |
 | `--no-gitignore` | off | Also analyse files excluded by `.gitignore` |
+| `--limit` | 20 | Call sites listed per category by `--format resolution` |
 | `RUST_LOG` | `warn,codeatlas_analyzer=info` | Log filter; logs go to stderr |
 
 ## Testing
@@ -115,15 +146,17 @@ extractor):
 cargo test
 ```
 
-* Unit tests sit next to the code they cover: discovery, language
-  detection, layout mapping, `use`-tree flattening, attribute handling,
-  parsing and extraction.
-* `crates/analyzer/tests/fixtures.rs` analyses `fixtures/simple-repo` and
-  `fixtures/duplicate-symbols` end to end. The expected symbols, lines and
-  calls were written from the fixture sources.
+* Unit tests sit next to the code they cover: discovery, layout, module
+  tree, `use`-tree flattening, attributes, parsing, extraction, and one test
+  per resolution rule (scoping, shadowing, visibility, re-exports, aliases,
+  receiver inference, re-homing, cyclic globs, …).
+* `crates/analyzer/tests/fixtures.rs` checks extraction on the fixtures.
+* `crates/analyzer/tests/resolution.rs` compares resolution on every
+  fixture with its `expected.json` and fails on any missing or unexpected
+  edge, ambiguous call or unresolved call.
 * `crates/analyzer/tests/git_ingest.rs` builds Git repositories in temporary
-  directories to test branch/SHA detection, detached HEAD, cloning from a
-  URL, updating a clone, and clone failures. These tests need `git`.
+  directories (branch/SHA detection, detached HEAD, cloning, updating a
+  clone, clone failures). These tests need `git`.
 
 Formatting and lints, as enforced in CI:
 
@@ -135,29 +168,46 @@ cargo fmt --all --check
 cargo clippy --all-targets -- -D warnings
 ```
 
+## Resolution quality
+
+Measured, not estimated; full details and method in
+[docs/symbol-resolution.md](docs/symbol-resolution.md#measured-quality).
+
+* All four fixtures match their hand-written ground truth exactly. They
+  were written alongside the resolver, so this shows the rules work as
+  designed rather than accuracy on unfamiliar code.
+* On ripgrep (commit `3fce3b5`, ~51k non-blank lines), a single run
+  resolved 76.3% of call sites that may target repository code; 2,873 were
+  ambiguous and 6 unresolved. A random sample of 30 receiver-type edges
+  checked by hand was 30/30 correct. That is a spot check, not a precision
+  measurement.
+
 ## Benchmarks
 
 The benchmark harness (`codeatlas bench`, with JSON results under
-`benchmarks/results/`) is planned for Milestone 10. No performance figures
-are published until it exists.
+`benchmarks/results/`) is planned for Milestone 10. Until it exists, the
+only figures in this repository are the single-run measurements quoted in
+the docs, each with its conditions.
 
 ## Known limitations
 
 * Only Rust is parsed. Other languages are counted in repository statistics
   but not analysed.
-* Module paths come from file paths and Cargo target declarations;
-  `#[path]` attributes and `include!` are not followed.
-* Macros: calls inside `(..)` / `[..]` macro arguments are recovered;
-  brace-delimited macro bodies and macro-generated items are not.
+* No general type inference: element types of iterators and `for` loops,
+  `match` / `if let` bindings, generic instantiation and standard-library
+  return types are not modelled. Calls on such receivers are reported as
+  ambiguous.
+* Macro-generated items are invisible. Calls inside `(..)` / `[..]` macro
+  arguments are recovered; brace-delimited macro bodies are not.
 * `#[cfg(...)]` is not evaluated. All configurations are analysed, and
   duplicate definitions receive `#N` ID suffixes.
-* Call sites are not resolved to definitions yet (Milestone 2).
+* `include!` is not followed.
 * LOC counts non-blank lines, including comments.
 
 ## Roadmap
 
-Symbol resolution → Neo4j graph and bounded queries → graph algorithms and
-change-impact engine → GraphQL API → SvelteKit workspace UI (MVP) → Git diff
-impact → incremental indexing → test-impact evaluation → architecture and
-cycle views with benchmarks → optional local-model explanations grounded in
-graph evidence. Details are in [docs/architecture.md](docs/architecture.md).
+Neo4j graph and bounded queries → graph algorithms and change-impact
+engine → GraphQL API → SvelteKit workspace UI (MVP) → Git diff impact →
+incremental indexing → test-impact evaluation → architecture and cycle
+views with benchmarks → optional local-model explanations grounded in graph
+evidence. Details are in [docs/architecture.md](docs/architecture.md).
