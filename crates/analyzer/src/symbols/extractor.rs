@@ -14,6 +14,7 @@ use super::syntax::{
 };
 use super::use_tree::flatten_use;
 use crate::ingest::discovery::count_loc;
+use crate::ingest::fnv1a;
 use crate::model::{
     BindingSource, CallSite, Callee, FieldDecl, FileAnalysis, ImplBlock, Import, LocalBinding,
     ModuleDecl, Receiver, Span, Symbol, SymbolId, SymbolKind, TypeAlias, TypeRef, Visibility,
@@ -46,6 +47,7 @@ pub fn extract_file(
             path: ctx.path.to_string(),
             crate_name: ctx.crate_name.to_string(),
             loc: count_loc(src),
+            content_hash: format!("{:016x}", fnv1a(src.as_bytes())),
             syntax_errors: count_syntax_errors(tree.root_node()),
             ..Default::default()
         },

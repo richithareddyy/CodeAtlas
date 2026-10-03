@@ -1,11 +1,12 @@
 //! CodeAtlas analysis core.
 //!
 //! Pipeline: [`ingest`] a repository → map files onto crates and modules
-//! ([`layout`]) → [`parser`] → [`symbols`] extraction → [`analysis`] assembly.
-//! Nothing in this crate talks to a database; persistence lives in the
-//! store crate.
+//! ([`layout`], [`module_tree`]) → [`parser`] → [`symbols`] extraction →
+//! [`resolver`] → derived [`dependencies`]. Nothing in this crate talks to a
+//! database; persistence lives in the store crate.
 
 pub mod analysis;
+pub mod dependencies;
 pub mod error;
 pub mod evaluation;
 pub mod git;

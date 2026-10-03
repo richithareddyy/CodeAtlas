@@ -12,7 +12,8 @@ Git repository
   → parser      (tree-sitter syntax trees)
   → symbols     (declarations, imports, impl blocks, call sites, bindings)
   → resolver    (references → symbol IDs, with explicit outcomes)
-  → store       (Neo4j code graph)                                           [M3]
+  → dependencies (derived file / module DEPENDS_ON aggregates)
+  → store       (Neo4j code graph, bounded queries)
   → algorithms / impact                                                       [M4]
   → GraphQL API                                                               [M5]
   → SvelteKit UI                                                              [M6]
@@ -23,9 +24,9 @@ Git repository
 | Crate | Responsibility | Depends on |
 |---|---|---|
 | `crates/analyzer` | Ingestion, layout, parsing, extraction, resolution and its evaluation; later graph algorithms, impact and diff analysis. Pure library; no database or network code beyond invoking `git`. | tree-sitter, ignore, toml |
-| `crates/store` *(M3)* | Neo4j schema, batched writes, bounded Cypher queries. | analyzer, neo4rs |
+| `crates/store` | Neo4j schema, batched writes, bounded queries (traversals with evidence paths, shortest path, search, file/module dependencies). | analyzer, neo4rs, tokio |
 | `crates/server` *(M5)* | GraphQL API over the store and analyzer. | analyzer, store, async-graphql, axum, tokio |
-| `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `ast`, and later `index` and `bench`. | analyzer |
+| `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `index`, `query`, `remove`, `ast`; later `bench`. | analyzer, store |
 | `web/` *(M6)* | SvelteKit + TypeScript + Cytoscape.js workspace UI. | GraphQL API |
 
 The analyzer is kept free of storage concerns so that extraction, resolution
@@ -150,13 +151,32 @@ unresolved (with a reason), external, constructor or local. Only resolved
 targets become `CALLS` edges. `evaluation.rs` compares the output with
 hand-written ground truth and reports precision and recall.
 
+## Store (`crates/store`)
+
+See [graph-model.md](graph-model.md) for the schema, the write procedure
+and the query catalogue. Choices worth noting:
+
+* **Driver: `neo4rs` 0.8.0, pinned.** It is the maintained async Bolt
+  driver for Rust; 0.9 was still a release candidate. It is confined to
+  this crate, so replacing it would not touch the analyzer.
+* **Whole-repository replacement.** A repository is deleted, then written
+  in a single transaction. Incremental per-file updates (Milestone 8) will
+  build on the `(repo_id, file)` index.
+* **Traversal in Rust, expansion in Cypher.** Each BFS level is one
+  parameterised Cypher query. This bounds work by depth and node count and
+  records the edge that reached each node, so every result has an evidence
+  path.
+* **Configuration from the environment** (`CODEATLAS_NEO4J_*`, optionally
+  via `.env`). The password is required and never logged; `StoreConfig`'s
+  `Debug` output redacts it.
+
 ## Milestones
 
 | # | Scope | Status |
 |---|---|---|
 | 1 | Workspace, ingestion, discovery, metadata, layout, parsing, extraction, CLI | Done |
 | 2 | Module tree, symbol resolution with explicit outcomes, receiver-type inference, ground-truth evaluation | Done |
-| 3 | Neo4j store and bounded Cypher queries | Planned |
+| 3 | Neo4j store, derived dependencies, bounded queries, `index` / `query` CLI | Done |
 | 4 | Graph algorithms (BFS with evidence, Tarjan SCC, centrality, topological order) and the impact engine | Planned |
 | 5 | GraphQL API | Planned |
 | 6 | SvelteKit workspace UI (completes the MVP) | Planned |

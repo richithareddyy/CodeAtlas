@@ -8,11 +8,11 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 2 of 11.** Ingestion, source discovery, repository
-> metadata, Rust module-tree construction, tree-sitter parsing, symbol
-> extraction and symbol resolution (with measured quality) are implemented
-> and tested. The Neo4j graph, impact analysis, the GraphQL API and the web
-> UI are not built yet. See [docs/architecture.md](docs/architecture.md#milestones).
+> **Status: Milestone 3 of 11.** Ingestion, Rust module-tree construction,
+> tree-sitter parsing, symbol extraction, symbol resolution (with measured
+> quality), the Neo4j code graph and bounded graph queries are implemented
+> and tested. The impact engine, graph algorithms, the GraphQL API and the
+> web UI are not built yet. See [docs/architecture.md](docs/architecture.md#milestones).
 
 ## Why static analysis
 
@@ -26,11 +26,12 @@ a high share of references to be resolved without full type inference.
 ## Architecture
 
 ```
-ingest → module tree → tree-sitter parse → extract → resolve → Neo4j → algorithms / impact → GraphQL → SvelteKit
-└─────────────────────── implemented ───────────────────────┘
+ingest → module tree → tree-sitter parse → extract → resolve → Neo4j + queries → algorithms / impact → GraphQL → SvelteKit
+└──────────────────────────────── implemented ────────────────────────────────┘
 ```
 
 * `crates/analyzer`: the analysis core, a pure library with no database code.
+* `crates/store`: Neo4j persistence and bounded graph queries.
 * `crates/cli`: the `codeatlas` command.
 * `fixtures/`: small Rust repositories with hand-written ground truth
   (`expected.json`).
@@ -63,9 +64,20 @@ parameters, fields, constructor calls, `?` and builder chains. Nothing is
 matched by name similarity. Details:
 [docs/symbol-resolution.md](docs/symbol-resolution.md).
 
+**Code graph.** Repositories are stored in Neo4j as symbols, files and
+crates connected by `CALLS`, `IMPORTS`, `IMPLEMENTS`, `CONTAINS`,
+`DEFINES`, `DEPENDS_ON` (derived file and module dependencies) and
+`CALLS_CANDIDATE` (ambiguous calls, kept apart from resolved ones).
+Queries answer *who calls this*, *what does this call*, *what depends on
+this transitively*, *which tests reach this*, *how are A and B connected*
+and *which files or modules depend on this*. Every query has depth and size
+limits, and every result carries the edges and source lines that justify
+it. Schema and queries: [docs/graph-model.md](docs/graph-model.md).
+
 ## Installation
 
-Requirements: Rust 1.80+ (`rustup` recommended) and `git` on `PATH`.
+Requirements: Rust 1.80+ (`rustup` recommended), `git` on `PATH`, and
+Docker for the graph database (`analyze` and `evaluate` work without it).
 
 ```bash
 git clone <this repository> codeatlas
@@ -74,6 +86,21 @@ git clone <this repository> codeatlas
 ```bash
 cd codeatlas && cargo build --release
 ```
+
+Start Neo4j. Copy `.env.example` to `.env` and set
+`CODEATLAS_NEO4J_PASSWORD` (at least 8 characters) first:
+
+```bash
+cp .env.example .env
+```
+
+```bash
+docker compose up -d
+```
+
+`docker-compose.yml` runs `neo4j:5.26-community` with the password from
+`.env`, a named data volume, and the browser UI on
+<http://localhost:7474>.
 
 ## Usage
 
@@ -124,6 +151,64 @@ sites, statistics):
 ./target/release/codeatlas analyze . --format json --output analysis.json
 ```
 
+### Graph commands (need Neo4j)
+
+Index a repository (replaces any earlier index of it):
+
+```bash
+./target/release/codeatlas index fixtures/simple-repo
+```
+
+```
+Indexed     simple-repo (edf568848e9517df)
+Graph       27 nodes, 55 relationships, written in 42 ms
+Labels      Crate 2, Enum 1, File 6, Function 6, Method 2, Module 7, Repository 1, Struct 2, Symbol 18, Test 2
+Relations   CALLS 8, CONTAINS 15, DEFINES 11, DEPENDS_ON 13, IMPORTS 8
+```
+
+Query it. `--repo` takes an ID or name and can be omitted when only one
+repository is indexed. Symbols can be given as an ID, a qualified name,
+`Type::method` or a unique name. `--json` prints machine-readable output.
+
+```bash
+./target/release/codeatlas query -r simple-repo callers PaymentService::authorize --depth 3
+```
+
+```
+Dependents of method:simple_repo::payments::PaymentService::authorize (src/payments/mod.rs:17), depth <= 3
+  1  fn:simple_repo::payments::process_payment                    src/payments/mod.rs:25
+       via fn:simple_repo::payments::process_payment -[CALLS receiver_type @27]-> method:simple_repo::payments::PaymentService::authorize
+  1  fn:simple_repo::payments::tests::rejects_amounts_over_limit  src/payments/mod.rs:35
+       via fn:simple_repo::payments::tests::rejects_amounts_over_limit -[CALLS receiver_type @37]-> method:simple_repo::payments::PaymentService::authorize
+  2  fn:simple_repo::checkout::checkout                           src/checkout.rs:9
+       via fn:simple_repo::checkout::checkout -[CALLS import @11]-> fn:simple_repo::payments::process_payment
+  3  fn:checkout_test::checkout_succeeds_for_small_orders         tests/checkout_test.rs:4
+       via fn:checkout_test::checkout_succeeds_for_small_orders -[CALLS import @9]-> fn:simple_repo::checkout::checkout
+```
+
+```bash
+./target/release/codeatlas query -r simple-repo tests stripe_call
+```
+
+```
+fn:simple_repo::payments::tests::rejects_amounts_over_limit  (depth 2, src/payments/mod.rs:35)
+    fn:simple_repo::payments::tests::rejects_amounts_over_limit -[CALLS receiver_type @37]-> method:simple_repo::payments::PaymentService::authorize
+    method:simple_repo::payments::PaymentService::authorize -[CALLS scope @21]-> fn:simple_repo::payments::gateway::stripe_call
+fn:checkout_test::checkout_succeeds_for_small_orders  (depth 4, tests/checkout_test.rs:4)
+    fn:checkout_test::checkout_succeeds_for_small_orders -[CALLS import @9]-> fn:simple_repo::checkout::checkout
+    fn:simple_repo::checkout::checkout -[CALLS import @11]-> fn:simple_repo::payments::process_payment
+    fn:simple_repo::payments::process_payment -[CALLS receiver_type @27]-> method:simple_repo::payments::PaymentService::authorize
+    method:simple_repo::payments::PaymentService::authorize -[CALLS scope @21]-> fn:simple_repo::payments::gateway::stripe_call
+```
+
+Other queries: `repos`, `search <text> [--kind method]`, `symbol <s>`,
+`callees <s> [--depth n]`, `path <from> <to>`, `file-dependents <path>`,
+`file-dependencies <path>`, `module-dependents <module>`,
+`module-dependencies <module>`. Remove an indexed repository with
+`codeatlas remove <repo>`.
+
+### Debugging the extractor
+
 Inspect the tree-sitter syntax tree of a file (useful when extending the
 extractor):
 
@@ -138,7 +223,15 @@ extractor):
 | `CODEATLAS_CLONE_DIR` / `--clone-dir` | `$XDG_CACHE_HOME/codeatlas/repos`, else `~/.cache/codeatlas/repos` | Where remote repositories are cloned |
 | `--no-gitignore` | off | Also analyse files excluded by `.gitignore` |
 | `--limit` | 20 | Call sites listed per category by `--format resolution` |
-| `RUST_LOG` | `warn,codeatlas_analyzer=info` | Log filter; logs go to stderr |
+| `CODEATLAS_NEO4J_PASSWORD` | none (required for graph commands) | Neo4j password; also used by `docker-compose.yml` |
+| `CODEATLAS_NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt address |
+| `CODEATLAS_NEO4J_USER` | `neo4j` | Neo4j user |
+| `CODEATLAS_NEO4J_DATABASE` | `neo4j` | Neo4j database |
+| `RUST_LOG` | `warn,codeatlas_analyzer=info,codeatlas_store=info` | Log filter; logs go to stderr |
+
+Variables are read from the environment and, if present, from `.env` in the
+working directory or its parents; real environment variables take
+precedence. `.env` is git-ignored.
 
 ## Testing
 
@@ -157,6 +250,14 @@ cargo test
 * `crates/analyzer/tests/git_ingest.rs` builds Git repositories in temporary
   directories (branch/SHA detection, detached HEAD, cloning, updating a
   clone, clone failures). These tests need `git`.
+* `crates/store/tests/neo4j.rs` indexes fixtures into a real Neo4j and checks
+  stored counts against the analysis, re-indexing, callers and callees with
+  evidence paths, related tests, shortest paths, file and module
+  dependencies, search, ambiguous and unresolved calls, limits and
+  deletion. Each test uses its own repository ID. They run when
+  `CODEATLAS_NEO4J_PASSWORD` is set (directly or via `.env`) and print
+  `skipping` otherwise; if Neo4j is configured but unreachable they fail.
+  CI runs them against a Neo4j service container.
 
 Formatting and lints, as enforced in CI:
 
@@ -186,8 +287,12 @@ Measured, not estimated; full details and method in
 
 The benchmark harness (`codeatlas bench`, with JSON results under
 `benchmarks/results/`) is planned for Milestone 10. Until it exists, the
-only figures in this repository are the single-run measurements quoted in
-the docs, each with its conditions.
+only figures in this repository are single-run measurements quoted with
+their conditions. For example, indexing ripgrep (commit `3fce3b5`) wrote
+3,668 nodes and 19,010 relationships in 0.76–0.91 s over two runs. Warm
+`codeatlas query` invocations on that graph took 31–42 ms end to end,
+including process start and connection. Machine: Apple Silicon Mac, local
+Docker Neo4j 5.26.
 
 ## Known limitations
 
@@ -203,11 +308,16 @@ the docs, each with its conditions.
   duplicate definitions receive `#N` ID suffixes.
 * `include!` is not followed.
 * LOC counts non-blank lines, including comments.
+* Indexing replaces a repository's whole graph; incremental updates are
+  planned (Milestone 8).
+* `query tests` follows resolved `CALLS` only; tests reaching an
+  implementation through a trait method are not found yet.
+* Search matches name prefixes (`store` finds `Store` and its methods, not
+  `MemoryStore`).
 
 ## Roadmap
 
-Neo4j graph and bounded queries → graph algorithms and change-impact
-engine → GraphQL API → SvelteKit workspace UI (MVP) → Git diff impact →
+Graph algorithms and change-impact engine → GraphQL API → SvelteKit workspace UI (MVP) → Git diff impact →
 incremental indexing → test-impact evaluation → architecture and cycle
 views with benchmarks → optional local-model explanations grounded in graph
 evidence. Details are in [docs/architecture.md](docs/architecture.md).

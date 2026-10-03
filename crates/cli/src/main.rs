@@ -1,3 +1,5 @@
+mod graph;
+
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -51,6 +53,32 @@ enum Command {
         #[arg(long)]
         truth: Option<PathBuf>,
     },
+    /// Analyse a repository and store its graph in Neo4j (replacing any
+    /// previous index of the same repository).
+    Index {
+        /// Local path or Git URL.
+        source: String,
+        #[arg(long, env = "CODEATLAS_CLONE_DIR")]
+        clone_dir: Option<PathBuf>,
+        #[arg(long)]
+        no_gitignore: bool,
+    },
+    /// Delete an indexed repository's graph from Neo4j.
+    Remove {
+        /// Repository ID or name.
+        repo: String,
+    },
+    /// Query an indexed repository.
+    Query {
+        /// Repository ID or name; optional when only one is indexed.
+        #[arg(long, short, global = true)]
+        repo: Option<String>,
+        /// Print JSON instead of text.
+        #[arg(long, global = true)]
+        json: bool,
+        #[command(subcommand)]
+        query: graph::Query,
+    },
     /// Print the tree-sitter syntax tree of a Rust file (for extending the extractor).
     Ast { file: PathBuf },
 }
@@ -63,12 +91,14 @@ enum Format {
     Json,
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Neo4j settings may live in `.env`; real environment variables win.
+    let _ = dotenvy::dotenv();
     tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("warn,codeatlas_analyzer=info")),
-        )
+        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+            EnvFilter::new("warn,codeatlas_analyzer=info,codeatlas_store=info")
+        }))
         .with_writer(std::io::stderr)
         .init();
 
@@ -81,15 +111,7 @@ fn main() -> Result<()> {
             no_gitignore,
             limit,
         } => {
-            let options = IngestOptions {
-                clone_dir: clone_dir.unwrap_or_else(default_clone_dir),
-                discovery: DiscoveryOptions {
-                    respect_gitignore: !no_gitignore,
-                    ..Default::default()
-                },
-            };
-            let analysis = analyze_source(&RepoSource::parse(&source), &options)
-                .with_context(|| format!("failed to analyse {source}"))?;
+            let analysis = analyze(&source, clone_dir, no_gitignore)?;
             let rendered = match format {
                 Format::Summary => summary(&analysis),
                 Format::Resolution => resolution_report(&analysis, limit),
@@ -116,6 +138,22 @@ fn main() -> Result<()> {
                 std::process::exit(1);
             }
         }
+        Command::Index {
+            source,
+            clone_dir,
+            no_gitignore,
+        } => {
+            let analysis = analyze(&source, clone_dir, no_gitignore)?;
+            writeln!(std::io::stdout(), "{}", summary(&analysis))?;
+            writeln!(std::io::stdout(), "{}", graph::index(&analysis).await?)?;
+        }
+        Command::Remove { repo } => {
+            writeln!(std::io::stdout(), "{}", graph::remove(&repo).await?)?;
+        }
+        Command::Query { repo, json, query } => {
+            let out = graph::query(repo.as_deref(), json, query).await?;
+            writeln!(std::io::stdout(), "{out}")?;
+        }
         Command::Ast { file } => {
             let src = fs::read_to_string(&file)
                 .with_context(|| format!("failed to read {}", file.display()))?;
@@ -124,6 +162,22 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn analyze(
+    source: &str,
+    clone_dir: Option<PathBuf>,
+    no_gitignore: bool,
+) -> Result<RepositoryAnalysis> {
+    let options = IngestOptions {
+        clone_dir: clone_dir.unwrap_or_else(default_clone_dir),
+        discovery: DiscoveryOptions {
+            respect_gitignore: !no_gitignore,
+            ..Default::default()
+        },
+    };
+    analyze_source(&RepoSource::parse(source), &options)
+        .with_context(|| format!("failed to analyse {source}"))
 }
 
 fn summary(a: &RepositoryAnalysis) -> String {

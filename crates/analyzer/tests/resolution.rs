@@ -172,3 +172,34 @@ fn resolution_is_deterministic() {
         second.resolution.ambiguous_calls
     );
 }
+
+#[test]
+fn derives_file_and_module_dependencies_from_resolved_edges() {
+    use codeatlas_analyzer::dependencies::derive_dependencies;
+
+    let a = analyze("simple-repo");
+    let deps = derive_dependencies(&a.files, &a.resolution.edges);
+    let files: Vec<String> = deps
+        .files
+        .iter()
+        .map(|d| format!("{} -> {} ({})", d.from, d.to, d.weight))
+        .collect();
+    // checkout.rs: 2 imports + 2 calls into inventory.rs / payments/mod.rs;
+    // payments/mod.rs calls gateway.rs once and gateway.rs imports
+    // PaymentError back; the integration test imports and calls checkout.
+    assert_eq!(
+        files,
+        vec![
+            "src/checkout.rs -> src/inventory.rs (2)",
+            "src/checkout.rs -> src/payments/mod.rs (3)",
+            "src/lib.rs -> src/checkout.rs (1)",
+            "src/payments/gateway.rs -> src/payments/mod.rs (1)",
+            "src/payments/mod.rs -> src/payments/gateway.rs (1)",
+            "tests/checkout_test.rs -> src/checkout.rs (3)",
+        ]
+    );
+    // The inline `tests` module depends on its parent module, not on itself.
+    assert!(deps.modules.iter().any(
+        |d| d.from == "mod:simple_repo::payments::tests" && d.to == "mod:simple_repo::payments"
+    ));
+}

@@ -7,10 +7,25 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # Throwaway credential for the per-run Neo4j service container.
+  CODEATLAS_NEO4J_PASSWORD: ci-${{ github.run_id }}-${{ github.run_attempt }}
+  CODEATLAS_NEO4J_URI: bolt://localhost:7687
 
 jobs:
   rust:
     runs-on: ubuntu-latest
+    services:
+      neo4j:
+        image: neo4j:5.26-community
+        env:
+          NEO4J_AUTH: neo4j/ci-${{ github.run_id }}-${{ github.run_attempt }}
+        ports:
+          - 7687:7687
+        options: >-
+          --health-cmd "wget -q -O /dev/null http://localhost:7474 || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
