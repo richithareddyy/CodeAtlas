@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use codeatlas_analyzer::graph::CodeGraph;
-use codeatlas_store::{GraphStore, Result, StoreError, GRAPH_FORMAT_VERSION};
+use codeatlas_store::{GraphStore, Result, StateDir, StoreError, GRAPH_FORMAT_VERSION};
 use tokio::sync::{Mutex, Semaphore};
 
 /// Diffs analyse two revisions each and are CPU-bound; at most this many
@@ -16,16 +16,24 @@ pub struct AppState {
     pub graphs: GraphCache,
     pub allow_indexing: bool,
     pub clone_dir: PathBuf,
+    /// Incremental indexing state, per repository.
+    pub states: StateDir,
     pub diffs: Semaphore,
 }
 
 impl AppState {
-    pub fn new(store: GraphStore, allow_indexing: bool, clone_dir: PathBuf) -> Arc<Self> {
+    pub fn new(
+        store: GraphStore,
+        allow_indexing: bool,
+        clone_dir: PathBuf,
+        state_dir: PathBuf,
+    ) -> Arc<Self> {
         Arc::new(Self {
             store,
             graphs: GraphCache::new(8),
             allow_indexing,
             clone_dir,
+            states: StateDir::new(state_dir),
             diffs: Semaphore::new(CONCURRENT_DIFFS),
         })
     }

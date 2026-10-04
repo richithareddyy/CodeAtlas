@@ -1,11 +1,11 @@
 use std::sync::Arc;
-use std::time::Instant;
 
 use async_graphql::{Context, Object, Result, ID};
-use codeatlas_analyzer::ingest::IngestOptions;
-use codeatlas_analyzer::{analyze_source, RepoSource};
+use codeatlas_analyzer::ingest::{ingest, IngestOptions};
+use codeatlas_analyzer::RepoSource;
+use codeatlas_store::{prepare, IndexMode as StoreIndexMode};
 
-use super::types::IndexResult;
+use super::types::{IndexMode, IndexResult};
 use crate::error::{coded, internal, StoreResultExt};
 use crate::state::AppState;
 
@@ -24,34 +24,77 @@ fn writable(ctx: &Context<'_>) -> Result<Arc<AppState>> {
 
 #[Object(name = "Mutation")]
 impl MutationRoot {
-    /// Analyses a local path or Git URL (as seen by the server) and replaces
-    /// its stored graph.
-    async fn index_repository(&self, ctx: &Context<'_>, source: String) -> Result<IndexResult> {
+    /// Analyses a local path or Git URL (as seen by the server) and stores
+    /// its graph. When the repository was indexed before by this server,
+    /// only changed files are parsed and only the difference to the stored
+    /// graph is written; `full: true` rewrites everything.
+    async fn index_repository(
+        &self,
+        ctx: &Context<'_>,
+        source: String,
+        #[graphql(default = false)] full: bool,
+    ) -> Result<IndexResult> {
         let state = writable(ctx)?;
         let options = IngestOptions {
             clone_dir: state.clone_dir.clone(),
             ..Default::default()
         };
-        let started = Instant::now();
-        let analysis = tokio::task::spawn_blocking(move || {
-            analyze_source(&RepoSource::parse(&source), &options)
+        let states = state.states.clone();
+        let prepared = tokio::task::spawn_blocking(move || {
+            let repo = ingest(&RepoSource::parse(&source), &options)?;
+            prepare(&repo, &states)
         })
         .await
         .map_err(internal)?
         .map_err(|err| coded(format!("analysis failed: {err}"), "INDEX_FAILED"))?;
-        let analysis_ms = started.elapsed().as_secs_f64() * 1000.0;
+        let files_analyzed = prepared.analysis.stats.files_analyzed as i32;
+        let resolution_rate = prepared.analysis.resolution.stats.calls.resolution_rate;
 
-        let summary = state.store.index(&analysis).await.gql()?;
-        state.graphs.forget(&summary.repo_id).await;
-        let repository = state.store.repository(&summary.repo_id).await.gql()?;
+        let report = state
+            .store
+            .index_prepared(prepared, &state.states, full)
+            .await
+            .gql()?;
+        state.graphs.forget(&report.summary.repo_id).await;
+        let repository = state
+            .store
+            .repository(&report.summary.repo_id)
+            .await
+            .gql()?;
+        let (mode, full_reason) = match report.mode {
+            StoreIndexMode::Incremental => (IndexMode::Incremental, None),
+            StoreIndexMode::Full(reason) => (
+                IndexMode::Full,
+                Some(
+                    serde_json::to_value(reason)
+                        .ok()
+                        .and_then(|v| v.as_str().map(str::to_string))
+                        .unwrap_or_default(),
+                ),
+            ),
+        };
+        let (r, d) = (&report.reuse, &report.delta);
+        let int = |n: usize| i32::try_from(n).unwrap_or(i32::MAX);
         Ok(IndexResult {
             repository: repository.into(),
-            files_analyzed: analysis.stats.files_analyzed as i32,
-            nodes: summary.nodes as i32,
-            relationships: summary.relationships as i32,
-            resolution_rate: analysis.resolution.stats.calls.resolution_rate,
-            analysis_ms,
-            write_ms: summary.write_ms,
+            files_analyzed,
+            nodes: int(report.summary.nodes),
+            relationships: int(report.summary.relationships),
+            resolution_rate,
+            analysis_ms: report.analysis_ms,
+            write_ms: report.summary.write_ms,
+            mode,
+            full_reason,
+            files_changed: (r.changed + r.added) as i32,
+            files_removed: r.removed as i32,
+            files_parsed: r.parsed as i32,
+            files_reused: r.reused as i32,
+            nodes_added: int(d.nodes_added),
+            nodes_removed: int(d.nodes_removed),
+            nodes_changed: int(d.nodes_changed),
+            relationships_added: int(d.relationships_added),
+            relationships_removed: int(d.relationships_removed),
+            relationships_changed: int(d.relationships_changed),
         })
     }
 
@@ -65,6 +108,9 @@ impl MutationRoot {
         };
         state.store.delete_repository(&repository.id).await.gql()?;
         state.graphs.forget(&repository.id).await;
+        if let Err(err) = state.states.remove(&repository.id) {
+            tracing::warn!(%err, "cannot remove index state");
+        }
         Ok(true)
     }
 }

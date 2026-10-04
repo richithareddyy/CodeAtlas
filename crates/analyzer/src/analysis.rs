@@ -1,14 +1,17 @@
 //! Repository-level analysis: parses every Rust file and assembles the
 //! per-file results into a consistent whole.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
 use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AnalyzerError, Result};
-use crate::ingest::{self, IngestOptions, IngestedRepository, RepoSource, RepositoryInfo};
+use crate::incremental::{AnalysisCache, CachedFile, ReuseStats};
+use crate::ingest::{
+    self, DiscoveredFile, IngestOptions, IngestedRepository, RepoSource, RepositoryInfo,
+};
 use crate::layout::{build_layout, manifest_reader};
 use crate::model::{CrateTarget, FileAnalysis, SymbolId, SymbolKind};
 use crate::module_tree;
@@ -48,7 +51,31 @@ pub fn analyze_source(source: &RepoSource, options: &IngestOptions) -> Result<Re
 }
 
 pub fn analyze(repo: &IngestedRepository) -> Result<RepositoryAnalysis> {
+    Ok(analyze_with_cache(repo, None)?.analysis)
+}
+
+/// The result of [`analyze_with_cache`].
+#[derive(Debug, Clone)]
+pub struct Analyzed {
+    pub analysis: RepositoryAnalysis,
+    /// Per-file results to pass to the next analysis of the repository.
+    pub cache: AnalysisCache,
+    pub reuse: ReuseStats,
+}
+
+/// Analyses `repo`, reusing the per-file results in `previous` for files
+/// whose content, crate and module path are unchanged. Cross-file work
+/// (module tree, ID de-duplication, resolution) always runs over all
+/// files, so the result is the same as a full analysis.
+pub fn analyze_with_cache(
+    repo: &IngestedRepository,
+    previous: Option<&AnalysisCache>,
+) -> Result<Analyzed> {
     let started = Instant::now();
+    let previous = previous.filter(|c| c.is_current());
+    let cached: HashMap<&str, &CachedFile> = previous
+        .map(|c| c.files.iter().map(|f| (f.path.as_str(), f)).collect())
+        .unwrap_or_default();
     let root = &repo.info.root;
     let rust_files: Vec<String> = repo.analyzable_files().map(|f| f.path.clone()).collect();
     let mut layout = build_layout(
@@ -66,48 +93,114 @@ pub fn analyze(repo: &IngestedRepository) -> Result<RepositoryAnalysis> {
         parse_ms += elapsed_ms(started);
         Ok(tree)
     };
+    let mut reuse = ReuseStats {
+        files: rust_files.len() as u32,
+        ..Default::default()
+    };
 
-    // Pass 1: read every file and collect its `mod` declarations. Syntax
-    // trees are dropped immediately; re-parsing in pass 2 is cheaper than
-    // holding every tree in memory on large repositories.
-    let mut sources = Vec::with_capacity(rust_files.len());
+    // Pass 1: `mod` declarations of every file, from the cache when the
+    // content is unchanged. Syntax trees are dropped immediately;
+    // re-parsing in pass 2 is cheaper than holding every tree in memory on
+    // large repositories.
+    let mut sources: Vec<(&DiscoveredFile, Option<String>)> = Vec::with_capacity(rust_files.len());
     let mut declarations = BTreeMap::new();
     for file in repo.analyzable_files() {
-        let src = fs::read_to_string(&file.abs_path)
-            .map_err(|err| AnalyzerError::io(&file.abs_path, err))?;
-        let tree = parse(&mut parser, &file.path, &src)?;
-        declarations.insert(
-            file.path.clone(),
-            module_tree::declarations(tree.root_node(), &src),
-        );
-        sources.push((file.path.as_str(), src));
+        let unchanged = cached
+            .get(file.path.as_str())
+            .filter(|c| c.content_hash == file.content_hash);
+        match unchanged {
+            Some(entry) => {
+                declarations.insert(file.path.clone(), entry.declarations.clone());
+                sources.push((file, None));
+            }
+            None => {
+                let src = fs::read_to_string(&file.abs_path)
+                    .map_err(|err| AnalyzerError::io(&file.abs_path, err))?;
+                let tree = parse(&mut parser, &file.path, &src)?;
+                declarations.insert(
+                    file.path.clone(),
+                    module_tree::declarations(tree.root_node(), &src),
+                );
+                reuse.parsed += 1;
+                if cached.contains_key(file.path.as_str()) {
+                    reuse.changed += 1;
+                } else if previous.is_some() {
+                    reuse.added += 1;
+                }
+                sources.push((file, Some(src)));
+            }
+        }
+    }
+    if let Some(previous) = previous {
+        let current: HashSet<&str> = rust_files.iter().map(String::as_str).collect();
+        reuse.removed = previous
+            .files
+            .iter()
+            .filter(|f| !current.contains(f.path.as_str()))
+            .count() as u32;
     }
     module_tree::apply(&mut layout, &declarations);
 
-    // Pass 2: extract symbols with the corrected module paths.
+    // Pass 2: extract symbols with the corrected module paths, reusing
+    // results whose inputs are unchanged.
     let mut files = Vec::with_capacity(sources.len());
-    for (path, src) in &sources {
-        let Some(module) = layout.files.get(*path) else {
-            continue;
+    let mut entries = Vec::with_capacity(sources.len());
+    for (file, src) in sources {
+        let path = file.path.as_str();
+        let module = layout.files.get(path);
+        let reusable = cached.get(path).filter(|c| {
+            src.is_none()
+                && module.is_some_and(|m| {
+                    c.crate_name.as_deref() == Some(m.crate_name.as_str())
+                        && c.module_path.as_deref() == Some(m.module_path.as_slice())
+                })
+        });
+        let extracted = match (module, reusable.and_then(|c| c.extracted.as_ref())) {
+            (None, _) => None,
+            (Some(_), Some(extracted)) => {
+                reuse.reused += 1;
+                Some(extracted.clone())
+            }
+            (Some(module), None) => {
+                let src = match src {
+                    Some(src) => src,
+                    None => fs::read_to_string(&file.abs_path)
+                        .map_err(|err| AnalyzerError::io(&file.abs_path, err))?,
+                };
+                let tree = parse(&mut parser, path, &src)?;
+                let ctx = FileContext {
+                    path,
+                    crate_name: &module.crate_name,
+                    module_path: &module.module_path,
+                };
+                let analysis = extract_file(&ctx, &src, &tree, &mut parser);
+                if analysis.syntax_errors > 0 {
+                    tracing::warn!(
+                        file = %path,
+                        errors = analysis.syntax_errors,
+                        "file contains syntax errors; affected regions were skipped"
+                    );
+                }
+                reuse.extracted += 1;
+                Some(analysis)
+            }
         };
-        let tree = parse(&mut parser, path, src)?;
-        let ctx = FileContext {
-            path,
-            crate_name: &module.crate_name,
-            module_path: &module.module_path,
-        };
-        let analysis = extract_file(&ctx, src, &tree, &mut parser);
-        if analysis.syntax_errors > 0 {
-            tracing::warn!(
-                file = %path,
-                errors = analysis.syntax_errors,
-                "file contains syntax errors; affected regions were skipped"
-            );
-        }
-        files.push(analysis);
+        entries.push(CachedFile {
+            path: path.to_string(),
+            // The hash of the content actually extracted, not of the
+            // content discovery saw, in case the file changed in between.
+            content_hash: extracted
+                .as_ref()
+                .map_or_else(|| file.content_hash.clone(), |e| e.content_hash.clone()),
+            declarations: declarations.remove(path).unwrap_or_default(),
+            crate_name: module.map(|m| m.crate_name.clone()),
+            module_path: module.map(|m| m.module_path.clone()),
+            extracted: extracted.clone(),
+        });
+        files.extend(extracted);
     }
-    drop(sources);
 
+    let cache = AnalysisCache::new(layout.targets.clone(), layout.dependencies.clone(), entries);
     let resolve_started = Instant::now();
     let resolution = assemble(&mut files, &layout.targets, &layout.dependencies);
     let resolve_ms = elapsed_ms(resolve_started);
@@ -120,16 +213,22 @@ pub fn analyze(repo: &IngestedRepository) -> Result<RepositoryAnalysis> {
         files = stats.files_analyzed,
         call_sites = stats.call_sites,
         resolved_calls = resolution.stats.calls.resolved,
+        parsed = reuse.parsed,
+        reused = reuse.reused,
         ms = stats.total_ms,
         "analysis complete"
     );
 
-    Ok(RepositoryAnalysis {
-        repository: repo.info.clone(),
-        crates: layout.targets,
-        files,
-        resolution,
-        stats,
+    Ok(Analyzed {
+        analysis: RepositoryAnalysis {
+            repository: repo.info.clone(),
+            crates: layout.targets,
+            files,
+            resolution,
+            stats,
+        },
+        cache,
+        reuse,
     })
 }
 
@@ -205,7 +304,7 @@ fn link_modules(files: &mut [FileAnalysis]) {
     }
 }
 
-fn compute_stats(files: &[FileAnalysis]) -> AnalysisStats {
+pub(crate) fn compute_stats(files: &[FileAnalysis]) -> AnalysisStats {
     let mut stats = AnalysisStats {
         files_analyzed: files.len() as u32,
         ..Default::default()

@@ -6,12 +6,11 @@ use anyhow::{bail, Context, Result};
 use clap::Subcommand;
 use codeatlas_analyzer::graph::{architecture, impact, impact::ImpactOptions};
 use codeatlas_analyzer::model::SymbolId;
-use codeatlas_analyzer::RepositoryAnalysis;
 
 use crate::views::{self, LevelArg};
 use codeatlas_store::{
-    AggregateDependency, Direction, GraphEdge, GraphStore, RepositoryNode, StoreConfig, SymbolNode,
-    Traversal,
+    AggregateDependency, Direction, GraphEdge, GraphStore, IndexMode, Prepared, RepositoryNode,
+    StateDir, StoreConfig, SymbolNode, Traversal,
 };
 
 #[derive(Subcommand)]
@@ -109,21 +108,53 @@ pub async fn connect() -> Result<GraphStore> {
     Ok(store)
 }
 
-pub async fn index(analysis: &RepositoryAnalysis) -> Result<String> {
+pub async fn index(prepared: Prepared, states: &StateDir, full: bool) -> Result<String> {
     let store = connect().await?;
-    let summary = store.index(analysis).await?;
+    let name = prepared.analysis.repository.name.clone();
+    let report = store.index_prepared(prepared, states, full).await?;
+    let summary = &report.summary;
     let stats = store.graph_stats(&summary.repo_id).await?;
     let mut out = String::new();
+    writeln!(out, "Indexed     {name} ({})", summary.repo_id)?;
+    let r = &report.reuse;
+    match report.mode {
+        IndexMode::Incremental => writeln!(
+            out,
+            "Mode        incremental: {} of {} Rust files changed ({} added, {} removed); {} parsed, {} reused",
+            r.changed + r.added,
+            r.files,
+            r.added,
+            r.removed,
+            r.parsed,
+            r.reused
+        )?,
+        IndexMode::Full(reason) => writeln!(out, "Mode        full ({})", reason.describe())?,
+    }
     writeln!(
         out,
-        "Indexed     {} ({})",
-        analysis.repository.name, summary.repo_id
+        "Graph       {} nodes, {} relationships",
+        summary.nodes, summary.relationships
     )?;
+    let d = &report.delta;
     writeln!(
         out,
-        "Graph       {} nodes, {} relationships, written in {:.0} ms",
-        summary.nodes, summary.relationships, summary.write_ms
+        "Written     nodes +{} -{} ~{}, relationships +{} -{} ~{}, in {:.0} ms",
+        d.nodes_added,
+        d.nodes_removed,
+        d.nodes_changed,
+        d.relationships_added,
+        d.relationships_removed,
+        d.relationships_changed,
+        summary.write_ms
     )?;
+    writeln!(out, "Analysis    {:.0} ms", report.analysis_ms)?;
+    if !report.state_saved {
+        writeln!(
+            out,
+            "Note        could not save incremental state in {}; the next run indexes in full",
+            states.dir().display()
+        )?;
+    }
     let join = |m: &std::collections::BTreeMap<String, i64>| {
         m.iter()
             .map(|(k, v)| format!("{k} {v}"))
@@ -135,10 +166,11 @@ pub async fn index(analysis: &RepositoryAnalysis) -> Result<String> {
     Ok(out)
 }
 
-pub async fn remove(key: &str) -> Result<String> {
+pub async fn remove(key: &str, states: &StateDir) -> Result<String> {
     let store = connect().await?;
     let repo = store.repository(key).await?;
     let deleted = store.delete_repository(&repo.id).await?;
+    states.remove(&repo.id)?;
     Ok(format!(
         "Removed {} ({}): {deleted} nodes",
         repo.name, repo.id

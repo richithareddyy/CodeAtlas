@@ -12,6 +12,7 @@ pub mod error;
 pub mod evaluation;
 pub mod git;
 pub mod graph;
+pub mod incremental;
 pub mod ingest;
 pub mod layout;
 pub mod model;
@@ -20,6 +21,8 @@ pub mod parser;
 pub mod resolver;
 pub mod symbols;
 
-pub use analysis::{analyze, analyze_source, AnalysisStats, RepositoryAnalysis};
+pub use analysis::{
+    analyze, analyze_source, analyze_with_cache, AnalysisStats, Analyzed, RepositoryAnalysis,
+};
 pub use error::{AnalyzerError, Result};
 pub use ingest::{ingest, IngestOptions, RepoSource, RepositoryInfo};

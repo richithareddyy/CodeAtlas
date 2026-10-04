@@ -180,6 +180,18 @@ export interface IndexResult {
 	resolutionRate: number | null;
 	analysisMs: number;
 	writeMs: number;
+	mode: 'FULL' | 'INCREMENTAL';
+	fullReason: 'requested' | 'not_indexed' | 'no_state' | 'index_changed' | null;
+	filesChanged: number;
+	filesRemoved: number;
+	filesParsed: number;
+	filesReused: number;
+	nodesAdded: number;
+	nodesRemoved: number;
+	nodesChanged: number;
+	relationshipsAdded: number;
+	relationshipsRemoved: number;
+	relationshipsChanged: number;
 }
 
 // Git diff impact

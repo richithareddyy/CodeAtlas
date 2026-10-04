@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use codeatlas_analyzer::ingest::default_clone_dir;
+use codeatlas_store::StateDir;
 
 /// HTTP server settings, read from the environment.
 #[derive(Debug, Clone)]
@@ -21,6 +22,8 @@ pub struct ServerConfig {
     pub graphiql: bool,
     /// `CODEATLAS_CLONE_DIR`: where remote repositories are cloned.
     pub clone_dir: PathBuf,
+    /// `CODEATLAS_STATE_DIR`: where incremental indexing state is kept.
+    pub state_dir: PathBuf,
 }
 
 impl ServerConfig {
@@ -52,6 +55,9 @@ impl ServerConfig {
             clone_dir: var("CODEATLAS_CLONE_DIR")
                 .map(PathBuf::from)
                 .unwrap_or_else(default_clone_dir),
+            state_dir: var("CODEATLAS_STATE_DIR")
+                .map(PathBuf::from)
+                .unwrap_or_else(StateDir::default_dir),
         })
     }
 }

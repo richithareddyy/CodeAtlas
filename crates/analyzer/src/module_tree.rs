@@ -9,6 +9,7 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 
+use serde::{Deserialize, Serialize};
 use tree_sitter::Node;
 
 use crate::layout::{CrateLayout, FileModule};
@@ -16,7 +17,7 @@ use crate::model::TargetKind;
 use crate::symbols::syntax::{text, ItemAttributes};
 
 /// A `mod name;` declaration (without a body) found in a file.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModDecl {
     /// Inline modules (`mod a { mod b; }`) enclosing the declaration.
     pub inline_path: Vec<String>,

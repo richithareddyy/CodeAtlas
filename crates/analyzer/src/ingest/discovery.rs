@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
 
+use super::fnv1a;
 use super::language::Language;
 use crate::error::{AnalyzerError, Result};
 
@@ -59,6 +60,9 @@ pub struct DiscoveredFile {
     pub bytes: u64,
     /// Non-blank lines.
     pub loc: u32,
+    /// FNV-1a of the content, as in `FileAnalysis::content_hash`; used to
+    /// tell which files changed since a previous analysis.
+    pub content_hash: String,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -138,6 +142,7 @@ pub fn discover(root: &Path, options: &DiscoveryOptions) -> Result<Discovery> {
             language,
             bytes,
             loc: count_loc(&content),
+            content_hash: format!("{:016x}", fnv1a(content.as_bytes())),
         });
     }
 

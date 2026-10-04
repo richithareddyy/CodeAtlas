@@ -6,6 +6,7 @@
 	import { workspace } from '../state/workspace.svelte';
 
 	let source = $state('');
+	let full = $state(false);
 	let running = $state(false);
 	let error = $state<string | null>(null);
 	let result = $state<IndexResult | null>(null);
@@ -27,7 +28,7 @@
 		error = null;
 		result = null;
 		try {
-			result = await api.indexRepository(source.trim());
+			result = await api.indexRepository(source.trim(), full);
 			await workspace.reloadRepositories();
 			await workspace.selectRepository(result.repository.id);
 		} catch (e) {
@@ -36,6 +37,13 @@
 			running = false;
 		}
 	}
+
+	const REASON: Record<string, string> = {
+		requested: 'as requested',
+		not_indexed: 'first index of this repository',
+		no_state: 'no saved state from a previous index',
+		index_changed: 'the stored graph was written elsewhere'
+	};
 
 	function close() {
 		if (!running) workspace.indexOpen = false;
@@ -56,8 +64,8 @@
 			<form onsubmit={submit}>
 				<h2 id="index-title">Index a repository</h2>
 				<p class="muted">
-					A local path or a Git URL, as seen by the CodeAtlas server. Indexing replaces any earlier
-					index of the same repository.
+					A local path or a Git URL, as seen by the CodeAtlas server. Re-indexing parses only the
+					files that changed and writes only the difference to the stored graph.
 				</p>
 				<input
 					bind:this={input}
@@ -67,6 +75,10 @@
 					aria-label="Repository path or URL"
 					disabled={running}
 				/>
+				<label class="option">
+					<input type="checkbox" bind:checked={full} disabled={running} />
+					Rewrite the whole graph
+				</label>
 				{#if running}
 					<p class="status"><span class="spinner"></span> Analysing and writing the graph…</p>
 				{/if}
@@ -81,6 +93,16 @@
 							(result.analysisMs + result.writeMs) /
 							1000
 						).toFixed(1)} s.
+					</p>
+					<p class="status detail">
+						{#if result.mode === 'INCREMENTAL'}
+							Incremental: {result.filesChanged} changed and {result.filesRemoved} removed files; {result.filesParsed}
+							parsed, {result.filesReused} reused. Wrote nodes +{result.nodesAdded} −{result.nodesRemoved}
+							~{result.nodesChanged}, relationships +{result.relationshipsAdded} −{result.relationshipsRemoved}
+							~{result.relationshipsChanged}.
+						{:else}
+							Full write ({REASON[result.fullReason ?? ''] ?? result.fullReason}).
+						{/if}
 					</p>
 				{/if}
 				<div class="buttons">
@@ -140,6 +162,19 @@
 	}
 	.success {
 		color: var(--success);
+	}
+	.detail {
+		display: block;
+		margin-top: 4px;
+		color: var(--text-muted);
+	}
+	.option {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: 8px;
+		font-size: 12px;
+		color: var(--text-muted);
 	}
 	.buttons {
 		display: flex;

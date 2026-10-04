@@ -713,11 +713,38 @@ pub struct SourceSnippet {
 pub struct IndexResult {
     pub repository: Repository,
     pub files_analyzed: i32,
+    /// Nodes and relationships stored after the write.
     pub nodes: i32,
     pub relationships: i32,
     pub resolution_rate: Option<f64>,
     pub analysis_ms: f64,
     pub write_ms: f64,
+    pub mode: IndexMode,
+    /// Why the whole graph was written (`null` for incremental writes):
+    /// `requested`, `not_indexed`, `no_state` or `index_changed`.
+    pub full_reason: Option<String>,
+    /// Rust files whose content changed since the previous index (including
+    /// added ones); `filesParsed` were read and parsed, `filesReused` taken
+    /// from the saved state.
+    pub files_changed: i32,
+    pub files_removed: i32,
+    pub files_parsed: i32,
+    pub files_reused: i32,
+    /// Size of the write; for full writes everything counts as added.
+    pub nodes_added: i32,
+    pub nodes_removed: i32,
+    pub nodes_changed: i32,
+    pub relationships_added: i32,
+    pub relationships_removed: i32,
+    pub relationships_changed: i32,
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum IndexMode {
+    /// The whole graph was written.
+    Full,
+    /// Only the difference to the previously stored graph was written.
+    Incremental,
 }
 
 // ---- Git diff impact --------------------------------------------------------

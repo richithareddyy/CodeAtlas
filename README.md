@@ -8,12 +8,12 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 7 of 11.** Ingestion, Rust module-tree
+> **Status: Milestone 8 of 11.** Ingestion, Rust module-tree
 > construction, tree-sitter parsing, symbol extraction, symbol resolution
-> (with measured quality), the Neo4j code graph, bounded graph queries,
-> graph algorithms, the change-impact engine, Git diff impact, the GraphQL
-> API and the web workspace are implemented and tested. Incremental
-> indexing, test-impact evaluation and benchmarks are next. See
+> (with measured quality), the Neo4j code graph with incremental indexing,
+> bounded graph queries, graph algorithms, the change-impact engine, Git
+> diff impact, the GraphQL API and the web workspace are implemented and
+> tested. Test-impact evaluation and a benchmark suite are next. See
 > [docs/architecture.md](docs/architecture.md#milestones).
 
 ## Why static analysis
@@ -96,6 +96,14 @@ reach, not the likelihood of breakage. Details:
 function level, each with a shortest cycle and the source lines of every
 hop; hotspots by betweenness centrality and fan-in/fan-out; and dependency
 layers with cycles collapsed.
+
+**Incremental indexing.** Re-indexing a repository parses only the files
+whose content changed (or whose module path did), re-resolves references
+across the whole repository in memory, and writes only the nodes and
+relationships that differ from the stored graph, in one transaction. The
+result is the graph a full index would produce; the tests compare the two
+property by property, on the fixtures and on ripgrep. Details:
+[docs/architecture.md](docs/architecture.md#incremental-indexing).
 
 **Git diff impact.** Given two revisions (branches, tags, commits, or a
 commit and the uncommitted working tree), CodeAtlas lists the changed
@@ -239,18 +247,36 @@ sites, statistics):
 
 ### Graph commands (need Neo4j)
 
-Index a repository (replaces any earlier index of it):
+Index a repository:
 
 ```bash
 ./target/release/codeatlas index fixtures/simple-repo
 ```
 
 ```
-Indexed     simple-repo (edf568848e9517df)
-Graph       27 nodes, 55 relationships, written in 42 ms
+Indexed     simple-repo (<repository id>)
+Mode        full (first index of this repository)
+Graph       27 nodes, 55 relationships
+Written     nodes +27 -0 ~0, relationships +55 -0 ~0, in 32 ms
+Analysis    2 ms
 Labels      Crate 2, Enum 1, File 6, Function 6, Method 2, Module 7, Repository 1, Struct 2, Symbol 18, Test 2
 Relations   CALLS 8, CONTAINS 15, DEFINES 11, DEPENDS_ON 13, IMPORTS 8
 ```
+
+Run it again after editing a file and only that file is parsed and only
+the difference is written (here a condition changed inside
+`stripe_call`, so only the file's content hash changed in the graph):
+
+```
+Mode        incremental: 1 of 6 Rust files changed (0 added, 0 removed); 1 parsed, 5 reused
+Graph       27 nodes, 55 relationships
+Written     nodes +0 -0 ~1, relationships +0 -0 ~0, in 3 ms
+```
+
+`--full` rewrites the whole graph. The per-file state between runs is kept
+in `CODEATLAS_STATE_DIR` (see [Configuration](#configuration)); without
+it, or when the stored graph was written by another run, indexing falls
+back to a full write.
 
 Query it. `--repo` takes an ID or name and can be omitted when only one
 repository is indexed. Symbols can be given as an ID, a qualified name,
@@ -470,6 +496,7 @@ extractor):
 | `CODEATLAS_CLONE_DIR` / `--clone-dir` | `$XDG_CACHE_HOME/codeatlas/repos`, else `~/.cache/codeatlas/repos` | Where remote repositories are cloned |
 | `--no-gitignore` | off | Also analyse files excluded by `.gitignore` |
 | `--limit` | 20 | Call sites listed per category by `--format resolution` |
+| `CODEATLAS_STATE_DIR` / `--state-dir` | `$XDG_CACHE_HOME/codeatlas/index`, else `~/.cache/codeatlas/index` | Incremental indexing state (one JSON file per repository) |
 | `CODEATLAS_NEO4J_PASSWORD` | none (required for graph commands) | Neo4j password; also used by `docker-compose.yml` |
 | `CODEATLAS_NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt address |
 | `CODEATLAS_NEO4J_USER` | `neo4j` | Neo4j user |
@@ -511,6 +538,19 @@ cargo test
   `crates/server/tests/schema.rs` checks that `docs/schema.graphql` matches
   the code and that the depth and complexity limits reject oversized
   queries.
+* `crates/analyzer/tests/incremental.rs` checks that an analysis reusing
+  a cache from an older state equals a full analysis of the new state, and
+  that only the expected files are parsed: no change, the `pr-impact`
+  edits (changes, additions, removals, a rename), a module moved with
+  `#[path]` (content unchanged, re-extracted), a renamed package (crate
+  name changed, nothing parsed), and outdated caches.
+* `crates/store/tests/neo4j.rs` (module `incremental`) indexes fixture
+  states in sequence and compares the stored graph, every node and
+  relationship with every property, with a full index of the same state;
+  it also checks the fall-back to full writes (another writer, no state,
+  `--full`). With `CODEATLAS_EQUIVALENCE_REPO=<path>` the same comparison
+  runs on two commits of a real repository (`HEAD~10` and `HEAD`, exported
+  with `git archive`).
 * `crates/analyzer/tests/diff.rs` builds a Git repository from the
   `pr-impact` fixture (`base/` on `main`, `head/` on `feature`) and
   compares the diff with the hand-written `expected.json`: changed files
@@ -587,6 +627,23 @@ including process start and connection. Impact, cycle and hotspot queries,
 which load the whole stored graph (3,536 symbols) into memory, took
 103–126 ms end to end. Through the GraphQL server, the first ripgrep `impact`
 request took 116 ms (graph load included) and cached repeats about 2 ms.
+Indexing ripgrep (110 Rust files; 3,668 nodes, 19,010 relationships), one
+run each unless a range is given:
+
+| Run | Analysis | Neo4j write | End to end |
+|---|---|---|---|
+| Full, first index (no state) | 295 ms | 980 ms | 1.79 s |
+| Full (`--full`, two runs) | 88–90 ms | 567–587 ms | 0.75–0.78 s |
+| Incremental, nothing changed (two runs) | 88–92 ms | 3–5 ms | 0.19–0.20 s |
+| Incremental, `HEAD` → `HEAD~10` and back (9–14 files changed; two runs each way) | 117–120 ms | 77–260 ms | 0.29–0.48 s |
+
+The `--full` runs reuse saved per-file results for the analysis; only the
+first run parses everything. Most of an incremental run's analysis time is
+reading the 6.4 MB state file, re-resolving, and building both snapshots;
+going back and forth over ten commits changes about 2,160 relationships,
+because edits shift the line numbers stored on calls and dependency
+evidence.
+
 Comparing ripgrep `HEAD~10` with `HEAD` (21 changed files, 137 downstream
 symbols) with `codeatlas diff` took 0.76–0.82 s end to end over two runs,
 about 0.32 s of it per revision for exporting and analysing it.
@@ -612,8 +669,13 @@ Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
 * The inspector, source view and Graph view show the indexed revision. In
   the Changes view, symbols that exist only in the compared revisions
   cannot be opened there; the view says so.
-* Indexing replaces a repository's whole graph; incremental updates are
-  planned (Milestone 8).
+* Incremental state is local to the machine (and state directory) that
+  wrote it. Indexing the same repository from two machines into one
+  database makes each run write in full, which is correct but slower.
+  Concurrent index runs of one repository are not coordinated.
+* The incremental cache is invalidated by the analyzer version, not by
+  the content of the analyzer's code; changes to extraction must bump
+  `CACHE_VERSION`.
 * `query tests` follows resolved `CALLS` only; use `query impact`, which
   also follows trait dispatch.
 * Type usage is not tracked yet, so changing a struct reaches the callers
@@ -628,6 +690,6 @@ Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
 
 ## Roadmap
 
-Incremental indexing → test-impact evaluation →
+Test-impact evaluation →
 benchmark suite → optional local-model explanations grounded in graph
 evidence. Details are in [docs/architecture.md](docs/architecture.md).
