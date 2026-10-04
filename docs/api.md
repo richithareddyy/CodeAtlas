@@ -41,6 +41,8 @@ them).
 |---|---|
 | `repositories`, `repository(id)` | Index metadata (`null` for an unknown ID) |
 | `symbol(repoId, id)` | One symbol, including its unresolved calls |
+| `crates(repoId)` | Crates with their kind and root module (libraries first); the roots of the explorer tree |
+| `children(repoId, id)` | Symbols directly contained in a module or type: modules, traits, types, functions, then methods |
 | `searchSymbols(repoId, query, kinds, first, after)` | Prefix search, cursor-paginated (`first` ≤ 50) |
 | `dependencies` / `dependents(repoId, symbolId, depth, relations)` | Breadth-first neighbourhood; each node carries the edge that reached it |
 | `dependencyPath(repoId, from, to, maxDepth)` | Shortest path over calls, imports and implementations, or `null` |
@@ -50,6 +52,7 @@ them).
 | `circularDependencies(repoId, level)` | Cycles with per-hop evidence |
 | `hotspots(repoId, level, first)` | Betweenness, fan-in, fan-out |
 | `layers(repoId, level)` | Dependency layers |
+| `architectureGraph(repoId, level)` | Crate, module or file dependency graph: nodes with fan-in, fan-out and cycle membership; weighted edges with the relation kinds behind them. Crate edges are module dependencies rolled up by crate |
 | `source(repoId, file, startLine, endLine)` | Up to 400 lines from the repository's working tree |
 | `indexRepository(source)` | Analyse a path or URL and replace its graph |
 | `removeRepository(id)` | Delete a repository's graph |

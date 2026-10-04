@@ -246,3 +246,117 @@ pub fn layers(code: &CodeGraph, level: Level) -> Vec<Layer> {
         })
         .collect()
 }
+
+/// Granularity of [`dependency_graph`]; `Crate` aggregates module
+/// dependencies by the crate each module belongs to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ViewLevel {
+    Crate,
+    Module,
+    File,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ViewNode {
+    /// Crate name, module ID or file path.
+    pub id: String,
+    pub fan_in: usize,
+    pub fan_out: usize,
+    /// Part of a dependency cycle at this level.
+    pub in_cycle: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ViewEdge {
+    pub from: String,
+    pub to: String,
+    pub weight: u32,
+    pub via: Vec<String>,
+}
+
+/// Whole-repository dependency graph at one level, for the architecture
+/// view. Only nodes with at least one dependency are included.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DependencyView {
+    pub nodes: Vec<ViewNode>,
+    pub edges: Vec<ViewEdge>,
+}
+
+pub fn dependency_graph(code: &CodeGraph, level: ViewLevel) -> DependencyView {
+    let deps: Vec<Dependency> = match level {
+        ViewLevel::File => code.dependencies().files.clone(),
+        ViewLevel::Module => code.dependencies().modules.clone(),
+        ViewLevel::Crate => crate_dependencies(&code.dependencies().modules),
+    };
+    let level_graph = LevelGraph::aggregated(code, &deps);
+    let (fan_in, fan_out) = degrees(&level_graph.graph);
+    let mut in_cycle = vec![false; level_graph.names.len()];
+    for component in cyclic_components(&level_graph.graph) {
+        for node in component {
+            in_cycle[node] = true;
+        }
+    }
+    let nodes = (0..level_graph.names.len())
+        .map(|n| ViewNode {
+            id: level_graph.names[n].clone(),
+            fan_in: fan_in[n],
+            fan_out: fan_out[n],
+            in_cycle: in_cycle[n],
+        })
+        .collect();
+    let mut edges: Vec<ViewEdge> = level_graph
+        .hops
+        .into_values()
+        .map(|hop| ViewEdge {
+            from: hop.from,
+            to: hop.to,
+            weight: hop.weight,
+            via: hop.via,
+        })
+        .collect();
+    edges.sort_by(|a, b| (&a.from, &a.to).cmp(&(&b.from, &b.to)));
+    DependencyView { nodes, edges }
+}
+
+/// Module dependencies rolled up by crate (the first segment of a module's
+/// qualified name), dropping dependencies inside one crate.
+fn crate_dependencies(modules: &[Dependency]) -> Vec<Dependency> {
+    let crate_of = |module_id: &str| -> String {
+        let qualified = module_id.split_once(':').map_or(module_id, |(_, q)| q);
+        qualified
+            .split("::")
+            .next()
+            .unwrap_or(qualified)
+            .to_string()
+    };
+    let mut merged: std::collections::BTreeMap<(String, String), Dependency> = Default::default();
+    for dep in modules {
+        let (from, to) = (crate_of(&dep.from), crate_of(&dep.to));
+        if from == to {
+            continue;
+        }
+        let entry = merged
+            .entry((from.clone(), to.clone()))
+            .or_insert_with(|| Dependency {
+                from,
+                to,
+                weight: 0,
+                via: Vec::new(),
+                evidence: Vec::new(),
+            });
+        entry.weight += dep.weight;
+        for kind in &dep.via {
+            if !entry.via.contains(kind) {
+                entry.via.push(*kind);
+            }
+        }
+        entry.via.sort();
+        for e in &dep.evidence {
+            if entry.evidence.len() < crate::dependencies::MAX_EVIDENCE {
+                entry.evidence.push(e.clone());
+            }
+        }
+    }
+    merged.into_values().collect()
+}

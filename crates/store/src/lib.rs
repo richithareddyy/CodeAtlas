@@ -15,8 +15,8 @@ mod writer;
 pub use config::{QueryLimits, StoreConfig};
 pub use error::{Result, StoreError};
 pub use queries::{
-    AggregateDependency, DependencyPath, Direction, GraphEdge, GraphStats, RelatedTest, Relation,
-    RepositoryNode, SearchPage, SymbolNode, Traversal, TraversalNode,
+    AggregateDependency, CrateNode, DependencyPath, Direction, GraphEdge, GraphStats, RelatedTest,
+    Relation, RepositoryNode, SearchPage, SymbolNode, Traversal, TraversalNode,
 };
 pub use writer::{IndexSummary, GRAPH_FORMAT_VERSION};
 

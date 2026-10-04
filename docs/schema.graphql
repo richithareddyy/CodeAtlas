@@ -38,9 +38,59 @@ type AggregateDependency {
 	via: [String!]!
 }
 
+type ArchitectureEdge {
+	from: String!
+	to: String!
+	"""
+	Number of symbol-level edges aggregated into this one.
+	"""
+	weight: Int!
+	via: [String!]!
+}
+
+type ArchitectureGraph {
+	level: ArchitectureLevel!
+	nodes: [ArchitectureNode!]!
+	edges: [ArchitectureEdge!]!
+}
+
+enum ArchitectureLevel {
+	CRATE
+	MODULE
+	FILE
+}
+
+type ArchitectureNode {
+	"""
+	Crate name, module ID or file path.
+	"""
+	id: String!
+	fanIn: Int!
+	fanOut: Int!
+	inCycle: Boolean!
+}
+
 enum Confidence {
 	CERTAIN
 	POSSIBLE
+}
+
+"""
+A Cargo build target.
+"""
+type Crate {
+	id: ID!
+	name: String!
+	package: String!
+	"""
+	`lib`, `bin`, `test`, `example`, `bench` or `buildscript`.
+	"""
+	kind: String!
+	rootFile: String!
+	"""
+	Module symbol at the root of the crate, if it was analysed.
+	"""
+	rootModule: ID
 }
 
 type Cycle {
@@ -266,6 +316,18 @@ type Query {
 	`first` (at most 50) and `after`.
 	"""
 	searchSymbols(repoId: ID!, query: String!, kinds: [SymbolKind!], first: Int, after: String): SymbolConnection!
+	"""
+	Build targets of a repository (libraries first) with their root modules.
+	"""
+	crates(repoId: ID!): [Crate!]!
+	"""
+	Direct children of a symbol: items of a module, methods of a type.
+	"""
+	children(repoId: ID!, id: ID!): [Symbol!]!
+	"""
+	Whole-repository dependency graph at crate, module or file level.
+	"""
+	architectureGraph(repoId: ID!, level: ArchitectureLevel! = MODULE): ArchitectureGraph!
 	"""
 	What `symbolId` depends on, breadth-first up to `depth`.
 	"""

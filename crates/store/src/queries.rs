@@ -151,6 +151,17 @@ pub struct RelatedTest {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct CrateNode {
+    pub id: String,
+    pub name: String,
+    pub package: String,
+    /// `lib`, `bin`, `test`, `example`, `bench` or `buildscript`.
+    pub kind: String,
+    pub root_file: String,
+    pub root_module: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SearchPage {
     pub symbols: Vec<SymbolNode>,
     /// Whether results exist beyond this page.
@@ -249,6 +260,53 @@ impl GraphStore {
             .await?
             .pop()
             .ok_or_else(|| StoreError::NotFound(format!("symbol `{id}`")))
+    }
+
+    /// Build targets of a repository with their root modules.
+    pub async fn crates(&self, repo: &str) -> Result<Vec<CrateNode>> {
+        let rows = self
+            .rows(
+                query(
+                    "MATCH (c:Crate {repo_id: $repo}) \
+                     OPTIONAL MATCH (c)-[:CONTAINS]->(m:Module) \
+                     RETURN c.id AS id, c.name AS name, c.package AS package, \
+                     c.target_kind AS kind, c.root_file AS root_file, m.id AS root_module \
+                     ORDER BY kind = 'lib' DESC, kind, name",
+                )
+                .param("repo", repo),
+            )
+            .await?;
+        rows.iter()
+            .map(|row| {
+                Ok(CrateNode {
+                    id: row.get("id")?,
+                    name: row.get("name")?,
+                    package: row.get("package")?,
+                    kind: row.get("kind")?,
+                    root_file: row.get("root_file")?,
+                    root_module: row.get("root_module")?,
+                })
+            })
+            .collect()
+    }
+
+    /// Direct children of a symbol (items of a module, methods of a type),
+    /// modules first, then types, functions and methods, each by name.
+    pub async fn children(&self, repo: &str, parent: &str) -> Result<Vec<SymbolNode>> {
+        let rows = self
+            .rows(
+                query(
+                    "MATCH (s:Symbol {repo_id: $repo, parent_id: $parent}) RETURN s \
+                     ORDER BY CASE s.kind WHEN 'module' THEN 0 WHEN 'trait' THEN 1 \
+                     WHEN 'struct' THEN 2 WHEN 'enum' THEN 3 WHEN 'function' THEN 4 ELSE 5 END, \
+                     s.name, s.id LIMIT $limit",
+                )
+                .param("repo", repo)
+                .param("parent", parent)
+                .param("limit", (self.limits.max_nodes * 4) as i64),
+            )
+            .await?;
+        rows.iter().map(|row| symbol_node(&row.get("s")?)).collect()
     }
 
     /// Symbols by ID, in the order requested; unknown IDs are skipped.

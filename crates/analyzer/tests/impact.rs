@@ -446,3 +446,44 @@ fn hotspots_rank_by_betweenness() {
         ]
     );
 }
+
+#[test]
+fn dependency_views_at_crate_module_and_file_level() {
+    use codeatlas_analyzer::graph::architecture::{dependency_graph, ViewLevel};
+
+    let g = graph("simple-repo");
+    let crates = dependency_graph(&g, ViewLevel::Crate);
+    let edges: Vec<(&str, &str, u32)> = crates
+        .edges
+        .iter()
+        .map(|e| (e.from.as_str(), e.to.as_str(), e.weight))
+        .collect();
+    // The integration test imports and calls into the library: one import of
+    // `checkout`, one of `Order`, and the call to `checkout`.
+    assert_eq!(edges, vec![("checkout_test", "simple_repo", 3)]);
+    assert!(crates.nodes.iter().all(|n| !n.in_cycle));
+
+    let modules = dependency_graph(&g, ViewLevel::Module);
+    let cyclic: Vec<&str> = modules
+        .nodes
+        .iter()
+        .filter(|n| n.in_cycle)
+        .map(|n| n.id.as_str())
+        .collect();
+    // payments calls gateway; gateway imports PaymentError from payments.
+    assert_eq!(
+        cyclic,
+        vec![
+            "mod:simple_repo::payments",
+            "mod:simple_repo::payments::gateway"
+        ]
+    );
+
+    let files = dependency_graph(&g, ViewLevel::File);
+    let checkout = files
+        .nodes
+        .iter()
+        .find(|n| n.id == "src/checkout.rs")
+        .unwrap();
+    assert_eq!((checkout.fan_in, checkout.fan_out), (2, 2));
+}
