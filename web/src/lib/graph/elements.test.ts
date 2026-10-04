@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { ArchitectureGraph, ImpactReport } from '../api/types';
-import { fromArchitecture, fromCycle, fromImpact } from './elements';
+import type { ArchitectureGraph, GitImpactReport, ImpactReport, SymbolKind } from '../api/types';
+import { fromArchitecture, fromCycle, fromDiff, fromImpact } from './elements';
 
 const report: ImpactReport = {
 	changed: [
@@ -171,5 +171,132 @@ describe('fromCycle', () => {
 		expect(data.nodes.map((n) => n.id)).toEqual(['mod:a', 'mod:c', 'mod:b']);
 		expect(data.edges.map((e) => e.label)).toEqual([undefined, '2', undefined]);
 		expect(data.layout).toBe('ring');
+	});
+});
+
+describe('fromDiff', () => {
+	const ref = (id: string, kind: SymbolKind, isTest = false) => ({
+		id,
+		kind,
+		qualifiedName: id.slice(id.indexOf(':') + 1),
+		file: 'src/lib.rs',
+		line: 1,
+		isTest
+	});
+	const step = (source: string, target: string) => ({
+		source,
+		target,
+		kind: 'CALLS' as const,
+		file: 'src/lib.rs',
+		lines: [2],
+		resolution: 'scope'
+	});
+
+	it('roots modified and removed symbols and draws downstream chains', () => {
+		const report = {
+			symbols: [
+				{
+					change: 'MODIFIED',
+					symbol: ref('fn:app::pay', 'FUNCTION'),
+					previous: null,
+					signature: null,
+					lines: []
+				},
+				{
+					change: 'REMOVED',
+					symbol: ref('fn:app::fee', 'FUNCTION'),
+					previous: null,
+					signature: null,
+					lines: []
+				},
+				{
+					change: 'ADDED',
+					symbol: ref('fn:app::new', 'FUNCTION'),
+					previous: null,
+					signature: null,
+					lines: []
+				},
+				{
+					change: 'REMOVED',
+					symbol: ref('mod:app::old', 'MODULE'),
+					previous: null,
+					signature: null,
+					lines: []
+				}
+			],
+			downstream: [
+				{
+					symbol: ref('fn:app::checkout', 'FUNCTION'),
+					depth: 1,
+					confidence: 'CERTAIN',
+					revision: 'HEAD',
+					path: [step('fn:app::checkout', 'fn:app::pay')]
+				},
+				{
+					symbol: ref('fn:tests::t', 'FUNCTION', true),
+					depth: 2,
+					confidence: 'CERTAIN',
+					revision: 'BASE',
+					path: [step('fn:tests::t', 'fn:app::total'), step('fn:app::total', 'fn:app::fee')]
+				}
+			]
+		} as unknown as GitImpactReport;
+		const data = fromDiff(report);
+		expect(data.roots).toEqual(['fn:app::pay', 'fn:app::fee']);
+		const classes = Object.fromEntries(data.nodes.map((n) => [n.id, n.classes]));
+		expect(classes['fn:app::fee']).toContain('removed');
+		expect(classes['fn:tests::t']).toContain('test');
+		// A changed symbol inside a chain that is not itself a root.
+		expect(classes['fn:app::total']).toContain('changed');
+		expect(classes['fn:app::new']).toBeUndefined();
+		expect(data.edges.map((e) => e.id).sort()).toEqual([
+			'fn:app::checkout->fn:app::pay:CALLS',
+			'fn:app::total->fn:app::fee:CALLS',
+			'fn:tests::t->fn:app::total:CALLS'
+		]);
+	});
+});
+
+describe('fromDiff depth limit', () => {
+	it('leaves out deeper downstream symbols', () => {
+		const sym = (id: string) => ({
+			id,
+			kind: 'FUNCTION',
+			qualifiedName: id,
+			file: 'a.rs',
+			line: 1,
+			isTest: false
+		});
+		const step = (source: string, target: string) => ({
+			source,
+			target,
+			kind: 'CALLS',
+			file: 'a.rs',
+			lines: [1],
+			resolution: null
+		});
+		const report = {
+			symbols: [
+				{ change: 'MODIFIED', symbol: sym('fn:a'), previous: null, signature: null, lines: [] }
+			],
+			downstream: [
+				{
+					symbol: sym('fn:b'),
+					depth: 1,
+					confidence: 'CERTAIN',
+					revision: 'HEAD',
+					path: [step('fn:b', 'fn:a')]
+				},
+				{
+					symbol: sym('fn:c'),
+					depth: 2,
+					confidence: 'CERTAIN',
+					revision: 'HEAD',
+					path: [step('fn:c', 'fn:b'), step('fn:b', 'fn:a')]
+				}
+			]
+		} as unknown as GitImpactReport;
+		expect(fromDiff(report, 1).nodes.map((n) => n.id)).toEqual(['fn:a', 'fn:b']);
+		expect(fromDiff(report).nodes.map((n) => n.id)).toEqual(['fn:a', 'fn:b', 'fn:c']);
 	});
 });

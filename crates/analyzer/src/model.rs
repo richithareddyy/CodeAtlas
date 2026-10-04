@@ -145,6 +145,12 @@ pub struct Symbol {
     /// including those of its `impl` or `trait` block.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub type_params: Vec<String>,
+    /// Hash of the item's tokens, ignoring whitespace and comments (and,
+    /// for traits, the methods, which have fingerprints of their own).
+    /// Used to tell real modifications from formatting changes in diffs.
+    /// `None` for modules.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fingerprint: Option<String>,
 }
 
 impl Symbol {

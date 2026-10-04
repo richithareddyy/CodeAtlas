@@ -52,4 +52,16 @@ pub enum GitError {
 
     #[error("failed to run git: {0}")]
     Spawn(std::io::Error),
+
+    #[error("not a valid revision: `{0}`")]
+    InvalidRevision(String),
+
+    #[error("unknown revision `{0}`")]
+    UnknownRevision(String),
+
+    #[error("{path} is not inside a Git repository")]
+    NotARepository { path: PathBuf },
+
+    #[error("failed to extract revision {revision}: {message}")]
+    Export { revision: String, message: String },
 }

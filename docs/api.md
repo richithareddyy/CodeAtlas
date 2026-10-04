@@ -54,11 +54,18 @@ them).
 | `layers(repoId, level)` | Dependency layers |
 | `architectureGraph(repoId, level)` | Crate, module or file dependency graph: nodes with fan-in, fan-out and cycle membership; weighted edges with the relation kinds behind them. Crate edges are module dependencies rolled up by crate |
 | `source(repoId, file, startLine, endLine)` | Up to 400 lines from the repository's working tree |
+| `gitRefs(repoId, first)` | Branches, remote-tracking branches and tags (newest first), recent commits, current branch |
+| `gitImpact(repoId, base, head, maxDepth, includeAmbiguous)` | Changes between two revisions (`head: null` is the working tree): changed files with hunks; added, removed, modified, moved and cosmetic symbols with changed lines and signature changes; downstream symbols with evidence chains; affected files, modules and tests; a summary |
 | `indexRepository(source)` | Analyse a path or URL and replace its graph |
 | `removeRepository(id)` | Delete a repository's graph |
 
-Git-diff impact (`gitImpact`) is not part of the API yet; it arrives with
-Milestone 7.
+`gitImpact` analyses both revisions from the repository's Git history on
+the server (the clone made by `indexRepository` for URLs). It does not use
+the stored graph, so it works for any two commits, not only the indexed
+one; each request analyses both revisions again (about 0.8 s on ripgrep),
+and at most two run at once. Revisions are resolved with `git rev-parse`;
+anything starting with `-` is rejected. See
+[impact-analysis.md](impact-analysis.md#git-diff-impact) for the method.
 
 ### Example
 
@@ -86,13 +93,15 @@ Errors are standard GraphQL errors with a machine-readable
 
 | Code | When |
 |---|---|
-| `NOT_FOUND` | Unknown repository, symbol or file (nullable lookups such as `repository` return `null` instead) |
-| `BAD_USER_INPUT` | Invalid argument: depth or page size out of range, both or neither of `symbolId` / `file`, a source path outside the repository |
+| `NOT_FOUND` | Unknown repository, symbol, file or Git revision (nullable lookups such as `repository` return `null` instead) |
+| `BAD_USER_INPUT` | Invalid argument: depth or page size out of range, both or neither of `symbolId` / `file`, a source path outside the repository, a revision that looks like an option |
 | `AMBIGUOUS` | A repository name matches several repositories |
 | `OUTDATED_INDEX` | The repository was indexed by an older CodeAtlas; index it again |
 | `FORBIDDEN` | Indexing mutations are disabled |
 | `INDEX_FAILED` | Analysis of the given source failed (the message says why) |
-| `SOURCE_UNAVAILABLE` | The file exists but is too large or unreadable |
+| `SOURCE_UNAVAILABLE` | The file exists but is too large or unreadable, or the repository directory is gone from the server |
+| `NOT_A_GIT_REPOSITORY` | `gitRefs` / `gitImpact` on a repository without Git history |
+| `DIFF_FAILED` | Exporting or analysing a revision failed (the message says why) |
 | `INTERNAL` | Anything else. The message is generic; details go to the server log |
 
 ## Limits and safety

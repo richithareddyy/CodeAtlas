@@ -3,7 +3,23 @@
 	import { lines, stepSentence } from '../format';
 	import { workspace } from '../state/workspace.svelte';
 
-	let { steps }: { steps: EvidenceStep[] } = $props();
+	interface Props {
+		steps: EvidenceStep[];
+		/** Replaces the default selection (the stored symbol). */
+		onselect?: (id: string, line: number | null) => void;
+		/**
+		 * The lines refer to another revision than the stored index (e.g. the
+		 * base of a diff), so they are shown but not opened.
+		 */
+		otherRevision?: string | null;
+	}
+
+	let { steps, onselect, otherRevision = null }: Props = $props();
+
+	function select(id: string, line: number | null = null) {
+		if (onselect) onselect(id, line);
+		else void workspace.select(id, line);
+	}
 
 	/** The symbol whose file holds the evidence for a step. */
 	function evidenceOwner(step: EvidenceStep): string {
@@ -15,16 +31,22 @@
 	{#each steps as step, i (i)}
 		{@const sentence = stepSentence(step)}
 		<li class:uncertain={step.kind === 'MAY_CALL'}>
-			<button class="sym" onclick={() => workspace.select(step.source)}>{sentence.source}</button>
+			<button class="sym" onclick={() => select(step.source)}>{sentence.source}</button>
 			<span class="verb">{sentence.verb}</span>
-			<button class="sym" onclick={() => workspace.select(step.target)}>{sentence.target}</button>
-			<button
-				class="loc"
-				title="Show the source of this evidence"
-				onclick={() => workspace.select(evidenceOwner(step), step.lines[0] ?? null)}
-			>
-				{step.file}{step.lines.length ? `:${step.lines[0]}` : ''}
-			</button>
+			<button class="sym" onclick={() => select(step.target)}>{sentence.target}</button>
+			{#if otherRevision}
+				<span class="loc static" title="Line in {otherRevision}">
+					{step.file}{step.lines.length ? `:${step.lines[0]}` : ''}
+				</span>
+			{:else}
+				<button
+					class="loc"
+					title="Show the source of this evidence"
+					onclick={() => select(evidenceOwner(step), step.lines[0] ?? null)}
+				>
+					{step.file}{step.lines.length ? `:${step.lines[0]}` : ''}
+				</button>
+			{/if}
 			{#if step.lines.length > 1}<span class="faint">({lines(step.lines)})</span>{/if}
 		</li>
 	{/each}
@@ -67,5 +89,11 @@
 	}
 	.loc {
 		color: var(--accent);
+	}
+	.loc.static {
+		color: var(--text-muted);
+		font-family: var(--font-mono);
+		font-size: 11.5px;
+		text-decoration: none;
 	}
 </style>

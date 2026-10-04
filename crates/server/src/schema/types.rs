@@ -4,6 +4,7 @@
 
 use async_graphql::{Enum, SimpleObject, ID};
 use codeatlas_analyzer::graph::{architecture, impact};
+use codeatlas_analyzer::{diff, git};
 use codeatlas_store as store;
 
 fn int(value: impl TryInto<i32>) -> i32 {
@@ -717,6 +718,327 @@ pub struct IndexResult {
     pub resolution_rate: Option<f64>,
     pub analysis_ms: f64,
     pub write_ms: f64,
+}
+
+// ---- Git diff impact --------------------------------------------------------
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum FileStatus {
+    Added,
+    Removed,
+    Modified,
+    Renamed,
+}
+
+impl From<git::FileStatus> for FileStatus {
+    fn from(status: git::FileStatus) -> Self {
+        match status {
+            git::FileStatus::Added => FileStatus::Added,
+            git::FileStatus::Removed => FileStatus::Removed,
+            git::FileStatus::Modified => FileStatus::Modified,
+            git::FileStatus::Renamed => FileStatus::Renamed,
+        }
+    }
+}
+
+/// A zero-context diff hunk. A pure deletion has `newLines = 0`, and
+/// `newStart` is the line after which the lines were removed.
+#[derive(SimpleObject)]
+pub struct Hunk {
+    pub old_start: i32,
+    pub old_lines: i32,
+    pub new_start: i32,
+    pub new_lines: i32,
+}
+
+#[derive(SimpleObject)]
+pub struct ChangedFile {
+    pub status: FileStatus,
+    pub path: String,
+    /// Previous path of a renamed file.
+    pub old_path: Option<String>,
+    /// A Rust file, so its symbols were compared.
+    pub rust: bool,
+    pub hunks: Vec<Hunk>,
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum ChangeKind {
+    Modified,
+    Added,
+    Removed,
+    /// Same code under a new ID (e.g. after a file rename).
+    Moved,
+}
+
+#[derive(SimpleObject)]
+pub struct LineRange {
+    pub start: i32,
+    pub end: i32,
+}
+
+#[derive(SimpleObject)]
+pub struct SignatureChange {
+    pub before: String,
+    pub after: String,
+}
+
+#[derive(SimpleObject)]
+pub struct SymbolChange {
+    pub change: ChangeKind,
+    /// The symbol in the head revision (the base revision for removed ones).
+    pub symbol: SymbolRef,
+    /// The symbol in the base revision, for modified and moved symbols.
+    pub previous: Option<SymbolRef>,
+    pub signature: Option<SignatureChange>,
+    /// Changed lines inside the symbol, in `symbol.file`.
+    pub lines: Vec<LineRange>,
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum DiffSide {
+    Head,
+    Base,
+}
+
+/// A symbol the diff did not change that depends on one it did.
+#[derive(SimpleObject)]
+pub struct DownstreamSymbol {
+    pub symbol: SymbolRef,
+    pub depth: i32,
+    pub confidence: Confidence,
+    /// From this symbol to a changed symbol.
+    pub path: Vec<EvidenceStep>,
+    /// Revision the chain comes from: `BASE` for dependents of removed
+    /// code, whose line numbers refer to the base revision.
+    pub revision: DiffSide,
+}
+
+#[derive(SimpleObject)]
+pub struct DiffSummary {
+    pub files_changed: i32,
+    pub files_added: i32,
+    pub files_removed: i32,
+    pub files_modified: i32,
+    pub files_renamed: i32,
+    /// Functions and methods, tests excluded.
+    pub functions_added: i32,
+    pub functions_removed: i32,
+    pub functions_modified: i32,
+    pub tests_added: i32,
+    pub tests_removed: i32,
+    pub tests_modified: i32,
+    /// Structs, enums and traits.
+    pub types_added: i32,
+    pub types_removed: i32,
+    pub types_modified: i32,
+    pub signatures_changed: i32,
+    pub moved: i32,
+    /// Symbols where only whitespace or comments changed.
+    pub cosmetic: i32,
+    pub downstream_symbols: i32,
+    pub possible_symbols: i32,
+    pub affected_modules: i32,
+    pub affected_files: i32,
+    pub affected_tests: i32,
+}
+
+#[derive(SimpleObject)]
+pub struct Revision {
+    /// As requested (`main`, `HEAD~2`, ...) or `working tree`.
+    pub label: String,
+    /// `null` for the working tree.
+    pub sha: Option<String>,
+}
+
+#[derive(SimpleObject)]
+pub struct GitImpactReport {
+    pub base: Revision,
+    pub head: Revision,
+    pub files: Vec<ChangedFile>,
+    pub symbols: Vec<SymbolChange>,
+    /// Touched by the diff, but only whitespace or comments changed.
+    pub cosmetic: Vec<SymbolRef>,
+    pub max_depth: i32,
+    pub include_ambiguous: bool,
+    pub downstream: Vec<DownstreamSymbol>,
+    pub affected_files: Vec<AffectedGroup>,
+    pub affected_modules: Vec<AffectedGroup>,
+    pub tests: Vec<ID>,
+    pub truncated: bool,
+    pub summary: DiffSummary,
+    /// Time to analyse both revisions and compare them.
+    pub analysis_ms: f64,
+}
+
+impl From<diff::DiffReport> for GitImpactReport {
+    fn from(r: diff::DiffReport) -> Self {
+        let s = r.summary;
+        Self {
+            base: Revision {
+                label: r.base.label,
+                sha: r.base.sha,
+            },
+            head: Revision {
+                label: r.head.label,
+                sha: r.head.sha,
+            },
+            files: r
+                .files
+                .into_iter()
+                .map(|f| ChangedFile {
+                    status: f.status.into(),
+                    path: f.path,
+                    old_path: f.old_path,
+                    rust: f.rust,
+                    hunks: f
+                        .hunks
+                        .into_iter()
+                        .map(|h| Hunk {
+                            old_start: int(h.old_start),
+                            old_lines: int(h.old_lines),
+                            new_start: int(h.new_start),
+                            new_lines: int(h.new_lines),
+                        })
+                        .collect(),
+                })
+                .collect(),
+            symbols: r
+                .symbols
+                .into_iter()
+                .map(|c| SymbolChange {
+                    change: match c.change {
+                        diff::ChangeKind::Modified => ChangeKind::Modified,
+                        diff::ChangeKind::Added => ChangeKind::Added,
+                        diff::ChangeKind::Removed => ChangeKind::Removed,
+                        diff::ChangeKind::Moved => ChangeKind::Moved,
+                    },
+                    symbol: c.symbol.into(),
+                    previous: c.previous.map(Into::into),
+                    signature: c.signature.map(|s| SignatureChange {
+                        before: s.before,
+                        after: s.after,
+                    }),
+                    lines: c
+                        .lines
+                        .into_iter()
+                        .map(|l| LineRange {
+                            start: int(l.start),
+                            end: int(l.end),
+                        })
+                        .collect(),
+                })
+                .collect(),
+            cosmetic: r.cosmetic.into_iter().map(Into::into).collect(),
+            max_depth: int(r.impact.max_depth),
+            include_ambiguous: r.impact.include_ambiguous,
+            downstream: r
+                .impact
+                .downstream
+                .into_iter()
+                .map(|d| {
+                    let a = AffectedSymbol::from(d.affected);
+                    DownstreamSymbol {
+                        symbol: a.symbol,
+                        depth: a.depth,
+                        confidence: a.confidence,
+                        path: a.path,
+                        revision: match d.revision {
+                            diff::Side::Head => DiffSide::Head,
+                            diff::Side::Base => DiffSide::Base,
+                        },
+                    }
+                })
+                .collect(),
+            affected_files: r.impact.files.into_iter().map(Into::into).collect(),
+            affected_modules: r.impact.modules.into_iter().map(Into::into).collect(),
+            tests: r
+                .impact
+                .tests
+                .into_iter()
+                .map(|t| ID(t.to_string()))
+                .collect(),
+            truncated: r.impact.truncated,
+            summary: DiffSummary {
+                files_changed: int(s.files_changed),
+                files_added: int(s.files_added),
+                files_removed: int(s.files_removed),
+                files_modified: int(s.files_modified),
+                files_renamed: int(s.files_renamed),
+                functions_added: int(s.functions_added),
+                functions_removed: int(s.functions_removed),
+                functions_modified: int(s.functions_modified),
+                tests_added: int(s.tests_added),
+                tests_removed: int(s.tests_removed),
+                tests_modified: int(s.tests_modified),
+                types_added: int(s.types_added),
+                types_removed: int(s.types_removed),
+                types_modified: int(s.types_modified),
+                signatures_changed: int(s.signatures_changed),
+                moved: int(s.moved),
+                cosmetic: int(s.cosmetic),
+                downstream_symbols: int(s.downstream_symbols),
+                possible_symbols: int(s.possible_symbols),
+                affected_modules: int(s.affected_modules),
+                affected_files: int(s.affected_files),
+                affected_tests: int(s.affected_tests),
+            },
+            analysis_ms: r.stats.total_ms,
+        }
+    }
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum RefKind {
+    Branch,
+    RemoteBranch,
+    Tag,
+}
+
+#[derive(SimpleObject)]
+pub struct GitRef {
+    pub name: String,
+    pub kind: RefKind,
+    /// Commit the ref points to.
+    pub sha: String,
+    pub date: String,
+    pub subject: String,
+}
+
+impl From<git::GitRef> for GitRef {
+    fn from(r: git::GitRef) -> Self {
+        Self {
+            name: r.name,
+            kind: match r.kind {
+                git::RefKind::Branch => RefKind::Branch,
+                git::RefKind::RemoteBranch => RefKind::RemoteBranch,
+                git::RefKind::Tag => RefKind::Tag,
+            },
+            sha: r.sha,
+            date: r.date,
+            subject: r.subject,
+        }
+    }
+}
+
+#[derive(SimpleObject)]
+pub struct Commit {
+    pub sha: String,
+    pub date: String,
+    pub subject: String,
+}
+
+/// Revisions available for `gitImpact`, read from the repository on the
+/// server.
+#[derive(SimpleObject)]
+pub struct GitRefs {
+    /// Checked-out branch, `null` when detached.
+    pub current_branch: Option<String>,
+    pub head_sha: Option<String>,
+    /// Most recently committed first.
+    pub refs: Vec<GitRef>,
+    /// Recent commits reachable from `HEAD`.
+    pub commits: Vec<Commit>,
 }
 
 #[cfg(test)]

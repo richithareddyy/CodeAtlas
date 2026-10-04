@@ -9,8 +9,8 @@ use std::collections::HashMap;
 use tree_sitter::{Node, Tree};
 
 use super::syntax::{
-    end_line, normalize_ws, path_segments, signature, start_line, text, type_segments, visibility,
-    ItemAttributes,
+    end_line, fingerprint, normalize_ws, path_segments, signature, start_line, text, type_segments,
+    visibility, ItemAttributes,
 };
 use super::use_tree::flatten_use;
 use crate::ingest::discovery::count_loc;
@@ -132,6 +132,7 @@ impl Extractor<'_> {
             cfg_test: attrs.cfg_test,
             return_type: None,
             type_params: Vec::new(),
+            fingerprint: None,
         });
         self.out.module = Some(id.clone());
 
@@ -239,6 +240,7 @@ impl Extractor<'_> {
                 .child_by_field_name("return_type")
                 .and_then(|r| type_ref(r, t.src)),
             type_params: type_params.clone(),
+            fingerprint: Some(fingerprint(node, t.src, &[])),
         });
 
         if !t.in_macro() {
@@ -402,6 +404,7 @@ impl Extractor<'_> {
             cfg_test,
             return_type: None,
             type_params: Vec::new(),
+            fingerprint: None,
         });
         let inner = Scope {
             module: id.clone(),
@@ -437,6 +440,12 @@ impl Extractor<'_> {
             cfg_test: scope.cfg_test || attrs.cfg_test,
             return_type: None,
             type_params: type_parameters(node, t.src),
+            // Trait methods are symbols with fingerprints of their own.
+            fingerprint: Some(fingerprint(
+                node,
+                t.src,
+                &["function_item", "function_signature_item"],
+            )),
         }))
     }
 

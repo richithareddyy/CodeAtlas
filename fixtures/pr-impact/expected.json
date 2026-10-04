@@ -1,0 +1,54 @@
+{
+  "description": "Diff of base/ (committed on `main`) against head/ (committed on `feature`). Derived by hand from the two snapshots.",
+  "files": {
+    "added": ["src/currency.rs"],
+    "removed": ["src/legacy.rs"],
+    "modified": [
+      "src/checkout.rs",
+      "src/invoice.rs",
+      "src/lib.rs",
+      "src/payments.rs",
+      "src/refunds.rs",
+      "tests/shop_tests.rs"
+    ],
+    "renamed": [["src/reports.rs", "src/reporting.rs"]]
+  },
+  "symbols": {
+    "modified": [
+      "fn:pr_shop::checkout::checkout",
+      "fn:pr_shop::invoice::invoice_total",
+      "fn:pr_shop::payments::validate_amount",
+      "fn:shop_tests::test_authorize_valid",
+      "method:pr_shop::payments::PaymentService::authorize"
+    ],
+    "signature_changed": ["method:pr_shop::payments::PaymentService::authorize"],
+    "added": [
+      "fn:pr_shop::currency::to_cents",
+      "mod:pr_shop::currency",
+      "mod:pr_shop::reporting"
+    ],
+    "removed": [
+      "fn:pr_shop::legacy::legacy_fee",
+      "mod:pr_shop::legacy",
+      "mod:pr_shop::reports"
+    ],
+    "moved": [
+      ["fn:pr_shop::reports::daily_total", "fn:pr_shop::reporting::daily_total"],
+      ["fn:pr_shop::reports::format_cents", "fn:pr_shop::reporting::format_cents"]
+    ],
+    "cosmetic": ["fn:pr_shop::refunds::refund_order"]
+  },
+  "downstream": {
+    "fn:pr_shop::invoice::print_invoice": 1,
+    "fn:pr_shop::payments::preauthorize": 1,
+    "fn:shop_tests::test_checkout": 1,
+    "fn:shop_tests::test_preauthorize": 2,
+    "fn:shop_tests::test_print_invoice": 2
+  },
+  "tests": [
+    "fn:shop_tests::test_checkout",
+    "fn:shop_tests::test_preauthorize",
+    "fn:shop_tests::test_print_invoice"
+  ],
+  "modules": ["mod:pr_shop::invoice", "mod:pr_shop::payments", "mod:shop_tests"]
+}

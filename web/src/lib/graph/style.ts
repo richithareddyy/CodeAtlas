@@ -60,6 +60,10 @@ export function graphStyle(): StylesheetJson {
 		{ selector: 'node.changed', style: { 'border-color': t.accent } },
 		{ selector: 'node.expanded', style: { 'background-color': t.subtle } },
 		{ selector: 'node.possible', style: { opacity: 0.55, 'border-style': 'dotted' } },
+		{
+			selector: 'node.removed',
+			style: { 'border-color': t.cycle, 'border-style': 'dashed', color: t.muted }
+		},
 		{ selector: 'node.cycle', style: { 'border-color': t.cycle, 'border-width': 2 } },
 		{ selector: 'node.context', style: { opacity: 0.45 } },
 		{

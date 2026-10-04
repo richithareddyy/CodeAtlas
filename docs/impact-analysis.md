@@ -114,6 +114,69 @@ BFS with predecessor edges, shortest path, Tarjan SCC, shortest cycle
 through a component, topological order (Kahn), dependency layering, degrees
 and betweenness.
 
+## Git diff impact
+
+`analyzer::diff` answers *what does this branch (or commit, or uncommitted
+change) affect?*
+
+1. **Revisions.** `base` and `head` are resolved to commits with
+   `git rev-parse --verify --end-of-options <rev>^{commit}`. Each commit
+   is exported with `git archive` into a temporary directory (the
+   repository and its work tree are not touched) and analysed like any
+   repository, under the repository's own name so that symbol IDs match.
+   Without a `head`, the working tree is analysed as it is on disk,
+   untracked files included.
+2. **Files and hunks.** `git diff --name-status --find-renames` lists added,
+   removed, modified and renamed files; `git diff --unified=0` gives the
+   changed line ranges of `.rs` files. Both are limited to the analysed
+   directory with `--relative`, so a project inside a larger repository is
+   handled. Options such as `--no-ext-diff` and explicit prefixes make the
+   output independent of the user's Git configuration.
+3. **Symbols.** Symbols are matched by ID. Each function, method, struct,
+   enum and trait carries a *fingerprint*: a hash of its tokens with
+   whitespace and comments left out (a trait's methods are left out of the
+   trait's fingerprint; they have their own).
+   * *Modified*: present on both sides with different fingerprints. The
+     evidence is the hunk lines that fall inside the symbol. If the
+     signature text differs as well, the change is reported as a
+     *signature change*, with both versions.
+   * *Cosmetic*: the diff touches the symbol's own lines (not just a nested
+     symbol's) but the fingerprint is unchanged: only formatting or
+     comments changed. These are listed but not treated as changes.
+   * *Added* / *removed*: only on one side.
+   * *Moved*: a removed and an added symbol of the same kind and name with
+     the same fingerprint, when that pairing is unique, e.g. after a file
+     rename. Ambiguous pairings stay added and removed.
+
+   Modules are only added or removed; edits to `use` lines and `mod`
+   declarations show up through the symbols they affect.
+4. **Impact.** Modified symbols are traced on the head graph and removed
+   symbols on the base graph, with the same engine and rules as
+   [above](#which-edges-propagate-impact) (types and traits expand to their
+   methods). Dependents of removed code matter if they still exist: they
+   either changed (and are reported as changes) or now resolve to
+   something else. The two results are merged per symbol: certain before
+   possible, head before base. Symbols the diff itself changed are left
+   out, so *downstream* means code that did not change but depends on code
+   that did. Each downstream symbol keeps its evidence chain and says
+   which revision its line numbers refer to.
+
+The `pr-impact` fixture has a base and a head snapshot covering each case
+(a signature change, body changes, a removed file, an added file, a
+rename, a comment-only edit), and `tests/diff.rs` compares the result with
+the hand-derived `expected.json`. The same diff must come out for
+committed branches, for uncommitted changes, and for a project in a
+subdirectory of its repository.
+
+Limits of the comparison:
+
+* Attributes are outside an item's syntax node, so adding `#[derive]` or
+  `#[inline]` alone does not mark the item as modified.
+* `#[cfg]` duplicates get `#N` suffixes in source order; removing one can
+  renumber the others and make them look modified.
+* Both revisions are analysed in full on every request. Incremental
+  analysis is Milestone 8.
+
 ## Where it runs
 
 The algorithms run on an in-memory `CodeGraph`, built from an analysis or

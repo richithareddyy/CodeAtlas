@@ -82,6 +82,23 @@ impl Api {
         })
     }
 
+    /// Indexes the repository at `path` under a fresh test ID.
+    async fn index_path(&mut self, path: &Path, name: &str) -> String {
+        let mut analysis = analyze_source(
+            &RepoSource::Local(path.to_path_buf()),
+            &IngestOptions::default(),
+        )
+        .unwrap();
+        analysis.repository.id = format!(
+            "test-api-{name}-{}-{}",
+            std::process::id(),
+            NEXT_ID.fetch_add(1, Ordering::Relaxed)
+        );
+        self.state.store.index(&analysis).await.unwrap();
+        self.repos.push(analysis.repository.id.clone());
+        analysis.repository.id
+    }
+
     async fn finish(self) {
         for repo in &self.repos {
             self.state.store.delete_repository(repo).await.unwrap();
@@ -583,5 +600,226 @@ async fn explorer_tree_and_architecture_graph() {
         .filter(|n| n["inCycle"] == true)
         .collect();
     assert_eq!(cyclic.len(), 2);
+    api.finish().await;
+}
+
+fn git(dir: &Path, args: &[&str]) {
+    let status = std::process::Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(args)
+        .env("GIT_AUTHOR_NAME", "Fixture")
+        .env("GIT_AUTHOR_EMAIL", "fixture@example.com")
+        .env("GIT_COMMITTER_NAME", "Fixture")
+        .env("GIT_COMMITTER_EMAIL", "fixture@example.com")
+        .status()
+        .expect("git must be installed for these tests");
+    assert!(status.success(), "git {args:?} failed");
+}
+
+fn copy_dir(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for entry in std::fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_dir(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+
+/// `fixtures/pr-impact`: base/ on `main`, head/ on `feature`, `main`
+/// checked out.
+fn pr_repo(dir: &Path) {
+    let fixture = workspace_root().join("fixtures/pr-impact");
+    copy_dir(&fixture.join("base"), dir);
+    git(dir, &["init", "--quiet", "--initial-branch=main"]);
+    git(dir, &["add", "-A"]);
+    git(dir, &["commit", "--quiet", "-m", "base"]);
+    git(dir, &["checkout", "--quiet", "-b", "feature"]);
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.file_name().is_some_and(|n| n == ".git") {
+            continue;
+        }
+        if path.is_dir() {
+            std::fs::remove_dir_all(path).unwrap();
+        } else {
+            std::fs::remove_file(path).unwrap();
+        }
+    }
+    copy_dir(&fixture.join("head"), dir);
+    git(dir, &["add", "-A"]);
+    git(dir, &["commit", "--quiet", "-m", "head"]);
+    git(dir, &["tag", "v2"]);
+    git(dir, &["checkout", "--quiet", "main"]);
+}
+
+#[tokio::test]
+async fn git_refs_and_git_impact_between_branches() {
+    let Some(mut api) = Api::start(&[], true).await else {
+        return;
+    };
+    let tmp = tempfile::tempdir().unwrap();
+    let repo_dir = tmp.path().join("pr-shop");
+    pr_repo(&repo_dir);
+    let repo = api.index_path(&repo_dir, "pr-shop").await;
+
+    let data = api
+        .data(
+            r#"query($repo: ID!) { gitRefs(repoId: $repo) {
+                currentBranch headSha refs { name kind sha } commits { sha subject } } }"#,
+            json!({ "repo": repo }),
+        )
+        .await;
+    let refs = &data["gitRefs"];
+    assert_eq!(refs["currentBranch"], "main");
+    let mut names = strings(&refs["refs"], "name");
+    names.sort();
+    assert_eq!(names, ["feature", "main", "v2"]);
+    let kinds: Vec<&str> = refs["refs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["kind"].as_str().unwrap())
+        .collect();
+    assert!(kinds.contains(&"TAG") && kinds.contains(&"BRANCH"));
+    assert_eq!(strings(&refs["commits"], "subject"), ["base"]);
+
+    let query = r#"query($repo: ID!, $base: String!, $head: String) {
+        gitImpact(repoId: $repo, base: $base, head: $head) {
+            base { label sha } head { label sha }
+            files { status path oldPath rust }
+            symbols { change symbol { id } previous { id } signature { before after } lines { start end } }
+            cosmetic { id }
+            downstream { symbol { id isTest } depth confidence revision path { source target kind file lines } }
+            affectedModules { name symbols tests }
+            tests
+            summary { filesChanged functionsModified functionsAdded functionsRemoved testsModified
+                      signaturesChanged moved cosmetic downstreamSymbols affectedModules affectedTests }
+        } }"#;
+    let data = api
+        .data(query, json!({ "repo": repo, "base": "main", "head": "v2" }))
+        .await;
+    let report = &data["gitImpact"];
+    assert_eq!(report["base"]["label"], "main");
+    assert_eq!(report["head"]["label"], "v2");
+    assert_eq!(
+        report["summary"],
+        json!({
+            "filesChanged": 9, "functionsModified": 4, "functionsAdded": 1, "functionsRemoved": 1,
+            "testsModified": 1, "signaturesChanged": 1, "moved": 2, "cosmetic": 1,
+            "downstreamSymbols": 5, "affectedModules": 3, "affectedTests": 3
+        })
+    );
+    let renamed: Vec<&Value> = report["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|f| f["status"] == "RENAMED")
+        .collect();
+    assert_eq!(
+        renamed,
+        [
+            &json!({ "status": "RENAMED", "path": "src/reporting.rs", "oldPath": "src/reports.rs", "rust": true })
+        ]
+    );
+    let authorize = report["symbols"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["symbol"]["id"] == "method:pr_shop::payments::PaymentService::authorize")
+        .unwrap();
+    assert_eq!(authorize["change"], "MODIFIED");
+    assert_eq!(authorize["lines"], json!([{ "start": 13, "end": 14 }]));
+    assert_eq!(
+        authorize["signature"]["after"],
+        "pub fn authorize(&self, amount: u64, currency: &str) -> Result<String, String>"
+    );
+    let print_test = report["downstream"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|d| d["symbol"]["id"] == "fn:shop_tests::test_print_invoice")
+        .unwrap();
+    assert_eq!(
+        print_test["path"][1],
+        json!({ "source": "fn:pr_shop::invoice::print_invoice", "target": "fn:pr_shop::invoice::invoice_total",
+                "kind": "CALLS", "file": "src/invoice.rs", "lines": [8] })
+    );
+    assert_eq!(print_test["revision"], "HEAD");
+    assert_eq!(
+        report["tests"],
+        json!([
+            "fn:shop_tests::test_checkout",
+            "fn:shop_tests::test_preauthorize",
+            "fn:shop_tests::test_print_invoice"
+        ])
+    );
+
+    // The working tree of `main` is clean: nothing changed.
+    let data = api
+        .data(query, json!({ "repo": repo, "base": "main", "head": null }))
+        .await;
+    assert_eq!(
+        data["gitImpact"]["head"],
+        json!({ "label": "working tree", "sha": null })
+    );
+    assert_eq!(data["gitImpact"]["summary"]["filesChanged"], 0);
+
+    assert_eq!(
+        api.error_code(
+            query,
+            json!({ "repo": repo, "base": "nope", "head": "main" })
+        )
+        .await,
+        "NOT_FOUND"
+    );
+    assert_eq!(
+        api.error_code(
+            query,
+            json!({ "repo": repo, "base": "--help", "head": "main" })
+        )
+        .await,
+        "BAD_USER_INPUT"
+    );
+    api.finish().await;
+}
+
+#[tokio::test]
+async fn git_operations_need_git_history() {
+    let Some(mut api) = Api::start(&[], true).await else {
+        return;
+    };
+    let tmp = tempfile::tempdir().unwrap();
+    let plain = tmp.path().join("plain");
+    copy_dir(&workspace_root().join("fixtures/simple-repo"), &plain);
+    let repo = api.index_path(&plain, "plain").await;
+    let code = api
+        .error_code(
+            "query($repo: ID!) { gitRefs(repoId: $repo) { refs { name } } }",
+            json!({ "repo": repo }),
+        )
+        .await;
+    assert_eq!(code, "NOT_A_GIT_REPOSITORY");
+    let code = api
+        .error_code(
+            r#"query($repo: ID!) { gitImpact(repoId: $repo, base: "HEAD") { tests } }"#,
+            json!({ "repo": repo }),
+        )
+        .await;
+    assert_eq!(code, "NOT_A_GIT_REPOSITORY");
+
+    // The directory is gone from the server.
+    std::fs::remove_dir_all(&plain).unwrap();
+    let code = api
+        .error_code(
+            "query($repo: ID!) { gitRefs(repoId: $repo) { refs { name } } }",
+            json!({ "repo": repo }),
+        )
+        .await;
+    assert_eq!(code, "SOURCE_UNAVAILABLE");
     api.finish().await;
 }

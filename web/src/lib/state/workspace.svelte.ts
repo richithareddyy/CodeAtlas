@@ -2,13 +2,15 @@
 
 import { goto } from '$app/navigation';
 import * as api from '../api/queries';
-import { describeError } from '../api/client';
+import { ApiError, describeError } from '../api/client';
 import type {
 	ArchitectureGraph,
 	ArchitectureLevel,
 	Crate,
 	Cycle,
 	CycleLevel,
+	GitImpactReport,
+	GitRefs,
 	ImpactReport,
 	Relation,
 	Repository,
@@ -17,10 +19,13 @@ import type {
 } from '../api/types';
 import { GraphModel } from '../graph/model';
 
-export type View = 'graph' | 'impact' | 'architecture' | 'cycles';
+export type View = 'graph' | 'impact' | 'changes' | 'architecture' | 'cycles';
 export type GraphDirection = 'DEPENDENTS' | 'DEPENDENCIES' | 'BOTH';
 
-const VIEWS: View[] = ['graph', 'impact', 'architecture', 'cycles'];
+const VIEWS: View[] = ['graph', 'impact', 'changes', 'architecture', 'cycles'];
+
+/** Branch names tried, in order, as the default base of a comparison. */
+const DEFAULT_BASES = ['main', 'master', 'trunk', 'develop'];
 
 class Workspace {
 	repositories = $state<Repository[]>([]);
@@ -58,6 +63,15 @@ class Workspace {
 	cycles = $state.raw<Cycle[] | null>(null);
 	cycleIndex = $state(0);
 
+	// Changes view (Git diff impact)
+	gitRefs = $state.raw<GitRefs | null>(null);
+	/** Why Git revisions cannot be compared for this repository, if so. */
+	gitUnavailable = $state<string | null>(null);
+	diffBase = $state('');
+	/** Empty for the working tree. */
+	diffHead = $state('');
+	diff = $state.raw<GitImpactReport | null>(null);
+
 	// Status
 	pending = $state(0);
 	error = $state<string | null>(null);
@@ -94,6 +108,8 @@ class Workspace {
 		const repo = repos.find((r) => r.id === wanted || r.name === wanted) ?? repos[0];
 		const view = url.searchParams.get('view') as View | null;
 		if (view && VIEWS.includes(view)) this.view = view;
+		this.diffBase = url.searchParams.get('base') ?? '';
+		this.diffHead = url.searchParams.get('head') ?? '';
 		if (!repo) return;
 		// Also loads the architecture or cycles view when that is the current view.
 		await this.selectRepository(repo.id, false);
@@ -114,10 +130,18 @@ class Workspace {
 		this.arch = null;
 		this.archScope = null;
 		this.cycles = null;
+		this.gitRefs = null;
+		this.gitUnavailable = null;
+		this.diff = null;
+		if (updateUrl) {
+			this.diffBase = '';
+			this.diffHead = '';
+		}
 		this.crates = (await this.track(() => api.crates(id))) ?? [];
 		if (updateUrl) this.syncUrl();
 		if (this.view === 'architecture') await this.loadArchitecture();
 		if (this.view === 'cycles') await this.loadCycles();
+		if (this.view === 'changes') await this.openChanges();
 	}
 
 	setView(view: View) {
@@ -125,6 +149,7 @@ class Workspace {
 		this.syncUrl();
 		if (view === 'architecture' && !this.arch) void this.loadArchitecture();
 		if (view === 'cycles' && !this.cycles) void this.loadCycles();
+		if (view === 'changes' && !this.gitRefs) void this.openChanges();
 		if (view === 'impact' && this.selected && !this.impactFor(this.selected.id)) {
 			void this.runImpact();
 		}
@@ -133,28 +158,37 @@ class Workspace {
 		}
 	}
 
-	/** Shows a symbol in the inspector without changing the graph. */
-	async select(id: string, line: number | null = null) {
+	/**
+	 * Shows a symbol in the inspector without changing the graph. Returns
+	 * whether the symbol is in the stored index; with `quiet`, a missing
+	 * symbol is not reported as an error.
+	 */
+	async select(id: string, line: number | null = null, quiet = false): Promise<boolean> {
 		const repo = this.repoId;
-		if (!repo) return;
+		if (!repo) return false;
 		const token = ++this.selectToken;
 		this.focusLine = line;
-		if (this.selected?.id === id) return;
+		if (this.selected?.id === id) return true;
 		const symbol = await this.track(() => api.symbol(repo, id));
-		if (token !== this.selectToken) return;
+		if (token !== this.selectToken) return false;
 		if (symbol) {
 			this.selected = symbol;
 			this.syncUrl();
-		} else if (symbol === null) {
+			return true;
+		}
+		if (symbol === null && !quiet) {
 			this.error = `Symbol ${id} is not in this repository's index.`;
 		}
+		return false;
 	}
 
 	/** Selects a symbol and makes it the subject of the current view. */
 	async focus(id: string, options: { view?: View; keepUrl?: boolean } = {}) {
 		const view =
 			options.view ??
-			(this.view === 'architecture' || this.view === 'cycles' ? 'graph' : this.view);
+			(this.view === 'architecture' || this.view === 'cycles' || this.view === 'changes'
+				? 'graph'
+				: this.view);
 		this.view = view;
 		await this.select(id);
 		if (!this.selected || this.selected.id !== id) return;
@@ -252,11 +286,78 @@ class Workspace {
 		if (found && this.repoId === repo) this.cycles = found;
 	}
 
+	/** Loads the repository's refs, picks default revisions, and compares them. */
+	async openChanges() {
+		const repo = this.repoId;
+		if (!repo) return;
+		this.pending++;
+		try {
+			const refs = await api.gitRefs(repo);
+			if (this.repoId !== repo) return;
+			this.gitRefs = refs;
+			this.gitUnavailable = null;
+			this.apiReachable = true;
+			if (!this.diffBase) this.defaultRevisions(refs);
+		} catch (error) {
+			const code = error instanceof ApiError ? error.code : null;
+			if (code === 'NOT_A_GIT_REPOSITORY' || code === 'SOURCE_UNAVAILABLE') {
+				this.gitUnavailable = describeError(error);
+			} else {
+				this.error = describeError(error);
+				if (code === 'NETWORK') this.apiReachable = false;
+			}
+			return;
+		} finally {
+			this.pending--;
+		}
+		if (this.diffBase && !this.diff) await this.runDiff();
+	}
+
+	/**
+	 * Picks what to compare: the main branch against the current branch, or,
+	 * when the main branch is checked out, against the most recently
+	 * committed other branch; otherwise the last commit against its parent.
+	 */
+	private defaultRevisions(refs: GitRefs) {
+		// `refs` is sorted by date, newest first.
+		const branches = refs.refs.filter((r) => r.kind === 'BRANCH').map((r) => r.name);
+		const current = refs.currentBranch;
+		const main = DEFAULT_BASES.find((b) => branches.includes(b));
+		const other = branches.find((b) => b !== main);
+		if (main && current && main !== current) {
+			this.diffBase = main;
+			this.diffHead = current;
+		} else if (main && other) {
+			this.diffBase = main;
+			this.diffHead = other;
+		} else if (refs.commits.length > 1) {
+			this.diffBase = 'HEAD~1';
+			this.diffHead = 'HEAD';
+		}
+	}
+
+	async runDiff() {
+		const repo = this.repoId;
+		const base = this.diffBase.trim();
+		if (!repo || !base) return;
+		const head = this.diffHead.trim() || null;
+		this.view = 'changes';
+		const report = await this.track(() =>
+			api.gitImpact(repo, base, head, this.impactDepth, this.includeAmbiguous)
+		);
+		if (report && this.repoId === repo) this.diff = report;
+		this.syncUrl();
+	}
+
 	private syncUrl() {
 		const params = new URLSearchParams();
 		if (this.repoId) params.set('repo', this.repoId);
 		if (this.selected) params.set('symbol', this.selected.id);
 		if (this.view !== 'graph') params.set('view', this.view);
+		if (this.view === 'changes' && this.diffBase) {
+			params.set('base', this.diffBase);
+			if (this.diffHead) params.set('head', this.diffHead);
+		}
 		const query = params.toString();
 		void goto(query ? `?${query}` : '?', { replace: true, shallow: true }).catch(() => {});
 	}

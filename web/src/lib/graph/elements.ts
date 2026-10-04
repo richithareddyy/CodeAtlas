@@ -1,6 +1,13 @@
 // Builders from API results to the generic element lists the canvas draws.
 
-import type { ArchitectureGraph, Cycle, ImpactReport, Relation, SymbolKind } from '../api/types';
+import type {
+	ArchitectureGraph,
+	Cycle,
+	GitImpactReport,
+	ImpactReport,
+	Relation,
+	SymbolKind
+} from '../api/types';
 import { kindOf, shortLabel } from '../format';
 import type { GraphModel } from './model';
 
@@ -127,6 +134,71 @@ export function fromImpact(report: ImpactReport): CanvasData {
 		roots: report.changed.map((c) => c.id),
 		layout: 'tree'
 	};
+}
+
+/**
+ * The diff impact graph: modified and removed symbols at the root, and
+ * every downstream symbol connected through its evidence chain. Added and
+ * moved symbols have no pre-existing dependents and are left out. With
+ * `maxDepth`, deeper downstream symbols are left out too.
+ */
+export function fromDiff(report: GitImpactReport, maxDepth = Infinity): CanvasData {
+	const downstream = report.downstream.filter((d) => d.depth <= maxDepth);
+	const nodes = new Map<string, CanvasNode>();
+	const edges = new Map<string, CanvasEdge>();
+	const roots: string[] = [];
+	for (const c of report.symbols) {
+		if (c.change !== 'MODIFIED' && c.change !== 'REMOVED') continue;
+		if (c.symbol.kind === 'MODULE') continue;
+		const classes = [kindClass(c.symbol.kind), 'root', 'changed'];
+		if (c.change === 'REMOVED') classes.push('removed');
+		if (c.symbol.isTest) classes.push('test');
+		const what =
+			c.change === 'REMOVED' ? 'removed' : c.signature ? 'signature changed' : 'modified';
+		nodes.set(
+			c.symbol.id,
+			node(
+				c.symbol.id,
+				shortLabel(c.symbol.id),
+				classes,
+				`${c.symbol.qualifiedName} (${what})\n${c.symbol.file}:${c.symbol.line}`
+			)
+		);
+		roots.push(c.symbol.id);
+	}
+	for (const d of downstream) {
+		const classes = [kindClass(d.symbol.kind), `depth-${Math.min(d.depth, 4)}`];
+		if (d.symbol.isTest) classes.push('test');
+		if (d.confidence === 'POSSIBLE') classes.push('possible');
+		nodes.set(
+			d.symbol.id,
+			node(
+				d.symbol.id,
+				shortLabel(d.symbol.id),
+				classes,
+				`${d.symbol.qualifiedName}\n${d.symbol.file}:${d.symbol.line}`
+			)
+		);
+	}
+	for (const d of downstream) {
+		for (const step of d.path) {
+			// Chains may pass through changed symbols that are not roots
+			// (e.g. methods of a changed type); show them too.
+			for (const id of [step.source, step.target]) {
+				if (!nodes.has(id)) {
+					nodes.set(id, node(id, shortLabel(id), [kindClass(kindOf(id)), 'changed']));
+				}
+			}
+			const id = `${step.source}->${step.target}:${step.kind}`;
+			edges.set(id, {
+				id,
+				source: step.source,
+				target: step.target,
+				classes: [`step-${step.kind.toLowerCase().replace('_', '-')}`]
+			});
+		}
+	}
+	return { nodes: [...nodes.values()], edges: [...edges.values()], roots, layout: 'tree' };
 }
 
 /** Label for an architecture node ID (crate name, module ID or file path). */

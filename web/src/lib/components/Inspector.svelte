@@ -86,7 +86,10 @@
 					<dd>{counts.callees} resolved</dd>
 				{/if}
 				<dt>Tests</dt>
-				<dd>{count(counts.tests.length, 'test')} reach this symbol</dd>
+				<dd>
+					{count(counts.tests.length, 'test')}
+					{counts.tests.length === 1 ? 'reaches' : 'reach'} this symbol
+				</dd>
 			{/if}
 		</dl>
 

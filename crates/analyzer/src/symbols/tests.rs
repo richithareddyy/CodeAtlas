@@ -224,3 +224,55 @@ fn keeps_extracting_after_syntax_errors() {
     symbol(&fa, "fn:app::m::good");
     assert!(calls(&fa).contains(&"good -> a @1".to_string()));
 }
+
+#[test]
+fn fingerprints_ignore_formatting_and_comments_but_not_tokens() {
+    let fp = |src: &str, id: &str| symbol(&extract(src), id).fingerprint.clone().unwrap();
+    let base = fp(
+        "fn total(a: u64) -> u64 {\n    a + 1\n}\n",
+        "fn:app::m::total",
+    );
+    let reformatted = fp(
+        "fn total(a: u64)\n    -> u64\n{\n    // add one\n    a /* inline */ + 1\n}\n",
+        "fn:app::m::total",
+    );
+    assert_eq!(base, reformatted);
+    // Moved to another line: same tokens, same fingerprint.
+    let moved = fp(
+        "\n\n\nfn total(a: u64) -> u64 { a + 1 }\n",
+        "fn:app::m::total",
+    );
+    assert_eq!(base, moved);
+
+    let edited = fp(
+        "fn total(a: u64) -> u64 {\n    a + 2\n}\n",
+        "fn:app::m::total",
+    );
+    assert_ne!(base, edited);
+    // Token boundaries matter: `a+1` is the same, `a1` is not.
+    let joined = fp(
+        "fn total(a1: u64) -> u64 {\n    a1\n}\n",
+        "fn:app::m::total",
+    );
+    assert_ne!(base, joined);
+}
+
+#[test]
+fn trait_fingerprints_exclude_their_methods_and_modules_have_none() {
+    let fa = extract("pub trait Store {\n    fn get(&self) -> u8;\n}\n");
+    let edited = extract("pub trait Store {\n    fn get(&self) -> u16;\n}\n");
+    assert_eq!(
+        symbol(&fa, "trait:app::m::Store").fingerprint,
+        symbol(&edited, "trait:app::m::Store").fingerprint
+    );
+    assert_ne!(
+        symbol(&fa, "method:app::m::Store::get").fingerprint,
+        symbol(&edited, "method:app::m::Store::get").fingerprint
+    );
+    let supertrait = extract("pub trait Store: Clone {\n    fn get(&self) -> u8;\n}\n");
+    assert_ne!(
+        symbol(&fa, "trait:app::m::Store").fingerprint,
+        symbol(&supertrait, "trait:app::m::Store").fingerprint
+    );
+    assert_eq!(symbol(&fa, "mod:app::m").fingerprint, None);
+}

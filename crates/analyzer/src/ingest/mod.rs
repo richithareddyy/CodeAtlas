@@ -153,6 +153,35 @@ pub fn ingest(source: &RepoSource, options: &IngestOptions) -> Result<IngestedRe
     Ok(IngestedRepository { info, discovery })
 }
 
+/// Ingests a snapshot of a repository, such as one revision exported to a
+/// temporary directory, under the identity (ID, name, origin) of `like`.
+/// Crate names fall back to the repository name, so this keeps symbol IDs
+/// identical to an analysis of the repository itself.
+pub fn ingest_snapshot(
+    root: &Path,
+    like: &RepositoryInfo,
+    commit: Option<String>,
+    options: &DiscoveryOptions,
+) -> Result<IngestedRepository> {
+    let root = canonical_dir(root)?;
+    let discovery = discovery::discover(&root, options)?;
+    let languages = language_stats(&discovery.files);
+    let info = RepositoryInfo {
+        id: like.id.clone(),
+        name: like.name.clone(),
+        source_files: discovery.files.len() as u32,
+        loc: languages.iter().map(|l| l.loc).sum(),
+        languages,
+        skipped: discovery.skipped.clone(),
+        root,
+        origin_url: like.origin_url.clone(),
+        branch: None,
+        head_sha: commit,
+        analyzed_at: Utc::now(),
+    };
+    Ok(IngestedRepository { info, discovery })
+}
+
 fn canonical_dir(path: &Path) -> Result<PathBuf> {
     let canonical = fs::canonicalize(path).map_err(|err| match err.kind() {
         std::io::ErrorKind::NotFound => AnalyzerError::NotADirectory(path.to_path_buf()),
@@ -229,7 +258,14 @@ fn language_stats(files: &[DiscoveredFile]) -> Vec<LanguageStats> {
 
 /// 64-bit FNV-1a. Used only for stable, non-cryptographic identifiers.
 pub(crate) fn fnv1a(bytes: &[u8]) -> u64 {
-    bytes.iter().fold(0xcbf2_9ce4_8422_2325, |hash, &b| {
+    fnv1a_extend(FNV1A_OFFSET, bytes)
+}
+
+pub(crate) const FNV1A_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+
+/// Continues an FNV-1a hash over more bytes.
+pub(crate) fn fnv1a_extend(hash: u64, bytes: &[u8]) -> u64 {
+    bytes.iter().fold(hash, |hash, &b| {
         (hash ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
     })
 }

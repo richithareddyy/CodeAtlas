@@ -7,6 +7,7 @@
 
 pub mod analysis;
 pub mod dependencies;
+pub mod diff;
 pub mod error;
 pub mod evaluation;
 pub mod git;

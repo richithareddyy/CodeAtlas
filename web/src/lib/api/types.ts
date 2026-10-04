@@ -181,3 +181,104 @@ export interface IndexResult {
 	analysisMs: number;
 	writeMs: number;
 }
+
+// Git diff impact
+
+export type FileStatus = 'ADDED' | 'REMOVED' | 'MODIFIED' | 'RENAMED';
+export type ChangeKind = 'MODIFIED' | 'ADDED' | 'REMOVED' | 'MOVED';
+export type DiffSide = 'HEAD' | 'BASE';
+export type RefKind = 'BRANCH' | 'REMOTE_BRANCH' | 'TAG';
+
+export interface Hunk {
+	oldStart: number;
+	oldLines: number;
+	newStart: number;
+	newLines: number;
+}
+
+export interface ChangedFile {
+	status: FileStatus;
+	path: string;
+	oldPath: string | null;
+	rust: boolean;
+	hunks: Hunk[];
+}
+
+export interface LineRange {
+	start: number;
+	end: number;
+}
+
+export interface SymbolChange {
+	change: ChangeKind;
+	symbol: SymbolRef;
+	previous: SymbolRef | null;
+	signature: { before: string; after: string } | null;
+	lines: LineRange[];
+}
+
+export interface DownstreamSymbol extends AffectedSymbol {
+	revision: DiffSide;
+}
+
+export interface DiffSummary {
+	filesChanged: number;
+	filesAdded: number;
+	filesRemoved: number;
+	filesModified: number;
+	filesRenamed: number;
+	functionsAdded: number;
+	functionsRemoved: number;
+	functionsModified: number;
+	testsAdded: number;
+	testsRemoved: number;
+	testsModified: number;
+	typesAdded: number;
+	typesRemoved: number;
+	typesModified: number;
+	signaturesChanged: number;
+	moved: number;
+	cosmetic: number;
+	downstreamSymbols: number;
+	possibleSymbols: number;
+	affectedModules: number;
+	affectedFiles: number;
+	affectedTests: number;
+}
+
+export interface Revision {
+	label: string;
+	sha: string | null;
+}
+
+export interface GitImpactReport {
+	base: Revision;
+	head: Revision;
+	files: ChangedFile[];
+	symbols: SymbolChange[];
+	cosmetic: SymbolRef[];
+	maxDepth: number;
+	includeAmbiguous: boolean;
+	downstream: DownstreamSymbol[];
+	affectedFiles: AffectedGroup[];
+	affectedModules: AffectedGroup[];
+	tests: string[];
+	truncated: boolean;
+	summary: DiffSummary;
+	analysisMs: number;
+}
+
+export interface GitRef {
+	name: string;
+	kind: RefKind;
+	sha: string;
+	date: string;
+	subject: string;
+}
+
+export interface GitRefs {
+	currentBranch: string | null;
+	headSha: string | null;
+	refs: GitRef[];
+	commits: { sha: string; date: string; subject: string }[];
+}
