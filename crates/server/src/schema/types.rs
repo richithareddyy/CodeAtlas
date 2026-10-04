@@ -601,6 +601,102 @@ impl From<architecture::Layer> for Layer {
     }
 }
 
+/// A Cargo build target.
+#[derive(SimpleObject)]
+pub struct Crate {
+    pub id: ID,
+    pub name: String,
+    pub package: String,
+    /// `lib`, `bin`, `test`, `example`, `bench` or `buildscript`.
+    pub kind: String,
+    pub root_file: String,
+    /// Module symbol at the root of the crate, if it was analysed.
+    pub root_module: Option<ID>,
+}
+
+impl From<store::CrateNode> for Crate {
+    fn from(c: store::CrateNode) -> Self {
+        Self {
+            id: ID(c.id),
+            name: c.name,
+            package: c.package,
+            kind: c.kind,
+            root_file: c.root_file,
+            root_module: c.root_module.map(ID),
+        }
+    }
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum ArchitectureLevel {
+    Crate,
+    Module,
+    File,
+}
+
+impl From<ArchitectureLevel> for architecture::ViewLevel {
+    fn from(level: ArchitectureLevel) -> Self {
+        match level {
+            ArchitectureLevel::Crate => architecture::ViewLevel::Crate,
+            ArchitectureLevel::Module => architecture::ViewLevel::Module,
+            ArchitectureLevel::File => architecture::ViewLevel::File,
+        }
+    }
+}
+
+#[derive(SimpleObject)]
+pub struct ArchitectureNode {
+    /// Crate name, module ID or file path.
+    pub id: String,
+    pub fan_in: i32,
+    pub fan_out: i32,
+    pub in_cycle: bool,
+}
+
+#[derive(SimpleObject)]
+pub struct ArchitectureEdge {
+    pub from: String,
+    pub to: String,
+    /// Number of symbol-level edges aggregated into this one.
+    pub weight: i32,
+    pub via: Vec<String>,
+}
+
+#[derive(SimpleObject)]
+pub struct ArchitectureGraph {
+    pub level: ArchitectureLevel,
+    pub nodes: Vec<ArchitectureNode>,
+    pub edges: Vec<ArchitectureEdge>,
+}
+
+impl ArchitectureGraph {
+    pub fn new(level: ArchitectureLevel, view: architecture::DependencyView) -> Self {
+        Self {
+            level,
+            nodes: view
+                .nodes
+                .into_iter()
+                .map(|n| ArchitectureNode {
+                    id: n.id,
+                    fan_in: int(n.fan_in),
+                    fan_out: int(n.fan_out),
+                    in_cycle: n.in_cycle,
+                })
+                .collect(),
+            edges: view
+                .edges
+                .into_iter()
+                .map(|e| ArchitectureEdge {
+                    from: e.from,
+                    to: e.to,
+                    weight: int(e.weight),
+                    via: e.via,
+                })
+                .collect(),
+        }
+    }
+}
+
 // ---- Misc ------------------------------------------------------------------
 
 #[derive(SimpleObject)]

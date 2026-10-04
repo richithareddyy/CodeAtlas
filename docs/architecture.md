@@ -16,7 +16,7 @@ Git repository
   → store       (Neo4j code graph, bounded queries)
   → graph       (in-memory CodeGraph: algorithms, impact, architecture)
   → server      (GraphQL API)
-  → SvelteKit UI                                                              [M6]
+  → web         (SvelteKit workspace UI)
 ```
 
 ## Crates
@@ -27,7 +27,7 @@ Git repository
 | `crates/store` | Neo4j schema, batched writes, bounded queries (traversals with evidence paths, shortest path, search, file/module dependencies), loading a stored graph back into a `CodeGraph`. | analyzer, neo4rs, tokio |
 | `crates/server` | GraphQL API over the store and analyzer, graph cache, guarded source reads. | analyzer, store, async-graphql, axum, tokio |
 | `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `index`, `query`, `remove`, `ast`; later `bench`. | analyzer, store |
-| `web/` *(M6)* | SvelteKit + TypeScript + Cytoscape.js workspace UI. | GraphQL API |
+| `web/` | SvelteKit + TypeScript + Cytoscape.js workspace UI; a static single-page app. | GraphQL API only |
 
 The analyzer is kept free of storage concerns so that extraction, resolution
 and the algorithms can be tested on in-memory data, and so that the CLI, the
@@ -182,6 +182,37 @@ Neo4j; both produce identical graphs. Whole-graph algorithms such as SCC
 and betweenness run in Rust rather than in Neo4j, so the Graph Data
 Science plugin is not needed.
 
+## Web UI (`web/`)
+
+A SvelteKit 3 app (Svelte 5, TypeScript) built with `adapter-static` as a
+single-page app; it has no server-side code and reads everything through
+the GraphQL API.
+
+* `src/lib/api`: a small `fetch` client (errors carry the API's
+  `extensions.code`) and one typed function per operation. No GraphQL
+  client library is used, since the app needs no normalised cache.
+* `src/lib/state/workspace.svelte.ts`: one state object built on Svelte
+  runes, holding the repository, selection, per-view data and the actions
+  that load it. Selections are mirrored into the URL with shallow
+  navigation, and late responses for an older selection are discarded.
+* `src/lib/graph`: pure TypeScript, unit-tested without a browser. The
+  `GraphModel` stores the explored neighbourhood and which node expanded
+  which, so collapsing removes only the nodes an expansion added. The
+  element builders turn API results into canvas elements. The layouts are
+  layered: trees by distance from the focused symbol; dependency graphs by
+  longest path, with cycle edges ignored; each in whichever orientation
+  draws the graph largest. Cycles are drawn as a ring in hop order.
+* `src/lib/components`: the explorer, graph canvas (Cytoscape.js, updated
+  by diffing elements so layouts only rerun when the structure changes),
+  inspector, command palette and the four views. Colours are CSS custom
+  properties with light and dark values; the canvas stylesheet reads them,
+  so the graph follows the theme.
+
+**Why Cytoscape.js.** It handles the interaction needed here (selection,
+double-click, hover, zoom, pan) and thousands of elements on canvas, ships
+TypeScript types, and accepts precomputed positions, so layouts can be
+plain, tested functions.
+
 ## Milestones
 
 | # | Scope | Status |
@@ -191,9 +222,9 @@ Science plugin is not needed.
 | 3 | Neo4j store, derived dependencies, bounded queries, `index` / `query` CLI | Done |
 | 4 | Graph algorithms, impact engine with evidence chains and a decomposable score, cycles, hotspots and layers | Done |
 | 5 | GraphQL API: queries, mutations, pagination, error codes, limits, graph cache | Done |
-| 6 | SvelteKit workspace UI (completes the MVP) | Planned |
+| 6 | SvelteKit workspace UI: explorer, graph, impact, architecture zoom and cycle views, inspector with source, command palette (completes the MVP) | Done |
 | 7 | Git diff analysis and PR impact reports | Planned |
 | 8 | Incremental indexing | Planned |
 | 9 | Test-impact analysis with precision/recall on ground-truth fixtures | Planned |
-| 10 | Architecture zoom, cycle view, benchmark suite | Planned |
+| 10 | Benchmark suite (`codeatlas bench`); architecture views tuned on larger repositories | Planned |
 | 11 | Optional local-model explanations grounded in graph evidence | Planned |

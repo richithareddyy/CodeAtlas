@@ -13,6 +13,7 @@ pub const STATEMENTS: &[&str] = &[
     "CREATE INDEX symbol_name IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id, s.name)",
     "CREATE INDEX symbol_qualified_name IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id, s.qualified_name)",
     "CREATE INDEX symbol_file IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id, s.file)",
+    "CREATE INDEX symbol_parent IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id, s.parent_id)",
     "CREATE INDEX file_repo IF NOT EXISTS FOR (f:File) ON (f.repo_id)",
     "CREATE INDEX crate_repo IF NOT EXISTS FOR (c:Crate) ON (c.repo_id)",
     "CREATE FULLTEXT INDEX symbol_search IF NOT EXISTS FOR (s:Symbol) ON EACH [s.name, s.qualified_name]",

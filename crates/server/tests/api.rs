@@ -542,3 +542,46 @@ async fn index_reindex_and_remove_through_mutations() {
     assert_eq!(again["removeRepository"], false);
     api.finish().await;
 }
+
+#[tokio::test]
+async fn explorer_tree_and_architecture_graph() {
+    let Some(api) = Api::start(&["simple-repo"], true).await else {
+        return;
+    };
+    let vars = json!({ "repo": api.repos[0] });
+    let data = api
+        .data(
+            "query($repo: ID!) { crates(repoId: $repo) { name kind rootModule } \
+             children(repoId: $repo, id: \"mod:simple_repo::payments\") { name kind } \
+             architectureGraph(repoId: $repo, level: CRATE) { nodes { id fanIn fanOut inCycle } edges { from to weight } } \
+             modules: architectureGraph(repoId: $repo) { nodes { id inCycle } } }",
+            vars,
+        )
+        .await;
+    assert_eq!(
+        data["crates"][0],
+        json!({ "name": "simple_repo", "kind": "lib", "rootModule": "mod:simple_repo" })
+    );
+    assert_eq!(
+        strings(&data["children"], "name"),
+        vec![
+            "gateway",
+            "tests",
+            "PaymentService",
+            "PaymentError",
+            "process_payment"
+        ]
+    );
+    assert_eq!(
+        data["architectureGraph"]["edges"],
+        json!([{ "from": "checkout_test", "to": "simple_repo", "weight": 3 }])
+    );
+    let cyclic: Vec<&Value> = data["modules"]["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|n| n["inCycle"] == true)
+        .collect();
+    assert_eq!(cyclic.len(), 2);
+    api.finish().await;
+}

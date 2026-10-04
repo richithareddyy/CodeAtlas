@@ -544,3 +544,53 @@ async fn graphs_written_by_another_format_version_are_rejected() {
         ));
     });
 }
+
+#[tokio::test]
+async fn crates_and_children_form_the_explorer_tree() {
+    with_indexed!("simple-repo", |store, _analysis, repo| {
+        let crates = store.crates(&repo).await.unwrap();
+        let summary: Vec<(&str, &str, Option<&str>)> = crates
+            .iter()
+            .map(|c| (c.name.as_str(), c.kind.as_str(), c.root_module.as_deref()))
+            .collect();
+        assert_eq!(
+            summary,
+            vec![
+                ("simple_repo", "lib", Some("mod:simple_repo")),
+                ("checkout_test", "test", Some("mod:checkout_test")),
+            ]
+        );
+
+        let names = |symbols: Vec<codeatlas_store::SymbolNode>| -> Vec<String> {
+            symbols.into_iter().map(|s| s.name).collect()
+        };
+        assert_eq!(
+            names(store.children(&repo, "mod:simple_repo").await.unwrap()),
+            vec!["checkout", "inventory", "payments"]
+        );
+        assert_eq!(
+            names(
+                store
+                    .children(&repo, "mod:simple_repo::payments")
+                    .await
+                    .unwrap()
+            ),
+            vec![
+                "gateway",
+                "tests",
+                "PaymentService",
+                "PaymentError",
+                "process_payment"
+            ]
+        );
+        assert_eq!(
+            names(
+                store
+                    .children(&repo, "struct:simple_repo::payments::PaymentService")
+                    .await
+                    .unwrap()
+            ),
+            vec!["authorize", "new"]
+        );
+    });
+}

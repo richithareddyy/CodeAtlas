@@ -116,6 +116,49 @@ impl QueryRoot {
         .await
     }
 
+    /// Build targets of a repository (libraries first) with their root modules.
+    async fn crates(&self, ctx: &Context<'_>, repo_id: ID) -> Result<Vec<Crate>> {
+        let state = state(ctx)?;
+        let repo = self::repo_id(state, &repo_id).await?;
+        Ok(state
+            .store
+            .crates(&repo)
+            .await
+            .gql()?
+            .into_iter()
+            .map(Into::into)
+            .collect())
+    }
+
+    /// Direct children of a symbol: items of a module, methods of a type.
+    async fn children(&self, ctx: &Context<'_>, repo_id: ID, id: ID) -> Result<Vec<Symbol>> {
+        let state = state(ctx)?;
+        let repo = self::repo_id(state, &repo_id).await?;
+        Ok(state
+            .store
+            .children(&repo, &id)
+            .await
+            .gql()?
+            .into_iter()
+            .map(Into::into)
+            .collect())
+    }
+
+    /// Whole-repository dependency graph at crate, module or file level.
+    async fn architecture_graph(
+        &self,
+        ctx: &Context<'_>,
+        repo_id: ID,
+        #[graphql(default_with = "ArchitectureLevel::Module")] level: ArchitectureLevel,
+    ) -> Result<ArchitectureGraph> {
+        let state = state(ctx)?;
+        let (_, graph) = state.graphs.get(&state.store, &repo_id).await.gql()?;
+        Ok(ArchitectureGraph::new(
+            level,
+            architecture::dependency_graph(&graph, level.into()),
+        ))
+    }
+
     /// What `symbolId` depends on, breadth-first up to `depth`.
     async fn dependencies(
         &self,

@@ -8,11 +8,12 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 5 of 11.** Ingestion, Rust module-tree construction,
-> tree-sitter parsing, symbol extraction, symbol resolution (with measured
-> quality), the Neo4j code graph, bounded graph queries, graph algorithms,
-> the change-impact engine and the GraphQL API are implemented and tested.
-> The web UI is not built yet. See
+> **Status: Milestone 6 of 11 (MVP complete).** Ingestion, Rust
+> module-tree construction, tree-sitter parsing, symbol extraction, symbol
+> resolution (with measured quality), the Neo4j code graph, bounded graph
+> queries, graph algorithms, the change-impact engine, the GraphQL API and
+> the web workspace are implemented and tested. Git-diff impact, incremental
+> indexing and benchmarks are next. See
 > [docs/architecture.md](docs/architecture.md#milestones).
 
 ## Why static analysis
@@ -28,13 +29,15 @@ a high share of references to be resolved without full type inference.
 
 ```
 ingest → module tree → tree-sitter parse → extract → resolve → Neo4j + queries → algorithms / impact → GraphQL → SvelteKit
-└─────────────────────────────────────────── implemented ───────────────────────────────────────────┘
+└──────────────────────────────────────────────────── implemented ───────────────────────────────────────────────────────┘
 ```
 
 * `crates/analyzer`: the analysis core, a pure library with no database code.
 * `crates/store`: Neo4j persistence and bounded graph queries.
 * `crates/server`: the GraphQL API (`codeatlas-server`).
 * `crates/cli`: the `codeatlas` command.
+* `web/`: the workspace UI (SvelteKit, TypeScript, Cytoscape.js), a static
+  single-page app that talks only to the GraphQL API.
 * `fixtures/`: small Rust repositories with hand-written ground truth
   (`expected.json`).
 * `docs/`: [architecture](docs/architecture.md),
@@ -94,10 +97,54 @@ function level, each with a shortest cycle and the source lines of every
 hop; hotspots by betweenness centrality and fan-in/fan-out; and dependency
 layers with cycles collapsed.
 
+**Workspace UI.** A browser workspace over the API: an explorer of crates,
+modules and their symbols on the left, a graph in the centre and an
+inspector on the right. Symbols are found with a command palette (`⌘K` /
+`Ctrl+K`). The centre has four views:
+
+* *Graph*: callers, callees or both of a symbol, to a chosen depth and
+  over chosen relations. Double-click expands a node; double-click again
+  collapses it.
+* *Impact*: the change-impact report, with the affected graph and the
+  evidence chain of every affected symbol.
+* *Architecture*: dependencies between crates, zooming into modules or
+  files.
+* *Cycles*: circular dependencies at module, file or function level.
+
+Every edge in a list links to the source line behind it, and the inspector
+shows the symbol's source with that line highlighted. Selections are kept
+in the URL, so a view can be shared or bookmarked.
+
+## Screenshots
+
+Impact of changing `<StripeGateway as Gateway>::charge` in the
+`change-impact` fixture. Trait dispatch is shown as its own step, and each
+affected symbol lists the source lines connecting it to the change.
+
+![Impact view](docs/images/impact.png)
+
+Callers of `RegexMatcherBuilder::build` in ripgrep (tests dashed):
+
+![Graph view](docs/images/graph.png)
+
+A module cycle in the `circular-dependency` fixture, with the calls and
+imports behind each hop:
+
+![Cycles view](docs/images/cycles.png)
+
+Crate dependencies in ripgrep. Edge numbers count the symbol references
+behind each dependency.
+
+![Architecture view](docs/images/architecture.png)
+
+Screenshots are from a local run; the status bar, which shows the
+repository's path on disk, is cropped.
+
 ## Installation
 
-Requirements: Rust 1.80+ (`rustup` recommended), `git` on `PATH`, and
-Docker for the graph database (`analyze` and `evaluate` work without it).
+Requirements: Rust 1.80+ (`rustup` recommended), `git` on `PATH`, Docker
+for the graph database (`analyze` and `evaluate` work without it), and
+Node.js 22.17+ for the web UI.
 
 ```bash
 git clone <this repository> codeatlas
@@ -294,6 +341,30 @@ curl -s http://127.0.0.1:8080/graphql -H 'content-type: application/json' -d '{"
 All operations, error codes, limits and configuration are in
 [docs/api.md](docs/api.md).
 
+### Web UI
+
+With Neo4j and the API server running, and at least one repository
+indexed:
+
+```bash
+cd web && npm install
+```
+
+```bash
+npm run dev
+```
+
+Open <http://localhost:5173>. The development server forwards `/graphql`
+and `/health` to `http://127.0.0.1:8080`; set `CODEATLAS_API_URL` to
+use another API address. Repositories can also be indexed from the UI
+(*Index…* in the top bar) when the server allows indexing.
+
+For a static build, run `npm run build`. It writes `web/build/`, which any
+static file server can serve if it also forwards `/graphql` to the API.
+The server's `CODEATLAS_CORS_ORIGINS` must include the UI's origin if
+the two are served from different origins; `VITE_CODEATLAS_API` (see
+`web/.env.example`) sets the API URL compiled into the build.
+
 ### Debugging the extractor
 
 Inspect the tree-sitter syntax tree of a file (useful when extending the
@@ -376,6 +447,22 @@ cargo fmt --all --check
 cargo clippy --all-targets -- -D warnings
 ```
 
+The web app has unit tests (vitest) for formatting helpers, the graph
+model's expand/collapse bookkeeping, the conversion of API results to
+canvas elements, and the layered layouts. CI also runs Prettier, the
+Svelte/TypeScript checker and a production build. From `web/`:
+
+```bash
+npm test
+```
+
+```bash
+npm run lint && npm run check && npm run build
+```
+
+The UI itself was checked by hand in a browser against the fixtures and
+ripgrep; there are no automated end-to-end browser tests yet.
+
 ## Resolution quality
 
 Measured, not estimated; full details and method in
@@ -426,10 +513,14 @@ Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
   of its methods but not code that only constructs it or reads its fields.
 * Search matches name prefixes (`store` finds `Store` and its methods, not
   `MemoryStore`).
+* The UI has no authentication and is meant for local use. The API server
+  binds to `127.0.0.1` by default; do not expose it on a network as is.
+* The graph canvas draws every node it receives. Neighbourhoods are capped
+  by the API's node limits, but expanding many high-fan-in nodes can still
+  produce graphs too dense to read.
 
 ## Roadmap
 
-SvelteKit workspace UI (MVP) → Git diff impact →
-incremental indexing → test-impact evaluation → architecture and cycle
-views with benchmarks → optional local-model explanations grounded in graph
+Git diff impact → incremental indexing → test-impact evaluation →
+benchmark suite → optional local-model explanations grounded in graph
 evidence. Details are in [docs/architecture.md](docs/architecture.md).
