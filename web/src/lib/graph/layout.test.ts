@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dependencyLayers, layered, layers } from './layout';
+import { dependencyLayers, layered, layers, place } from './layout';
 
 const node = (id: string, width = 80) => ({ id, width });
 
@@ -69,5 +69,30 @@ describe('layered layout', () => {
 		);
 		expect(positions.a.y).toBeGreaterThan(positions.root.y);
 		expect(positions.b.x - 20 - (positions.a.x + 60)).toBe(16);
+	});
+});
+
+describe('wrapping', () => {
+	const nodes = ['a', 'b', 'c', 'd', 'e'].map((id) => node(id, 100));
+
+	it('wraps a wide row into several rows', () => {
+		const positions = place(nodes, [['a', 'b', 'c', 'd', 'e']], 'vertical', 250);
+		// Two nodes (100 + 16 + 100) fit in 250; three do not.
+		const rows = new Set(Object.values(positions).map((p) => p.y));
+		expect(rows.size).toBe(3);
+		expect(positions.a.y).toBe(positions.b.y);
+		expect(positions.c.y).toBeGreaterThan(positions.a.y);
+	});
+
+	it('wraps a tall column into several columns', () => {
+		const positions = place(nodes, [['a', 'b', 'c', 'd', 'e']], 'horizontal', 100);
+		// A column holds floor((100 + 16) / 40) = 2 nodes.
+		const columns = new Set(Object.values(positions).map((p) => p.x));
+		expect(columns.size).toBe(3);
+	});
+
+	it('keeps one row or column without a limit', () => {
+		const positions = place(nodes, [['a', 'b', 'c', 'd', 'e']], 'vertical');
+		expect(new Set(Object.values(positions).map((p) => p.y)).size).toBe(1);
 	});
 });

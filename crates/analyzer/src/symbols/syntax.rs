@@ -2,6 +2,7 @@
 
 use tree_sitter::Node;
 
+use crate::ingest::{fnv1a_extend, FNV1A_OFFSET};
 use crate::model::{PathSegments, Visibility};
 
 pub fn text<'s>(node: Node<'_>, src: &'s str) -> &'s str {
@@ -83,6 +84,31 @@ pub fn signature(item: Node<'_>, src: &str) -> String {
         .unwrap_or_else(|| item.end_byte());
     let raw = &src[item.start_byte()..end];
     normalize_ws(raw.trim_end_matches(';'))
+}
+
+/// Hash of an item's tokens, so that whitespace, line breaks and comments do
+/// not change it. Descendants whose kind is in `skip` (items extracted as
+/// symbols of their own, such as trait methods) are left out.
+pub fn fingerprint(item: Node<'_>, src: &str, skip: &[&str]) -> String {
+    let mut hash = FNV1A_OFFSET;
+    let mut stack = vec![item];
+    while let Some(node) = stack.pop() {
+        match node.kind() {
+            "line_comment" | "block_comment" => continue,
+            kind if node != item && skip.contains(&kind) => continue,
+            _ => {}
+        }
+        if node.child_count() == 0 {
+            hash = fnv1a_extend(hash, text(node, src).as_bytes());
+            // Separator, so that `ab c` and `a bc` differ.
+            hash = fnv1a_extend(hash, &[0xff]);
+        } else {
+            let mut cursor = node.walk();
+            let children: Vec<Node<'_>> = node.children(&mut cursor).collect();
+            stack.extend(children.into_iter().rev());
+        }
+    }
+    format!("{hash:016x}")
 }
 
 pub fn normalize_ws(s: &str) -> String {

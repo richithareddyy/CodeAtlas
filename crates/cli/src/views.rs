@@ -26,11 +26,11 @@ impl From<LevelArg> for Level {
 }
 
 /// `fn:shop::payments::authorize` → `shop::payments::authorize`.
-fn short(id: &str) -> &str {
+pub(crate) fn short(id: &str) -> &str {
     id.split_once(':').map_or(id, |(_, rest)| rest)
 }
 
-fn step_text(step: &EvidenceStep) -> String {
+pub(crate) fn step_text(step: &EvidenceStep) -> String {
     let (source, target) = (short(step.source.as_str()), short(step.target.as_str()));
     let lines = step
         .lines

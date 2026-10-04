@@ -170,7 +170,7 @@ pub fn impact_of_symbol(
     let node = graph
         .node(id)
         .ok_or_else(|| ImpactError::UnknownSymbol(id.to_string()))?;
-    analyze_impact(graph, &expand(graph, node), options)
+    analyze_impact(graph, &expand_change(graph, node), options)
 }
 
 /// Impact of changing every symbol defined in a file.
@@ -299,9 +299,10 @@ pub fn analyze_impact(
     })
 }
 
-/// A changed type or trait changes its methods; a changed module changes
-/// everything written in it (including nested modules).
-fn expand(graph: &CodeGraph, node: usize) -> Vec<usize> {
+/// The symbols a change to `node` amounts to: a changed type or trait
+/// changes its methods; a changed module changes everything written in it
+/// (including nested modules).
+pub fn expand_change(graph: &CodeGraph, node: usize) -> Vec<usize> {
     let symbol = graph.symbol(node);
     match symbol.kind {
         SymbolKind::Function | SymbolKind::Method => vec![node],

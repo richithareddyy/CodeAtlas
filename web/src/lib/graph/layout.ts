@@ -145,36 +145,68 @@ function orderByNeighbours(result: string[][], neighbours: Map<string, string[]>
 	return result;
 }
 
-/** Positions layers as columns (horizontal) or rows (vertical). */
+/**
+ * Positions layers as columns (horizontal) or rows (vertical). A layer
+ * longer than `wrap` (layout units) continues in further columns or rows,
+ * so that wide layers do not shrink the whole drawing.
+ */
 export function place(
 	nodes: LayoutNode[],
 	layered: string[][],
-	orientation: Orientation
+	orientation: Orientation,
+	wrap = Number.POSITIVE_INFINITY
 ): Positions {
 	const width = new Map(nodes.map((n) => [n.id, n.width]));
 	const positions: Positions = {};
 	let offset = 0;
 	for (const layer of layered) {
 		if (orientation === 'horizontal') {
-			const columnWidth = Math.max(...layer.map((id) => width.get(id)!));
 			const step = NODE_HEIGHT + ROW_GAP;
-			const top = (-(layer.length - 1) * step) / 2;
-			layer.forEach((id, index) => {
-				positions[id] = { x: offset + columnWidth / 2, y: top + index * step };
-			});
-			offset += columnWidth + LAYER_GAP;
+			const perColumn = Math.max(1, Math.floor((wrap + ROW_GAP) / step));
+			for (let i = 0; i < layer.length; i += perColumn) {
+				const column = layer.slice(i, i + perColumn);
+				const columnWidth = Math.max(...column.map((id) => width.get(id)!));
+				const top = (-(column.length - 1) * step) / 2;
+				column.forEach((id, index) => {
+					positions[id] = { x: offset + columnWidth / 2, y: top + index * step };
+				});
+				const last = i + perColumn >= layer.length;
+				offset += columnWidth + (last ? LAYER_GAP : ROW_GAP);
+			}
 		} else {
-			const widths = layer.map((id) => width.get(id)!);
-			const total = widths.reduce((a, b) => a + b, 0) + ROW_GAP * (layer.length - 1);
-			let x = -total / 2;
-			layer.forEach((id, index) => {
-				positions[id] = { x: x + widths[index] / 2, y: offset };
-				x += widths[index] + ROW_GAP;
-			});
-			offset += NODE_HEIGHT + LAYER_GAP;
+			for (const row of wrapRow(layer, width, wrap)) {
+				const widths = row.map((id) => width.get(id)!);
+				const total = widths.reduce((a, b) => a + b, 0) + ROW_GAP * (row.length - 1);
+				let x = -total / 2;
+				row.forEach((id, index) => {
+					positions[id] = { x: x + widths[index] / 2, y: offset };
+					x += widths[index] + ROW_GAP;
+				});
+				offset += NODE_HEIGHT + ROW_GAP;
+			}
+			offset += LAYER_GAP - ROW_GAP;
 		}
 	}
 	return positions;
+}
+
+/** Splits a row of nodes so that no part is wider than `wrap`. */
+function wrapRow(layer: string[], width: Map<string, number>, wrap: number): string[][] {
+	const rows: string[][] = [];
+	let current: string[] = [];
+	let used = 0;
+	for (const id of layer) {
+		const w = width.get(id)!;
+		if (current.length && used + ROW_GAP + w > wrap) {
+			rows.push(current);
+			current = [];
+			used = 0;
+		}
+		used += (current.length ? ROW_GAP : 0) + w;
+		current.push(id);
+	}
+	if (current.length) rows.push(current);
+	return rows;
 }
 
 /** Tree layout from the given roots. */

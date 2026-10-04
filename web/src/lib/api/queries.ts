@@ -8,6 +8,8 @@ import type {
 	Cycle,
 	CycleLevel,
 	Direction,
+	GitImpactReport,
+	GitRefs,
 	ImpactReport,
 	IndexResult,
 	Neighborhood,
@@ -187,4 +189,58 @@ export async function affectedTests(repoId: string, symbolId: string): Promise<S
 		{ repo: repoId, id: symbolId }
 	);
 	return data.affectedTests.map((t) => t.test);
+}
+
+export async function gitRefs(repoId: string): Promise<GitRefs> {
+	const data = await request<{ gitRefs: GitRefs }>(
+		`query($repo: ID!) {
+			gitRefs(repoId: $repo, first: 100) {
+				currentBranch headSha
+				refs { name kind sha date subject }
+				commits { sha date subject }
+			}
+		}`,
+		{ repo: repoId }
+	);
+	return data.gitRefs;
+}
+
+/** `head` null compares with the working tree. */
+export async function gitImpact(
+	repoId: string,
+	base: string,
+	head: string | null,
+	maxDepth: number,
+	includeAmbiguous: boolean
+): Promise<GitImpactReport> {
+	const data = await request<{ gitImpact: GitImpactReport }>(
+		`query($repo: ID!, $base: String!, $head: String, $depth: Int!, $ambiguous: Boolean!) {
+			gitImpact(repoId: $repo, base: $base, head: $head, maxDepth: $depth, includeAmbiguous: $ambiguous) {
+				base { label sha } head { label sha }
+				files { status path oldPath rust hunks { oldStart oldLines newStart newLines } }
+				symbols {
+					change symbol { ${SYMBOL_REF} } previous { ${SYMBOL_REF} }
+					signature { before after } lines { start end }
+				}
+				cosmetic { ${SYMBOL_REF} }
+				maxDepth includeAmbiguous truncated analysisMs tests
+				downstream {
+					depth confidence revision symbol { ${SYMBOL_REF} }
+					path { source target kind file lines resolution }
+				}
+				affectedFiles { name symbols tests }
+				affectedModules { name symbols tests }
+				summary {
+					filesChanged filesAdded filesRemoved filesModified filesRenamed
+					functionsAdded functionsRemoved functionsModified
+					testsAdded testsRemoved testsModified
+					typesAdded typesRemoved typesModified
+					signaturesChanged moved cosmetic
+					downstreamSymbols possibleSymbols affectedModules affectedFiles affectedTests
+				}
+			}
+		}`,
+		{ repo: repoId, base, head, depth: maxDepth, ambiguous: includeAmbiguous }
+	);
+	return data.gitImpact;
 }

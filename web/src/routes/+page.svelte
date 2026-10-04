@@ -7,6 +7,7 @@
 	import StatusBar from '#lib/components/StatusBar.svelte';
 	import TopBar from '#lib/components/TopBar.svelte';
 	import ArchitectureView from '#lib/components/views/ArchitectureView.svelte';
+	import ChangesView from '#lib/components/views/ChangesView.svelte';
 	import CyclesView from '#lib/components/views/CyclesView.svelte';
 	import GraphView from '#lib/components/views/GraphView.svelte';
 	import ImpactView from '#lib/components/views/ImpactView.svelte';
@@ -15,6 +16,7 @@
 	const TABS: { view: View; label: string }[] = [
 		{ view: 'graph', label: 'Graph' },
 		{ view: 'impact', label: 'Impact' },
+		{ view: 'changes', label: 'Changes' },
 		{ view: 'architecture', label: 'Architecture' },
 		{ view: 'cycles', label: 'Cycles' }
 	];
@@ -82,6 +84,8 @@
 						<GraphView />
 					{:else if workspace.view === 'impact'}
 						<ImpactView />
+					{:else if workspace.view === 'changes'}
+						<ChangesView />
 					{:else if workspace.view === 'architecture'}
 						<ArchitectureView />
 					{:else}

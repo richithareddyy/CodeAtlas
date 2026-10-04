@@ -2,12 +2,17 @@ use std::sync::Arc;
 
 use async_graphql::connection::{self, Connection, Edge};
 use async_graphql::{Context, Object, Result, ID};
+use codeatlas_analyzer::diff::{analyze_diff, DiffOptions};
+use codeatlas_analyzer::error::{AnalyzerError, GitError};
+use codeatlas_analyzer::git::Git;
 use codeatlas_analyzer::graph::{architecture, impact};
+use codeatlas_analyzer::ingest::IngestOptions;
 use codeatlas_analyzer::model::SymbolId;
+use codeatlas_analyzer::RepoSource;
 use codeatlas_store::{Direction as StoreDirection, StoreError};
 
 use super::types::*;
-use crate::error::{bad_input, coded, from_impact, StoreResultExt};
+use crate::error::{bad_input, coded, from_diff, from_impact, StoreResultExt};
 use crate::source::{read_snippet, SourceError};
 use crate::state::AppState;
 
@@ -15,6 +20,8 @@ use crate::state::AppState;
 const MAX_PAGE: usize = 50;
 /// Upper bound for `first` in `hotspots`.
 const MAX_HOTSPOTS: i32 = 100;
+/// Upper bound for `first` in `gitRefs`.
+const MAX_REFS: i32 = 200;
 
 pub struct QueryRoot;
 
@@ -32,6 +39,22 @@ fn depth(value: i32, max: u32, argument: &str) -> Result<u32> {
         .ok()
         .filter(|d| (1..=max).contains(d))
         .ok_or_else(|| bad_input(format!("{argument} must be between 1 and {max}")))
+}
+
+/// Working-tree directory of an indexed repository on the server.
+async fn repository_root(state: &AppState, key: &ID) -> Result<std::path::PathBuf> {
+    let repository = state.store.repository(key).await.gql()?;
+    let root = std::path::PathBuf::from(repository.root);
+    if !root.is_dir() {
+        return Err(coded(
+            format!(
+                "repository directory {} is not available on the server",
+                root.display()
+            ),
+            "SOURCE_UNAVAILABLE",
+        ));
+    }
+    Ok(root)
 }
 
 fn optional<T>(result: std::result::Result<T, StoreError>) -> Result<Option<T>> {
@@ -367,6 +390,86 @@ impl QueryRoot {
             .into_iter()
             .map(Into::into)
             .collect())
+    }
+
+    /// Branches, tags and recent commits of the repository on the server,
+    /// for choosing what `gitImpact` compares.
+    async fn git_refs(
+        &self,
+        ctx: &Context<'_>,
+        repo_id: ID,
+        #[graphql(default = 50)] first: i32,
+    ) -> Result<GitRefs> {
+        if !(1..=MAX_REFS).contains(&first) {
+            return Err(bad_input(format!("first must be between 1 and {MAX_REFS}")));
+        }
+        let root = repository_root(state(ctx)?, &repo_id).await?;
+        tokio::task::spawn_blocking(move || -> std::result::Result<GitRefs, AnalyzerError> {
+            let git =
+                Git::discover(&root)?.ok_or(GitError::NotARepository { path: root.clone() })?;
+            Ok(GitRefs {
+                current_branch: git.current_branch()?,
+                head_sha: git.head_sha()?,
+                refs: git
+                    .refs(first as usize)?
+                    .into_iter()
+                    .map(Into::into)
+                    .collect(),
+                commits: git
+                    .recent_commits(first as usize)?
+                    .into_iter()
+                    .map(|c| Commit {
+                        sha: c.sha,
+                        date: c.date,
+                        subject: c.subject,
+                    })
+                    .collect(),
+            })
+        })
+        .await
+        .map_err(crate::error::internal)?
+        .map_err(from_diff)
+    }
+
+    /// What changed between `base` and `head` (a branch, tag, SHA or
+    /// expression such as `HEAD~1`; the working tree when `head` is null),
+    /// symbol by symbol, and what else the changes could affect. Both
+    /// revisions are analysed from the repository's Git history on the
+    /// server; the stored graph is not used.
+    async fn git_impact(
+        &self,
+        ctx: &Context<'_>,
+        repo_id: ID,
+        base: String,
+        head: Option<String>,
+        #[graphql(default = 8)] max_depth: i32,
+        #[graphql(default = false)] include_ambiguous: bool,
+    ) -> Result<GitImpactReport> {
+        let state = state(ctx)?;
+        let options = DiffOptions {
+            impact: impact::ImpactOptions {
+                max_depth: depth(max_depth, state.store.limits().max_depth, "maxDepth")?,
+                include_ambiguous,
+                ..Default::default()
+            },
+            ingest: IngestOptions {
+                clone_dir: state.clone_dir.clone(),
+                ..Default::default()
+            },
+        };
+        let root = repository_root(state, &repo_id).await?;
+        let _permit = state
+            .diffs
+            .acquire()
+            .await
+            .map_err(crate::error::internal)?;
+        let report = tokio::task::spawn_blocking(move || {
+            analyze_diff(&RepoSource::Local(root), &base, head.as_deref(), &options)
+        })
+        .await
+        .map_err(crate::error::internal)?
+        .map_err(from_diff)?;
+        Ok(report.into())
     }
 
     /// Source lines of a repository file (at most 400 per request), read

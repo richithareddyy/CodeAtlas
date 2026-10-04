@@ -4,7 +4,11 @@ use std::sync::Arc;
 
 use codeatlas_analyzer::graph::CodeGraph;
 use codeatlas_store::{GraphStore, Result, StoreError, GRAPH_FORMAT_VERSION};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Semaphore};
+
+/// Diffs analyse two revisions each and are CPU-bound; at most this many
+/// run at once, the rest wait.
+const CONCURRENT_DIFFS: usize = 2;
 
 /// Shared state available to every resolver.
 pub struct AppState {
@@ -12,6 +16,7 @@ pub struct AppState {
     pub graphs: GraphCache,
     pub allow_indexing: bool,
     pub clone_dir: PathBuf,
+    pub diffs: Semaphore,
 }
 
 impl AppState {
@@ -21,6 +26,7 @@ impl AppState {
             graphs: GraphCache::new(8),
             allow_indexing,
             clone_dir,
+            diffs: Semaphore::new(CONCURRENT_DIFFS),
         })
     }
 }

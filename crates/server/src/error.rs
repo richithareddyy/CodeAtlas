@@ -9,9 +9,13 @@
 //! | `OUTDATED_INDEX` | the repository must be indexed again |
 //! | `FORBIDDEN` | the operation is disabled by configuration |
 //! | `INDEX_FAILED` | analysing a repository failed |
+//! | `NOT_A_GIT_REPOSITORY` | Git operations on a repository without Git history |
+//! | `SOURCE_UNAVAILABLE` | the repository's files are not readable on the server |
+//! | `DIFF_FAILED` | comparing two revisions failed |
 //! | `INTERNAL` | anything else; details are logged, not returned |
 
 use async_graphql::{Error, ErrorExtensions};
+use codeatlas_analyzer::error::{AnalyzerError, GitError};
 use codeatlas_analyzer::graph::impact::ImpactError;
 use codeatlas_store::StoreError;
 
@@ -45,6 +49,18 @@ pub fn from_impact(error: ImpactError) -> Error {
         }
         ImpactError::NothingChanged => coded(error.to_string(), "BAD_USER_INPUT"),
     }
+}
+
+/// Errors from Git operations and diff analysis.
+pub fn from_diff(error: AnalyzerError) -> Error {
+    let code = match &error {
+        AnalyzerError::Git(GitError::InvalidRevision(_)) => "BAD_USER_INPUT",
+        AnalyzerError::Git(GitError::UnknownRevision(_)) => "NOT_FOUND",
+        AnalyzerError::Git(GitError::NotARepository { .. }) => "NOT_A_GIT_REPOSITORY",
+        AnalyzerError::NotADirectory(_) => "SOURCE_UNAVAILABLE",
+        _ => "DIFF_FAILED",
+    };
+    coded(error.to_string(), code)
 }
 
 /// `?`-friendly conversion for resolvers.

@@ -30,6 +30,8 @@
 	}: Props = $props();
 
 	const MAX_FIT_ZOOM = 1.15;
+	/** Layer lengths (layout units) tried when wide layers are wrapped. */
+	const WRAPS = [Number.POSITIVE_INFINITY, 2400, 1600, 1200, 800, 500];
 
 	let container: HTMLDivElement;
 	let cy: Core | null = null;
@@ -165,13 +167,16 @@
 			.edges()
 			.map((e) => ({ source: e.data('source'), target: e.data('target') }));
 		const rows = roots ? layers(nodes, edges, roots) : dependencyLayers(nodes, edges);
-		const candidates = (['horizontal', 'vertical'] as const).map((orientation) => {
-			const positions = place(nodes, rows, orientation);
-			return { positions, zoom: fitZoom(positions, nodes, instance) };
-		});
-		return candidates[0].zoom >= candidates[1].zoom
-			? candidates[0].positions
-			: candidates[1].positions;
+		let best: { positions: Positions; zoom: number } | null = null;
+		for (const orientation of ['horizontal', 'vertical'] as const) {
+			for (const wrap of WRAPS) {
+				const positions = place(nodes, rows, orientation, wrap);
+				const zoom = Math.min(MAX_FIT_ZOOM, fitZoom(positions, nodes, instance));
+				// Strictly better only, so unwrapped layouts win ties.
+				if (!best || zoom > best.zoom * 1.05) best = { positions, zoom };
+			}
+		}
+		return best!.positions;
 	}
 
 	function fitZoom(positions: Positions, nodes: LayoutNode[], instance: Core) {

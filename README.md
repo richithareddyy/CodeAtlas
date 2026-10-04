@@ -8,12 +8,12 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 6 of 11 (MVP complete).** Ingestion, Rust
-> module-tree construction, tree-sitter parsing, symbol extraction, symbol
-> resolution (with measured quality), the Neo4j code graph, bounded graph
-> queries, graph algorithms, the change-impact engine, the GraphQL API and
-> the web workspace are implemented and tested. Git-diff impact, incremental
-> indexing and benchmarks are next. See
+> **Status: Milestone 7 of 11.** Ingestion, Rust module-tree
+> construction, tree-sitter parsing, symbol extraction, symbol resolution
+> (with measured quality), the Neo4j code graph, bounded graph queries,
+> graph algorithms, the change-impact engine, Git diff impact, the GraphQL
+> API and the web workspace are implemented and tested. Incremental
+> indexing, test-impact evaluation and benchmarks are next. See
 > [docs/architecture.md](docs/architecture.md#milestones).
 
 ## Why static analysis
@@ -97,16 +97,28 @@ function level, each with a shortest cycle and the source lines of every
 hop; hotspots by betweenness centrality and fan-in/fan-out; and dependency
 layers with cycles collapsed.
 
+**Git diff impact.** Given two revisions (branches, tags, commits, or a
+commit and the uncommitted working tree), CodeAtlas lists the changed
+files and, symbol by symbol, what was added, removed, modified or moved,
+with the changed lines and any signature change. Formatting-only and
+comment-only edits are recognised and kept apart. The modified and removed
+symbols then go through the impact engine: the report lists every
+unchanged symbol that depends on the change, with its evidence chain, and
+the tests to run. Output as text, Markdown for a pull-request comment, or
+JSON. Details: [docs/impact-analysis.md](docs/impact-analysis.md#git-diff-impact).
+
 **Workspace UI.** A browser workspace over the API: an explorer of crates,
 modules and their symbols on the left, a graph in the centre and an
 inspector on the right. Symbols are found with a command palette (`⌘K` /
-`Ctrl+K`). The centre has four views:
+`Ctrl+K`). The centre has five views:
 
 * *Graph*: callers, callees or both of a symbol, to a chosen depth and
   over chosen relations. Double-click expands a node; double-click again
   collapses it.
 * *Impact*: the change-impact report, with the affected graph and the
   evidence chain of every affected symbol.
+* *Changes*: the Git diff impact report for two revisions chosen from
+  the repository's branches, tags and commits.
 * *Architecture*: dependencies between crates, zooming into modules or
   files.
 * *Cycles*: circular dependencies at module, file or function level.
@@ -131,6 +143,13 @@ A module cycle in the `circular-dependency` fixture, with the calls and
 imports behind each hop:
 
 ![Cycles view](docs/images/cycles.png)
+
+Impact of a branch (the `pr-impact` fixture, `main` → `feature`): changed
+symbols with the signature change, the graph from changed symbols (top
+row; the removed one dashed red) to the unchanged code and tests that
+depend on them:
+
+![Changes view](docs/images/changes.png)
 
 Crate dependencies in ripgrep. Edge numbers count the symbol references
 behind each dependency.
@@ -325,6 +344,75 @@ indexed repository with `codeatlas remove <repo>`. If a repository was
 indexed by an older version of CodeAtlas, the graph-based analyses ask you
 to index it again.
 
+### Git diff impact (no database needed)
+
+Compare two revisions of a local clone (`--head` defaults to the working
+tree, so uncommitted changes can be checked before committing):
+
+```bash
+./target/release/codeatlas diff . --base main --head feature
+```
+
+To try it on the `pr-impact` fixture, build a repository with `base/` on
+`main` and `head/` on `feature`:
+
+```bash
+scripts/make-pr-fixture.sh /tmp/pr-shop
+```
+
+```bash
+./target/release/codeatlas diff /tmp/pr-shop --base main --head feature
+```
+
+```
+PR impact   main..feature  (<base sha>..<head sha>)
+Files       9 changed: 1 added, 1 removed, 6 modified, 1 renamed
+Functions   4 modified, 1 added, 1 removed
+Signatures  1 changed
+Types       none
+Tests       1 modified
+Also        2 symbols moved, 1 with whitespace or comment changes only
+
+Potential impact (resolved calls and trait dispatch, depth <= 8)
+  5 downstream symbols in 3 modules and 3 files; 3 tests to run
+
+Changed symbols
+  ~ fn     pr_shop::checkout::checkout                                  src/checkout.rs:5
+  ~ fn     pr_shop::invoice::invoice_total                              src/invoice.rs:4
+  ~ method pr_shop::payments::PaymentService::authorize                 src/payments.rs:13-14
+      signature before: pub fn authorize(&self, cents: u64) -> Result<String, String>
+      signature after:  pub fn authorize(&self, amount: u64, currency: &str) -> Result<String, String>
+  ~ fn     pr_shop::payments::validate_amount                           src/payments.rs:25-26
+  ~ fn     shop_tests::test_authorize_valid                             tests/shop_tests.rs:11
+  + fn     pr_shop::currency::to_cents                                  src/currency.rs:1-7
+  …
+  - fn     pr_shop::legacy::legacy_fee                                  src/legacy.rs:1-3  (base revision)
+  …
+  > fn     pr_shop::reporting::format_cents                             src/reporting.rs:1  moved from pr_shop::reports::format_cents
+  > fn     pr_shop::reporting::daily_total                              src/reporting.rs:5  moved from pr_shop::reports::daily_total
+
+Whitespace or comment changes only (not treated as changes)
+    fn     pr_shop::refunds::refund_order                               src/refunds.rs:4
+
+Downstream symbols (depth, symbol, location, then why)
+   1  pr_shop::invoice::print_invoice                                  src/invoice.rs:7
+        pr_shop::invoice::print_invoice calls pr_shop::invoice::invoice_total  (src/invoice.rs:8)
+  …
+   2  shop_tests::test_print_invoice                                   tests/shop_tests.rs:26  [test]
+        shop_tests::test_print_invoice calls pr_shop::invoice::print_invoice  (tests/shop_tests.rs:27)
+        pr_shop::invoice::print_invoice calls pr_shop::invoice::invoice_total  (src/invoice.rs:8)
+
+Tests to run
+  shop_tests::test_checkout
+  shop_tests::test_preauthorize
+  shop_tests::test_print_invoice
+…
+```
+
+`--format markdown` writes a summary for a pull-request comment and
+`--format json` the full report. `--depth n`, `--include-ambiguous` and
+`--limit n` work as for `query impact`.
+
 ### GraphQL API
 
 ```bash
@@ -339,7 +427,8 @@ curl -s http://127.0.0.1:8080/graphql -H 'content-type: application/json' -d '{"
 ```
 
 All operations, error codes, limits and configuration are in
-[docs/api.md](docs/api.md).
+[docs/api.md](docs/api.md). `gitImpact` and `gitRefs` give the API the same
+diff analysis as `codeatlas diff`.
 
 ### Web UI
 
@@ -422,6 +511,15 @@ cargo test
   `crates/server/tests/schema.rs` checks that `docs/schema.graphql` matches
   the code and that the depth and complexity limits reject oversized
   queries.
+* `crates/analyzer/tests/diff.rs` builds a Git repository from the
+  `pr-impact` fixture (`base/` on `main`, `head/` on `feature`) and
+  compares the diff with the hand-written `expected.json`: changed files
+  (including a rename), modified, added, removed, moved and cosmetic
+  symbols, the signature change, downstream symbols with depths and
+  evidence lines, tests and modules. The same result is required for
+  uncommitted changes and for a project in a subdirectory; invalid and
+  unknown revisions are rejected. Unit tests cover fingerprints,
+  diff parsing and the symbol comparison.
 * `crates/analyzer/tests/git_ingest.rs` builds Git repositories in temporary
   directories (branch/SHA detection, detached HEAD, cloning, updating a
   clone, clone failures). These tests need `git`.
@@ -489,6 +587,9 @@ including process start and connection. Impact, cycle and hotspot queries,
 which load the whole stored graph (3,536 symbols) into memory, took
 103–126 ms end to end. Through the GraphQL server, the first ripgrep `impact`
 request took 116 ms (graph load included) and cached repeats about 2 ms.
+Comparing ripgrep `HEAD~10` with `HEAD` (21 changed files, 137 downstream
+symbols) with `codeatlas diff` took 0.76–0.82 s end to end over two runs,
+about 0.32 s of it per revision for exporting and analysing it.
 Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
 
 ## Known limitations
@@ -505,6 +606,12 @@ Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
   duplicate definitions receive `#N` ID suffixes.
 * `include!` is not followed.
 * LOC counts non-blank lines, including comments.
+* Diffs analyse both revisions in full and compare item tokens, so adding
+  or removing an attribute alone (`#[derive]`, `#[inline]`) does not mark
+  an item as modified, and edits inside macro-generated code are not seen.
+* The inspector, source view and Graph view show the indexed revision. In
+  the Changes view, symbols that exist only in the compared revisions
+  cannot be opened there; the view says so.
 * Indexing replaces a repository's whole graph; incremental updates are
   planned (Milestone 8).
 * `query tests` follows resolved `CALLS` only; use `query impact`, which
@@ -521,6 +628,6 @@ Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
 
 ## Roadmap
 
-Git diff impact → incremental indexing → test-impact evaluation →
+Incremental indexing → test-impact evaluation →
 benchmark suite → optional local-model explanations grounded in graph
 evidence. Details are in [docs/architecture.md](docs/architecture.md).

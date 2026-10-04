@@ -15,6 +15,7 @@ Git repository
   → dependencies (derived file / module DEPENDS_ON aggregates)
   → store       (Neo4j code graph, bounded queries)
   → graph       (in-memory CodeGraph: algorithms, impact, architecture)
+  → diff        (two revisions compared symbol by symbol, impact of the change)
   → server      (GraphQL API)
   → web         (SvelteKit workspace UI)
 ```
@@ -23,10 +24,10 @@ Git repository
 
 | Crate | Responsibility | Depends on |
 |---|---|---|
-| `crates/analyzer` | Ingestion, layout, parsing, extraction, resolution and its evaluation, derived dependencies, graph algorithms, impact and architecture analyses; later diff analysis. Pure library; no database or network code beyond invoking `git`. | tree-sitter, ignore, toml |
+| `crates/analyzer` | Ingestion, layout, parsing, extraction, resolution and its evaluation, derived dependencies, graph algorithms, impact and architecture analyses, Git diff analysis. Pure library; no database or network code beyond invoking `git` (and `tar` to unpack `git archive`). | tree-sitter, ignore, toml |
 | `crates/store` | Neo4j schema, batched writes, bounded queries (traversals with evidence paths, shortest path, search, file/module dependencies), loading a stored graph back into a `CodeGraph`. | analyzer, neo4rs, tokio |
 | `crates/server` | GraphQL API over the store and analyzer, graph cache, guarded source reads. | analyzer, store, async-graphql, axum, tokio |
-| `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `index`, `query`, `remove`, `ast`; later `bench`. | analyzer, store |
+| `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `index`, `query`, `diff`, `remove`, `ast`; later `bench`. | analyzer, store |
 | `web/` | SvelteKit + TypeScript + Cytoscape.js workspace UI; a static single-page app. | GraphQL API only |
 
 The analyzer is kept free of storage concerns so that extraction, resolution
@@ -182,6 +183,26 @@ Neo4j; both produce identical graphs. Whole-graph algorithms such as SCC
 and betweenness run in Rust rather than in Neo4j, so the Graph Data
 Science plugin is not needed.
 
+## Diff analysis (`analyzer/src/diff`)
+
+See [impact-analysis.md](impact-analysis.md#git-diff-impact). Choices
+worth noting:
+
+* **Both revisions are analysed from scratch.** Each commit is exported
+  with `git archive` and analysed in full, so the comparison never depends
+  on what happens to be indexed, and the work tree is never checked out or
+  modified. On ripgrep a diff takes about 0.8 s. Milestone 8 will reuse
+  unchanged files instead.
+* **Fingerprints instead of text comparison.** Each item's token hash
+  (without whitespace and comments) separates real modifications from
+  reformatting, and pairs code that moved under a new ID.
+* **Impact on both graphs.** Modified code is traced on the head graph,
+  removed code on the base graph; the results are merged with their
+  evidence and the revision they come from.
+* The CLI (`codeatlas diff`, text, Markdown or JSON) and the API
+  (`gitImpact`, `gitRefs`) are thin layers over `analyze_diff`; neither
+  needs the database.
+
 ## Web UI (`web/`)
 
 A SvelteKit 3 app (Svelte 5, TypeScript) built with `adapter-static` as a
@@ -204,7 +225,7 @@ the GraphQL API.
   draws the graph largest. Cycles are drawn as a ring in hop order.
 * `src/lib/components`: the explorer, graph canvas (Cytoscape.js, updated
   by diffing elements so layouts only rerun when the structure changes),
-  inspector, command palette and the four views. Colours are CSS custom
+  inspector, command palette and the five views. Colours are CSS custom
   properties with light and dark values; the canvas stylesheet reads them,
   so the graph follows the theme.
 
@@ -223,7 +244,7 @@ plain, tested functions.
 | 4 | Graph algorithms, impact engine with evidence chains and a decomposable score, cycles, hotspots and layers | Done |
 | 5 | GraphQL API: queries, mutations, pagination, error codes, limits, graph cache | Done |
 | 6 | SvelteKit workspace UI: explorer, graph, impact, architecture zoom and cycle views, inspector with source, command palette (completes the MVP) | Done |
-| 7 | Git diff analysis and PR impact reports | Planned |
+| 7 | Git diff analysis: changed files and symbols (signatures, moves, cosmetic edits), impact of a diff, `codeatlas diff` (text / Markdown / JSON), `gitImpact` and `gitRefs`, Changes view | Done |
 | 8 | Incremental indexing | Planned |
 | 9 | Test-impact analysis with precision/recall on ground-truth fixtures | Planned |
 | 10 | Benchmark suite (`codeatlas bench`); architecture views tuned on larger repositories | Planned |

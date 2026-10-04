@@ -1,3 +1,4 @@
+mod diff_view;
 mod graph;
 mod views;
 
@@ -7,7 +8,9 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
+use codeatlas_analyzer::diff::{analyze_diff, DiffOptions};
 use codeatlas_analyzer::evaluation::{evaluate, Evaluation, GroundTruth, SetComparison};
+use codeatlas_analyzer::graph::impact::ImpactOptions;
 use codeatlas_analyzer::ingest::{default_clone_dir, DiscoveryOptions, IngestOptions};
 use codeatlas_analyzer::model::SymbolKind;
 use codeatlas_analyzer::parser::RustParser;
@@ -64,6 +67,35 @@ enum Command {
         #[arg(long)]
         no_gitignore: bool,
     },
+    /// Compare two revisions: changed files and symbols, and what else the
+    /// changes could affect. Works on a local clone; no database needed.
+    Diff {
+        /// Repository path (or Git URL, which is cloned first).
+        #[arg(default_value = ".")]
+        source: String,
+        /// Base revision: branch, tag, SHA or expression such as `HEAD~1`.
+        #[arg(long, short)]
+        base: String,
+        /// Head revision; defaults to the working tree (uncommitted changes
+        /// and untracked files included).
+        #[arg(long)]
+        head: Option<String>,
+        #[arg(long, value_enum, default_value_t = DiffFormat::Text)]
+        format: DiffFormat,
+        /// Maximum length of an impact chain.
+        #[arg(long, default_value_t = 8)]
+        depth: u32,
+        /// Also follow ambiguous calls (reported as possible).
+        #[arg(long)]
+        include_ambiguous: bool,
+        /// Entries shown per list in text and Markdown output.
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+        #[arg(long, env = "CODEATLAS_CLONE_DIR")]
+        clone_dir: Option<PathBuf>,
+    },
     /// Delete an indexed repository's graph from Neo4j.
     Remove {
         /// Repository ID or name.
@@ -89,6 +121,14 @@ enum Format {
     Summary,
     /// Resolution breakdown with ambiguous and unresolved call sites.
     Resolution,
+    Json,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum DiffFormat {
+    Text,
+    /// For pull-request comments.
+    Markdown,
     Json,
 }
 
@@ -147,6 +187,51 @@ async fn main() -> Result<()> {
             let analysis = analyze(&source, clone_dir, no_gitignore)?;
             writeln!(std::io::stdout(), "{}", summary(&analysis))?;
             writeln!(std::io::stdout(), "{}", graph::index(&analysis).await?)?;
+        }
+        Command::Diff {
+            source,
+            base,
+            head,
+            format,
+            depth,
+            include_ambiguous,
+            limit,
+            output,
+            clone_dir,
+        } => {
+            let options = DiffOptions {
+                impact: ImpactOptions {
+                    max_depth: depth,
+                    include_ambiguous,
+                    ..Default::default()
+                },
+                ingest: IngestOptions {
+                    clone_dir: clone_dir.unwrap_or_else(default_clone_dir),
+                    ..Default::default()
+                },
+            };
+            let report = analyze_diff(
+                &RepoSource::parse(&source),
+                &base,
+                head.as_deref(),
+                &options,
+            )
+            .with_context(|| {
+                format!(
+                    "failed to compare {base} with {}",
+                    head.as_deref().unwrap_or("the working tree")
+                )
+            })?;
+            let rendered = match format {
+                DiffFormat::Text => diff_view::text(&report, limit),
+                DiffFormat::Markdown => diff_view::markdown(&report, limit),
+                DiffFormat::Json => serde_json::to_string_pretty(&report)?,
+            };
+            match output {
+                Some(path) => fs::write(&path, rendered)
+                    .with_context(|| format!("failed to write {}", path.display()))?,
+                None => writeln!(std::io::stdout(), "{rendered}")?,
+            }
         }
         Command::Remove { repo } => {
             writeln!(std::io::stdout(), "{}", graph::remove(&repo).await?)?;
