@@ -34,7 +34,12 @@ async fn main() -> Result<()> {
         );
     }
 
-    let state = AppState::new(store, config.allow_indexing, config.clone_dir.clone());
+    let state = AppState::new(
+        store,
+        config.allow_indexing,
+        config.clone_dir.clone(),
+        config.state_dir.clone(),
+    );
     let app = router(state, &config);
     let listener = tokio::net::TcpListener::bind(config.addr)
         .await

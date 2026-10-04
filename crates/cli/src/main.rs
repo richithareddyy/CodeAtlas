@@ -11,10 +11,11 @@ use clap::{Parser, Subcommand, ValueEnum};
 use codeatlas_analyzer::diff::{analyze_diff, DiffOptions};
 use codeatlas_analyzer::evaluation::{evaluate, Evaluation, GroundTruth, SetComparison};
 use codeatlas_analyzer::graph::impact::ImpactOptions;
-use codeatlas_analyzer::ingest::{default_clone_dir, DiscoveryOptions, IngestOptions};
+use codeatlas_analyzer::ingest::{default_clone_dir, ingest, DiscoveryOptions, IngestOptions};
 use codeatlas_analyzer::model::SymbolKind;
 use codeatlas_analyzer::parser::RustParser;
 use codeatlas_analyzer::{analyze_source, RepoSource, RepositoryAnalysis};
+use codeatlas_store::{prepare, StateDir};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
@@ -66,6 +67,12 @@ enum Command {
         clone_dir: Option<PathBuf>,
         #[arg(long)]
         no_gitignore: bool,
+        /// Rewrite the whole graph even if an incremental update is possible.
+        #[arg(long)]
+        full: bool,
+        /// Where incremental state is kept between runs.
+        #[arg(long, env = "CODEATLAS_STATE_DIR")]
+        state_dir: Option<PathBuf>,
     },
     /// Compare two revisions: changed files and symbols, and what else the
     /// changes could affect. Works on a local clone; no database needed.
@@ -100,6 +107,8 @@ enum Command {
     Remove {
         /// Repository ID or name.
         repo: String,
+        #[arg(long, env = "CODEATLAS_STATE_DIR")]
+        state_dir: Option<PathBuf>,
     },
     /// Query an indexed repository.
     Query {
@@ -183,10 +192,23 @@ async fn main() -> Result<()> {
             source,
             clone_dir,
             no_gitignore,
+            full,
+            state_dir,
         } => {
-            let analysis = analyze(&source, clone_dir, no_gitignore)?;
-            writeln!(std::io::stdout(), "{}", summary(&analysis))?;
-            writeln!(std::io::stdout(), "{}", graph::index(&analysis).await?)?;
+            let states = StateDir::new(state_dir.unwrap_or_else(StateDir::default_dir));
+            let repo = ingest(
+                &RepoSource::parse(&source),
+                &ingest_options(clone_dir, no_gitignore),
+            )
+            .with_context(|| format!("failed to read {source}"))?;
+            let prepared =
+                prepare(&repo, &states).with_context(|| format!("failed to analyse {source}"))?;
+            writeln!(std::io::stdout(), "{}", summary(&prepared.analysis))?;
+            writeln!(
+                std::io::stdout(),
+                "{}",
+                graph::index(prepared, &states, full).await?
+            )?;
         }
         Command::Diff {
             source,
@@ -233,8 +255,13 @@ async fn main() -> Result<()> {
                 None => writeln!(std::io::stdout(), "{rendered}")?,
             }
         }
-        Command::Remove { repo } => {
-            writeln!(std::io::stdout(), "{}", graph::remove(&repo).await?)?;
+        Command::Remove { repo, state_dir } => {
+            let states = StateDir::new(state_dir.unwrap_or_else(StateDir::default_dir));
+            writeln!(
+                std::io::stdout(),
+                "{}",
+                graph::remove(&repo, &states).await?
+            )?;
         }
         Command::Query { repo, json, query } => {
             let out = graph::query(repo.as_deref(), json, query).await?;
@@ -250,20 +277,26 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn analyze(
-    source: &str,
-    clone_dir: Option<PathBuf>,
-    no_gitignore: bool,
-) -> Result<RepositoryAnalysis> {
-    let options = IngestOptions {
+fn ingest_options(clone_dir: Option<PathBuf>, no_gitignore: bool) -> IngestOptions {
+    IngestOptions {
         clone_dir: clone_dir.unwrap_or_else(default_clone_dir),
         discovery: DiscoveryOptions {
             respect_gitignore: !no_gitignore,
             ..Default::default()
         },
-    };
-    analyze_source(&RepoSource::parse(source), &options)
-        .with_context(|| format!("failed to analyse {source}"))
+    }
+}
+
+fn analyze(
+    source: &str,
+    clone_dir: Option<PathBuf>,
+    no_gitignore: bool,
+) -> Result<RepositoryAnalysis> {
+    analyze_source(
+        &RepoSource::parse(source),
+        &ingest_options(clone_dir, no_gitignore),
+    )
+    .with_context(|| format!("failed to analyse {source}"))
 }
 
 fn summary(a: &RepositoryAnalysis) -> String {

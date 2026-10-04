@@ -31,6 +31,7 @@ fn config(allow_indexing: bool) -> ServerConfig {
         allow_indexing,
         graphiql: true,
         clone_dir: std::env::temp_dir().join("codeatlas-test-clones"),
+        state_dir: std::env::temp_dir().join("codeatlas-test-state"),
     }
 }
 
@@ -74,7 +75,12 @@ impl Api {
             repos.push(analysis.repository.id);
         }
         let config = config(allow_indexing);
-        let state = AppState::new(store, allow_indexing, config.clone_dir.clone());
+        let state = AppState::new(
+            store,
+            allow_indexing,
+            config.clone_dir.clone(),
+            config.state_dir.clone(),
+        );
         Some(Self {
             app: router(state.clone(), &config),
             state,
@@ -513,12 +519,18 @@ async fn index_reindex_and_remove_through_mutations() {
     let copy = copy_fixture("change-impact");
     let source = copy.path().to_string_lossy().into_owned();
 
-    let mutation = "mutation($source: String!) { indexRepository(source: $source) { \
-                    nodes relationships filesAnalyzed resolutionRate repository { id name } } }";
+    let mutation = "mutation($source: String!, $full: Boolean = false) { \
+                    indexRepository(source: $source, full: $full) { \
+                    nodes relationships filesAnalyzed resolutionRate repository { id name } \
+                    mode fullReason filesChanged filesParsed filesReused \
+                    nodesAdded nodesRemoved relationshipsAdded relationshipsRemoved } }";
     let indexed = api.data(mutation, json!({ "source": source })).await;
     let result = &indexed["indexRepository"];
     assert_eq!(result["nodes"], 38);
     assert_eq!(result["filesAnalyzed"], 7);
+    assert_eq!(result["mode"], "FULL");
+    assert_eq!(result["fullReason"], "not_indexed");
+    assert_eq!(result["nodesAdded"], 38);
     let repo = result["repository"]["id"].as_str().unwrap().to_string();
 
     // A query loads and caches the graph.
@@ -536,12 +548,34 @@ async fn index_reindex_and_remove_through_mutations() {
         "use change_impact::reports::daily_total;\n\n#[test]\nfn test_renamed_total() {\n    assert_eq!(daily_total(&[2]), 2);\n}\n",
     )
     .unwrap();
-    api.data(mutation, json!({ "source": source })).await;
+    let reindexed = api.data(mutation, json!({ "source": source })).await;
+    let result = &reindexed["indexRepository"];
+    assert_eq!(result["mode"], "INCREMENTAL");
+    assert_eq!(result["fullReason"], Value::Null);
+    assert_eq!(
+        (
+            &result["filesChanged"],
+            &result["filesParsed"],
+            &result["filesReused"]
+        ),
+        (&json!(1), &json!(1), &json!(6))
+    );
+    // The four tests in the file were replaced by test_renamed_total.
+    assert_eq!(
+        (&result["nodesAdded"], &result["nodesRemoved"]),
+        (&json!(1), &json!(4))
+    );
     let after = api.data(impact, json!({ "repo": repo })).await;
     assert_eq!(
         after["impact"]["tests"],
         json!(["fn:payment_tests::test_renamed_total"])
     );
+
+    let forced = api
+        .data(mutation, json!({ "source": source, "full": true }))
+        .await;
+    assert_eq!(forced["indexRepository"]["fullReason"], "requested");
+    assert!(api.state.states.load(&repo).is_some());
 
     let removed = api
         .data(
@@ -550,6 +584,7 @@ async fn index_reindex_and_remove_through_mutations() {
         )
         .await;
     assert_eq!(removed["removeRepository"], true);
+    assert!(api.state.states.load(&repo).is_none());
     let again = api
         .data(
             "mutation($id: ID!) { removeRepository(id: $id) }",

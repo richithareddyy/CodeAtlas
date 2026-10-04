@@ -170,15 +170,18 @@ export async function source(
 	return data.source;
 }
 
-export async function indexRepository(source: string): Promise<IndexResult> {
+export async function indexRepository(source: string, full = false): Promise<IndexResult> {
 	const data = await request<{ indexRepository: IndexResult }>(
-		`mutation($source: String!) {
-			indexRepository(source: $source) {
+		`mutation($source: String!, $full: Boolean!) {
+			indexRepository(source: $source, full: $full) {
 				repository { ${REPOSITORY} }
 				filesAnalyzed nodes relationships resolutionRate analysisMs writeMs
+				mode fullReason filesChanged filesRemoved filesParsed filesReused
+				nodesAdded nodesRemoved nodesChanged
+				relationshipsAdded relationshipsRemoved relationshipsChanged
 			}
 		}`,
-		{ source }
+		{ source, full }
 	);
 	return data.indexRepository;
 }

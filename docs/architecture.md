@@ -161,9 +161,10 @@ and the query catalogue. Choices worth noting:
 * **Driver: `neo4rs` 0.8.0, pinned.** It is the maintained async Bolt
   driver for Rust; 0.9 was still a release candidate. It is confined to
   this crate, so replacing it would not touch the analyzer.
-* **Whole-repository replacement.** A repository is deleted, then written
-  in a single transaction. Incremental per-file updates (Milestone 8) will
-  build on the `(repo_id, file)` index.
+* **Snapshots and deltas.** The graph of an analysis is computed as a
+  comparable snapshot; a full write creates it, an incremental write
+  applies the difference to the previous snapshot in one transaction. See
+  [Incremental indexing](#incremental-indexing).
 * **Traversal in Rust, expansion in Cypher.** Each BFS level is one
   parameterised Cypher query. This bounds work by depth and node count and
   records the edge that reached each node, so every result has an evidence
@@ -191,8 +192,8 @@ worth noting:
 * **Both revisions are analysed from scratch.** Each commit is exported
   with `git archive` and analysed in full, so the comparison never depends
   on what happens to be indexed, and the work tree is never checked out or
-  modified. On ripgrep a diff takes about 0.8 s. Milestone 8 will reuse
-  unchanged files instead.
+  modified. On ripgrep a diff takes about 0.8 s. Unlike indexing, diffs do
+  not yet reuse per-file results between revisions.
 * **Fingerprints instead of text comparison.** Each item's token hash
   (without whitespace and comments) separates real modifications from
   reformatting, and pairs code that moved under a new ID.
@@ -202,6 +203,44 @@ worth noting:
 * The CLI (`codeatlas diff`, text, Markdown or JSON) and the API
   (`gitImpact`, `gitRefs`) are thin layers over `analyze_diff`; neither
   needs the database.
+
+## Incremental indexing
+
+`analyzer::incremental` and `store::incremental`. The pipeline:
+
+1. **Changed files.** Discovery already reads every file to count lines,
+   so it also hashes each one. A file's per-file results are reused when
+   its content hash, crate and module path match the saved state. Hashing
+   covers what `git diff` against the indexed commit would report, plus
+   uncommitted and untracked edits, and works without Git.
+2. **Re-parse changed files.** Only files with a new hash are read and
+   parsed for their `mod` declarations; the module tree is rebuilt from the
+   declarations of all files (saved ones for the rest). Files are
+   extracted again when their content changed *or* their module path or
+   crate did (a moved `mod`, a renamed package), even if their content did
+   not.
+3. **Re-resolve.** ID de-duplication, module linking and resolution run
+   over all files every time. A change in one file can change what a name
+   means in another (glob imports, re-exports, shadowing, a removed
+   definition), and tracking that precisely would be a second resolver; on
+   ripgrep the whole step takes about 20 ms, against about 150 ms for
+   parsing. The analysis is therefore identical to a full one, which the
+   tests check field by field.
+4. **Changed symbols and obsolete relationships.** The previous analysis is
+   rebuilt from the saved per-file results (no parsing), both analyses are
+   turned into graph snapshots, and their difference is computed per node
+   and per relationship.
+5. **Update Neo4j.** The difference is applied in one transaction (see
+   [graph-model.md](graph-model.md#writing)).
+
+The state (per-file declarations and extraction results, crates and
+dependencies, and the token of the write) is saved as JSON in
+`CODEATLAS_STATE_DIR`, default `~/.cache/codeatlas/index`, one file per
+repository; about 6.4 MB for ripgrep. It is used only if it was written by
+the same analyzer version (`CACHE_VERSION` and the crate version) and its
+token matches the stored graph; otherwise the run indexes in full and saves
+a fresh state. Losing the state therefore costs one full index, never a
+wrong graph.
 
 ## Web UI (`web/`)
 
@@ -245,7 +284,7 @@ plain, tested functions.
 | 5 | GraphQL API: queries, mutations, pagination, error codes, limits, graph cache | Done |
 | 6 | SvelteKit workspace UI: explorer, graph, impact, architecture zoom and cycle views, inspector with source, command palette (completes the MVP) | Done |
 | 7 | Git diff analysis: changed files and symbols (signatures, moves, cosmetic edits), impact of a diff, `codeatlas diff` (text / Markdown / JSON), `gitImpact` and `gitRefs`, Changes view | Done |
-| 8 | Incremental indexing | Planned |
+| 8 | Incremental indexing: per-file reuse by content hash and module path, global re-resolution, graph snapshots and deltas written in one transaction, measured against full indexing | Done |
 | 9 | Test-impact analysis with precision/recall on ground-truth fixtures | Planned |
 | 10 | Benchmark suite (`codeatlas bench`); architecture views tuned on larger repositories | Planned |
 | 11 | Optional local-model explanations grounded in graph evidence | Planned |

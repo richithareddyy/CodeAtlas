@@ -379,14 +379,52 @@ type ImpactScore {
 	factors: [ScoreFactor!]!
 }
 
+enum IndexMode {
+	"""
+	The whole graph was written.
+	"""
+	FULL
+	"""
+	Only the difference to the previously stored graph was written.
+	"""
+	INCREMENTAL
+}
+
 type IndexResult {
 	repository: Repository!
 	filesAnalyzed: Int!
+	"""
+	Nodes and relationships stored after the write.
+	"""
 	nodes: Int!
 	relationships: Int!
 	resolutionRate: Float
 	analysisMs: Float!
 	writeMs: Float!
+	mode: IndexMode!
+	"""
+	Why the whole graph was written (`null` for incremental writes):
+	`requested`, `not_indexed`, `no_state` or `index_changed`.
+	"""
+	fullReason: String
+	"""
+	Rust files whose content changed since the previous index (including
+	added ones); `filesParsed` were read and parsed, `filesReused` taken
+	from the saved state.
+	"""
+	filesChanged: Int!
+	filesRemoved: Int!
+	filesParsed: Int!
+	filesReused: Int!
+	"""
+	Size of the write; for full writes everything counts as added.
+	"""
+	nodesAdded: Int!
+	nodesRemoved: Int!
+	nodesChanged: Int!
+	relationshipsAdded: Int!
+	relationshipsRemoved: Int!
+	relationshipsChanged: Int!
 }
 
 type Layer {
@@ -407,10 +445,12 @@ type LineRange {
 
 type Mutation {
 	"""
-	Analyses a local path or Git URL (as seen by the server) and replaces
-	its stored graph.
+	Analyses a local path or Git URL (as seen by the server) and stores
+	its graph. When the repository was indexed before by this server,
+	only changed files are parsed and only the difference to the stored
+	graph is written; `full: true` rewrites everything.
 	"""
-	indexRepository(source: String!): IndexResult!
+	indexRepository(source: String!, full: Boolean! = false): IndexResult!
 	"""
 	Deletes a repository's graph. Returns `true` when it existed.
 	"""

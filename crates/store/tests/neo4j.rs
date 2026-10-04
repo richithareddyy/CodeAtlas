@@ -594,3 +594,261 @@ async fn crates_and_children_form_the_explorer_tree() {
         );
     });
 }
+
+// ---- Incremental indexing ----------------------------------------------------
+
+mod incremental {
+    use std::fs;
+    use std::path::Path;
+
+    use codeatlas_analyzer::analyze;
+    use codeatlas_analyzer::ingest::{ingest, IngestOptions, IngestedRepository};
+    use codeatlas_analyzer::RepoSource;
+    use codeatlas_store::{prepare, DeltaStats, FullReason, IndexMode, IndexReport, StateDir};
+
+    use super::{store, workspace_root, NEXT_ID};
+    use std::sync::atomic::Ordering;
+
+    fn copy_dir(from: &Path, to: &Path) {
+        fs::create_dir_all(to).unwrap();
+        for entry in fs::read_dir(from).unwrap() {
+            let entry = entry.unwrap();
+            let target = to.join(entry.file_name());
+            if entry.file_type().unwrap().is_dir() {
+                copy_dir(&entry.path(), &target);
+            } else {
+                fs::copy(entry.path(), target).unwrap();
+            }
+        }
+    }
+
+    fn replace_with(dir: &Path, fixture: &str) {
+        fs::remove_dir_all(dir).unwrap();
+        copy_dir(&workspace_root().join("fixtures").join(fixture), dir);
+    }
+
+    fn test_id(name: &str) -> String {
+        format!(
+            "test-inc-{name}-{}-{}",
+            std::process::id(),
+            NEXT_ID.fetch_add(1, Ordering::Relaxed)
+        )
+    }
+
+    fn ingested(dir: &Path, id: &str) -> IngestedRepository {
+        let mut repo = ingest(
+            &RepoSource::Local(dir.to_path_buf()),
+            &IngestOptions::default(),
+        )
+        .unwrap();
+        repo.info.id = id.to_string();
+        repo
+    }
+
+    async fn index(
+        store: &codeatlas_store::GraphStore,
+        dir: &Path,
+        id: &str,
+        states: &StateDir,
+        full: bool,
+    ) -> IndexReport {
+        let prepared = prepare(&ingested(dir, id), states).unwrap();
+        store.index_prepared(prepared, states, full).await.unwrap()
+    }
+
+    /// The stored graph of `id` equals a full index of `dir`.
+    async fn assert_matches_full_index(store: &codeatlas_store::GraphStore, dir: &Path, id: &str) {
+        let reference = test_id("reference");
+        let mut analysis = analyze(&ingested(dir, &reference)).unwrap();
+        analysis.repository.id = reference.clone();
+        store.index(&analysis).await.unwrap();
+        let (incremental, full) = (
+            store.dump_for_tests(id).await.unwrap(),
+            store.dump_for_tests(&reference).await.unwrap(),
+        );
+        store.delete_repository(&reference).await.unwrap();
+        // The comparison must cover real content: symbols, calls, files.
+        for prefix in [
+            "node File",
+            "node Function",
+            "rel CALLS",
+            "rel DEFINES",
+            "rel DEPENDS_ON",
+        ] {
+            assert!(
+                full.iter().any(|l| l.starts_with(prefix)),
+                "dump has no `{prefix}` lines"
+            );
+        }
+        if incremental != full {
+            let only_inc: Vec<_> = incremental.iter().filter(|l| !full.contains(l)).collect();
+            let only_full: Vec<_> = full.iter().filter(|l| !incremental.contains(l)).collect();
+            panic!(
+                "stored graphs differ\nonly incremental: {only_inc:#?}\nonly full: {only_full:#?}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn incremental_index_matches_a_full_index() {
+        let Some(store) = store().await else { return };
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("pr-shop");
+        copy_dir(&workspace_root().join("fixtures/pr-impact/base"), &dir);
+        let states = StateDir::new(tmp.path().join("state"));
+        let id = test_id("pr-shop");
+
+        let first = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(first.mode, IndexMode::Full(FullReason::NotIndexed));
+        assert!(first.state_saved);
+
+        // Nothing changed: nothing parsed, nothing written but the
+        // repository node.
+        let again = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(again.mode, IndexMode::Incremental);
+        assert_eq!(again.reuse.parsed, 0);
+        assert_eq!(again.delta, DeltaStats::default());
+        assert_matches_full_index(&store, &dir, &id).await;
+
+        // Edits, a new file, a removed file and a rename.
+        replace_with(&dir, "pr-impact/head");
+        let head = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(head.mode, IndexMode::Incremental);
+        assert_eq!((head.reuse.parsed, head.reuse.reused), (8, 1));
+        assert!(head.delta.nodes_added > 0 && head.delta.nodes_removed > 0);
+        assert!(head.delta.relationships_removed > 0 && head.delta.relationships_changed > 0);
+        assert_eq!(
+            (head.summary.nodes, head.summary.relationships),
+            (
+                first.summary.nodes + head.delta.nodes_added - head.delta.nodes_removed,
+                first.summary.relationships + head.delta.relationships_added
+                    - head.delta.relationships_removed
+            )
+        );
+        assert_matches_full_index(&store, &dir, &id).await;
+
+        // And back.
+        replace_with(&dir, "pr-impact/base");
+        let back = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(back.mode, IndexMode::Incremental);
+        assert_matches_full_index(&store, &dir, &id).await;
+
+        store.delete_repository(&id).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn module_moves_and_test_attributes_are_applied_incrementally() {
+        let Some(store) = store().await else { return };
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("change-impact");
+        copy_dir(&workspace_root().join("fixtures/change-impact"), &dir);
+        let states = StateDir::new(tmp.path().join("state"));
+        let id = test_id("change-impact");
+        index(&store, &dir, &id, &states, false).await;
+
+        // `reports` becomes `summary` (same file); one test loses `#[test]`
+        // and a helper gains it.
+        let lib = dir.join("src/lib.rs");
+        let text = fs::read_to_string(&lib).unwrap();
+        fs::write(
+            &lib,
+            text.replace(
+                "pub mod reports;",
+                "#[path = \"reports.rs\"]\npub mod summary;",
+            ),
+        )
+        .unwrap();
+        let tests = dir.join("tests/payment_tests.rs");
+        let text = fs::read_to_string(&tests).unwrap();
+        let text = text
+            .replace("#[test]\nfn test_refund()", "fn test_refund()")
+            .replace(
+                "use change_impact::reports::daily_total;",
+                "use change_impact::summary::daily_total;",
+            );
+        fs::write(&tests, text).unwrap();
+
+        let report = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(report.mode, IndexMode::Incremental);
+        assert!(report.delta.nodes_changed > 0);
+        assert_matches_full_index(&store, &dir, &id).await;
+        store.delete_repository(&id).await.unwrap();
+    }
+
+    /// Opt-in check on a real repository: `CODEATLAS_EQUIVALENCE_REPO=<path>`
+    /// and `CODEATLAS_EQUIVALENCE_BASE=<revision>` (default `HEAD~10`).
+    /// Both revisions are exported with `git archive`; the repository's
+    /// checkout is not touched.
+    #[tokio::test]
+    async fn incremental_index_matches_a_full_index_on_a_real_repository() {
+        let Ok(path) = std::env::var("CODEATLAS_EQUIVALENCE_REPO") else {
+            eprintln!("skipping: CODEATLAS_EQUIVALENCE_REPO not set");
+            return;
+        };
+        let base = std::env::var("CODEATLAS_EQUIVALENCE_BASE").unwrap_or_else(|_| "HEAD~10".into());
+        let Some(store) = store().await else { return };
+        let git = codeatlas_analyzer::git::Git::discover(Path::new(&path))
+            .unwrap()
+            .unwrap();
+        let prefix = codeatlas_analyzer::git::Git::prefix_of(Path::new(&path)).unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("repo");
+        let export = |revision: &str| {
+            let _ = fs::remove_dir_all(&dir);
+            fs::create_dir_all(&dir).unwrap();
+            let sha = git.resolve_commit(revision).unwrap();
+            git.export(&sha, &prefix, &dir).unwrap();
+        };
+        let states = StateDir::new(tmp.path().join("state"));
+        let id = test_id("real");
+
+        export(&base);
+        index(&store, &dir, &id, &states, false).await;
+        export("HEAD");
+        let forward = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(forward.mode, IndexMode::Incremental);
+        assert_matches_full_index(&store, &dir, &id).await;
+        export(&base);
+        let back = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(back.mode, IndexMode::Incremental);
+        assert_matches_full_index(&store, &dir, &id).await;
+        eprintln!(
+            "forward: {:?} {:?}; back: {:?} {:?}",
+            forward.reuse, forward.delta, back.reuse, back.delta
+        );
+        store.delete_repository(&id).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn full_writes_when_the_state_does_not_describe_the_stored_graph() {
+        let Some(store) = store().await else { return };
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("simple-repo");
+        copy_dir(&workspace_root().join("fixtures/simple-repo"), &dir);
+        let states = StateDir::new(tmp.path().join("state"));
+        let id = test_id("simple-repo");
+        index(&store, &dir, &id, &states, false).await;
+
+        // Another writer replaced the graph: its token differs.
+        let mut analysis = analyze(&ingested(&dir, &id)).unwrap();
+        analysis.repository.id = id.clone();
+        store.index(&analysis).await.unwrap();
+        let report = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(report.mode, IndexMode::Full(FullReason::IndexChanged));
+        // The state saved by that full write is usable again; the analysis
+        // still reused every file.
+        assert_eq!(report.reuse.parsed, 0);
+        let report = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(report.mode, IndexMode::Incremental);
+
+        let report = index(&store, &dir, &id, &states, true).await;
+        assert_eq!(report.mode, IndexMode::Full(FullReason::Requested));
+
+        states.remove(&id).unwrap();
+        let report = index(&store, &dir, &id, &states, false).await;
+        assert_eq!(report.mode, IndexMode::Full(FullReason::NoState));
+        assert_eq!(report.reuse.reused, 0);
+        assert_matches_full_index(&store, &dir, &id).await;
+        store.delete_repository(&id).await.unwrap();
+    }
+}

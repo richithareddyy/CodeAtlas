@@ -23,7 +23,7 @@ and `unresolved_calls`.
 
 | Label | Why it exists | Specific properties |
 |---|---|---|
-| `Repository` | Root of a graph; holds index metadata. | `id`, `format_version`, `name`, `root`, `origin_url`, `branch`, `head_sha`, `indexed_sha`, `analyzed_at`, `indexed_at`, `languages` / `language_files` / `language_loc` (parallel lists), `source_files`, `loc`, `calls_total`, `calls_resolved`, `calls_ambiguous`, `calls_unresolved`, `resolution_rate` |
+| `Repository` | Root of a graph; holds index metadata. | `id`, `format_version`, `index_token` (identifies the write, see [Writing](#writing)), `name`, `root`, `origin_url`, `branch`, `head_sha`, `indexed_sha`, `analyzed_at`, `indexed_at`, `languages` / `language_files` / `language_loc` (parallel lists), `source_files`, `loc`, `calls_total`, `calls_resolved`, `calls_ambiguous`, `calls_unresolved`, `resolution_rate` |
 | `Crate` | The *package* level of the architecture view. `id` is `crate:<package>:<name>`, because two packages may both have a test target named `integration`. | `name`, `package`, `target_kind`, `root_file` |
 | `File` | Unit of incremental re-indexing; anchors file-level dependencies. | `path`, `crate`, `loc`, `syntax_errors`, `content_hash` |
 | `Module` | Rust namespace; module-level dependencies and cycles are computed here. | — |
@@ -83,14 +83,20 @@ CREATE INDEX crate_repo IF NOT EXISTS FOR (c:Crate) ON (c.repo_id);
 CREATE FULLTEXT INDEX symbol_search IF NOT EXISTS FOR (s:Symbol) ON EACH [s.name, s.qualified_name];
 ```
 
-`(repo_id, file)` makes "delete everything defined in this file" cheap,
-which is the first step of incremental re-indexing. The statements run on
-every connection; an "already exists" error from a concurrent client counts
-as success.
+The uniqueness constraints double as the lookup indexes that incremental
+writes use to find nodes by key. The statements run on every connection;
+an "already exists" error from a concurrent client counts as success.
 
 ## Writing
 
-`GraphStore::index` replaces a repository's graph:
+Everything stored for an analysis is first computed as a `GraphSnapshot`:
+every node with all its properties (absent values as `null`) and every
+relationship, keyed by type and endpoints. Relationships are unique per
+key because the analyzer aggregates parallel edges. Both kinds of write
+are made from snapshots, so they cannot disagree about what is stored.
+
+**Full write** (first index, `--full`, or when incremental state is
+unusable):
 
 1. The previous subgraph is deleted in batches of 5,000 nodes per label,
    outside the write transaction, so deleting a large repository does not
@@ -102,6 +108,21 @@ as success.
 
 If step 2 fails, the repository is absent rather than half-written; running
 `codeatlas index` again restores it.
+
+**Incremental write.** The previous snapshot is rebuilt from the saved
+state (see [architecture.md](architecture.md#incremental-indexing)) and
+compared with the new one. In one transaction: removed relationships are
+deleted, then removed nodes (`DETACH DELETE`), the `Repository` node and
+changed nodes are updated (`SET n += row`, whose `null`s remove stale
+properties; the `:Test` label is added or removed), new nodes are created,
+and finally new relationships created and changed ones updated
+(`SET r = row.props`). A failure rolls the whole delta back.
+
+Each write stores a fresh `index_token` on the `Repository` node and in
+the saved state. An incremental write is only attempted when the two
+match, i.e. when the stored graph is exactly the one the state describes;
+after a write by another client (or a different state directory) the next
+run writes in full.
 
 `format_version` records the layout written (currently 2).
 `GraphStore::load_graph` rejects other versions and asks for a re-index, so

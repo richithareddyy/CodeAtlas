@@ -27,6 +27,7 @@ cargo run --release -p codeatlas-server
 | `CODEATLAS_ALLOW_INDEXING` | `true` | Enables `indexRepository` / `removeRepository` |
 | `CODEATLAS_GRAPHIQL` | `true` | Serves GraphiQL |
 | `CODEATLAS_CLONE_DIR` | as for the CLI | Where URLs given to `indexRepository` are cloned |
+| `CODEATLAS_STATE_DIR` | `~/.cache/codeatlas/index` | Incremental indexing state, one file per repository |
 | `CODEATLAS_NEO4J_*` | see README | Database connection |
 
 `codeatlas-server --print-schema` prints the SDL without connecting.
@@ -56,7 +57,7 @@ them).
 | `source(repoId, file, startLine, endLine)` | Up to 400 lines from the repository's working tree |
 | `gitRefs(repoId, first)` | Branches, remote-tracking branches and tags (newest first), recent commits, current branch |
 | `gitImpact(repoId, base, head, maxDepth, includeAmbiguous)` | Changes between two revisions (`head: null` is the working tree): changed files with hunks; added, removed, modified, moved and cosmetic symbols with changed lines and signature changes; downstream symbols with evidence chains; affected files, modules and tests; a summary |
-| `indexRepository(source)` | Analyse a path or URL and replace its graph |
+| `indexRepository(source, full)` | Analyse a path or URL and store its graph: incrementally when this server indexed it before (only changed files parsed, only the difference written), in full otherwise or with `full: true`. The result reports the mode, the reason for a full write, files changed / parsed / reused, and nodes and relationships added, removed and changed |
 | `removeRepository(id)` | Delete a repository's graph |
 
 `gitImpact` analyses both revisions from the repository's Git history on
