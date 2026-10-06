@@ -142,3 +142,59 @@ fn reports_clone_failures() {
     let err = ingest(&RepoSource::Remote(missing), &options).unwrap_err();
     assert!(err.to_string().contains("git clone"), "{err}");
 }
+
+#[test]
+fn projects_inside_a_repository_with_an_origin_get_their_own_identity() {
+    let tmp = tempfile::tempdir().unwrap();
+    let repo = tmp.path().join("monorepo");
+    init_repo(&repo);
+    let project = repo.join("services/billing");
+    fs::create_dir_all(project.join("src")).unwrap();
+    fs::write(
+        project.join("Cargo.toml"),
+        "[package]\nname = \"billing\"\nversion = \"0.1.0\"\n",
+    )
+    .unwrap();
+    fs::write(project.join("src/lib.rs"), "pub fn bill() {}\n").unwrap();
+    git(&repo, &["add", "."]);
+    git(&repo, &["commit", "--quiet", "-m", "billing"]);
+    git(
+        &repo,
+        &[
+            "remote",
+            "add",
+            "origin",
+            "https://example.com/org/monorepo.git",
+        ],
+    );
+
+    let top = ingest(&RepoSource::Local(repo.clone()), &IngestOptions::default()).unwrap();
+    let sub = ingest(&RepoSource::Local(project), &IngestOptions::default()).unwrap();
+    assert_eq!(top.info.name, "monorepo");
+    assert_eq!(sub.info.name, "billing");
+    assert_ne!(top.info.id, sub.info.id);
+    // Both still report the repository's origin and commit.
+    assert_eq!(sub.info.origin_url, top.info.origin_url);
+    assert_eq!(sub.info.head_sha, top.info.head_sha);
+    // The ID does not depend on where the clone lives.
+    let elsewhere = tmp.path().join("copy");
+    git(
+        tmp.path(),
+        &["clone", "--quiet", repo.to_str().unwrap(), "copy"],
+    );
+    git(
+        &elsewhere,
+        &[
+            "remote",
+            "set-url",
+            "origin",
+            "https://example.com/org/monorepo.git",
+        ],
+    );
+    let copy = ingest(
+        &RepoSource::Local(elsewhere.join("services/billing")),
+        &IngestOptions::default(),
+    )
+    .unwrap();
+    assert_eq!(copy.info.id, sub.info.id);
+}
