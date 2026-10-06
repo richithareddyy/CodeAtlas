@@ -296,3 +296,40 @@ export interface GitRefs {
 	refs: GitRef[];
 	commits: { sha: string; date: string; subject: string }[];
 }
+
+// ---- Explanations ----
+
+export type EvidenceStatus = 'SUFFICIENT' | 'POSSIBLE' | 'INSUFFICIENT';
+export type FactKind = 'CALLS' | 'DISPATCHES_TO' | 'IMPLEMENTS' | 'MAY_CALL' | 'SUMMARY';
+export type TextSource = 'MODEL' | 'TEMPLATE';
+
+/** One numbered fact found by static analysis. */
+export interface Fact {
+	id: string;
+	kind: FactKind;
+	sourceId: string | null;
+	targetId: string | null;
+	file: string | null;
+	lines: number[];
+	text: string;
+}
+
+export interface Explanation {
+	question: string;
+	status: EvidenceStatus;
+	reason: string | null;
+	facts: Fact[];
+	chains: string[][];
+	/** Cites facts as `[E1]`. */
+	text: string;
+	source: TextSource;
+	model: string | null;
+	verification: {
+		accepted: boolean;
+		cited: string[];
+		problems: string[];
+		warnings: string[];
+	} | null;
+	rejectedText: string | null;
+	notes: string[];
+}

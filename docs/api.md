@@ -29,6 +29,8 @@ cargo run --release -p codeatlas-server
 | `CODEATLAS_CLONE_DIR` | as for the CLI | Where URLs given to `indexRepository` are cloned |
 | `CODEATLAS_STATE_DIR` | `~/.cache/codeatlas/index` | Incremental indexing state, one file per repository |
 | `CODEATLAS_NEO4J_*` | see README | Database connection |
+| `CODEATLAS_OLLAMA_URL`, `CODEATLAS_OLLAMA_MODEL`, `CODEATLAS_OLLAMA_TIMEOUT_SECS` | `http://127.0.0.1:11434`, `llama3.2`, 120 | Local model for `explainImpact` |
+| `CODEATLAS_EXPLAIN` | unset | `template` disables the model for `explainImpact` |
 
 `codeatlas-server --print-schema` prints the SDL without connecting.
 
@@ -51,6 +53,7 @@ them).
 | `impact(repoId, symbolId \| file, maxDepth, includeAmbiguous)` | Affected symbols with evidence chains, files, modules, tests and the decomposed score |
 | `affectedTests(repoId, symbolId, maxDepth)` | Affected tests with their chains (follows trait dispatch) |
 | `testImpact(repoId, symbolIds, maxDepth, includeAmbiguous)` | Tests to run for one or more changed symbols (up to 100): direct and transitive tests with their chains and the changed symbols each reaches, possible tests (ambiguous calls), changed tests, and changed functions no test reaches |
+| `explainImpact(repoId, symbolId, affectedId, maxDepth, useModel)` | Why changing `symbolId` can affect `affectedId` (or, without `affectedId`, what it affects): the status (`SUFFICIENT`, `POSSIBLE`, `INSUFFICIENT` with a `reason`), numbered `facts` with their symbols, file and lines, `chains` of fact IDs, and `text` citing the facts as `[E1]`. `source` says whether the text is `TEMPLATE` (built from the facts) or `MODEL` (written by `model` and accepted by the check in `verification`); a rejected answer is returned in `rejectedText`, and `notes` say what happened |
 | `circularDependencies(repoId, level)` | Cycles with per-hop evidence |
 | `hotspots(repoId, level, first)` | Betweenness, fan-in, fan-out |
 | `layers(repoId, level)` | Dependency layers |
@@ -120,6 +123,12 @@ Errors are standard GraphQL errors with a machine-readable
   reach. The server binds to `127.0.0.1` by default and warns at start-up if
   it listens elsewhere with indexing enabled; set
   `CODEATLAS_ALLOW_INDEXING=false` on shared deployments.
+* **Explanations** send only the question and the facts to the configured
+  model server, never source code, and never anything when the evidence
+  is insufficient. Each model call is bounded by
+  `CODEATLAS_OLLAMA_TIMEOUT_SECS`; Ollama queues concurrent requests
+  itself. Point `CODEATLAS_OLLAMA_URL` only at a server you trust with
+  symbol and file names.
 * **CORS** allows only the configured origins. There is no authentication:
   the server is meant to run next to the developer, like a language server.
 

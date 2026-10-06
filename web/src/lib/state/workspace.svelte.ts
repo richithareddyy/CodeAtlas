@@ -49,6 +49,8 @@ class Workspace {
 
 	// Impact view
 	impact = $state.raw<ImpactReport | null>(null);
+	/** The symbol `impact` was computed for. */
+	impactSubject = $state<string | null>(null);
 	impactDepth = $state(8);
 	includeAmbiguous = $state(false);
 
@@ -255,7 +257,10 @@ class Workspace {
 		const report = await this.track(() =>
 			api.impact(repo, id, this.impactDepth, this.includeAmbiguous)
 		);
-		if (report && this.selected?.id === id) this.impact = report;
+		if (report && this.selected?.id === id) {
+			this.impact = report;
+			this.impactSubject = id;
+		}
 		this.syncUrl();
 	}
 

@@ -157,3 +157,27 @@ export function supportCrateNames(crates: { name: string; kind: string }[]): Set
 		crates.filter((c) => SUPPORT_CRATE_KINDS.has(c.kind) && !product.has(c.name)).map((c) => c.name)
 	);
 }
+
+export type TextPart =
+	| { kind: 'text'; value: string }
+	| { kind: 'code'; value: string }
+	| { kind: 'cite'; ids: string[] };
+
+/**
+ * Splits explanation text into plain text, `code` and citations such as
+ * `[E1]` or `[E1, E2]`.
+ */
+export function explanationParts(text: string): TextPart[] {
+	const parts: TextPart[] = [];
+	const pattern = /`([^`]+)`|\[(E\d+(?:\s*,\s*E\d+)*)\]/g;
+	let last = 0;
+	for (const match of text.matchAll(pattern)) {
+		const at = match.index ?? 0;
+		if (at > last) parts.push({ kind: 'text', value: text.slice(last, at) });
+		if (match[1] !== undefined) parts.push({ kind: 'code', value: match[1] });
+		else parts.push({ kind: 'cite', ids: match[2].split(',').map((id) => id.trim()) });
+		last = at + match[0].length;
+	}
+	if (last < text.length) parts.push({ kind: 'text', value: text.slice(last) });
+	return parts;
+}

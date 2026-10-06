@@ -1,0 +1,20 @@
+[package]
+name = "codeatlas-explain"
+description = "Optional explanations of CodeAtlas evidence by a local language model"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+codeatlas-analyzer.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net", "io-util"] }
+
+[lints]
+workspace = true

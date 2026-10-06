@@ -16,6 +16,7 @@ Git repository
   → store       (Neo4j code graph, bounded queries)
   → graph       (in-memory CodeGraph: algorithms, impact, architecture)
   → diff        (two revisions compared symbol by symbol, impact of the change)
+  → explain     (optional: cited facts → explanation, local model checked against them)
   → server      (GraphQL API)
   → web         (SvelteKit workspace UI)
 ```
@@ -26,8 +27,9 @@ Git repository
 |---|---|---|
 | `crates/analyzer` | Ingestion, layout, parsing, extraction, resolution and its evaluation, derived dependencies, graph algorithms, impact and architecture analyses, Git diff analysis. Pure library; no database or network code beyond invoking `git` (and `tar` to unpack `git archive`). | tree-sitter, ignore, toml |
 | `crates/store` | Neo4j schema, batched writes, bounded queries (traversals with evidence paths, shortest path, search, file/module dependencies), loading a stored graph back into a `CodeGraph`. | analyzer, neo4rs, tokio |
-| `crates/server` | GraphQL API over the store and analyzer, graph cache, guarded source reads. | analyzer, store, async-graphql, axum, tokio |
-| `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `index`, `query`, `diff`, `remove`, `ast`; later `bench`. | analyzer, store |
+| `crates/server` | GraphQL API over the store and analyzer, graph cache, guarded source reads. | analyzer, store, explain, async-graphql, axum, tokio |
+| `crates/explain` | Evidence for explanations (numbered facts from impact reports), the evidence-built explanation, the Ollama client and the check of model answers. | analyzer, reqwest |
+| `crates/cli` | `codeatlas` binary: `analyze`, `evaluate`, `index`, `query`, `diff`, `remove`, `ast`; later `bench`. | analyzer, store, explain |
 | `web/` | SvelteKit + TypeScript + Cytoscape.js workspace UI; a static single-page app. | GraphQL API only |
 
 The analyzer is kept free of storage concerns so that extraction, resolution
@@ -242,6 +244,53 @@ token matches the stored graph; otherwise the run indexes in full and saves
 a fresh state. Losing the state therefore costs one full index, never a
 wrong graph.
 
+## Explanations (`crates/explain`)
+
+The analysis decides what is true; a language model may only put it into
+words. The crate is optional at every level: nothing else depends on a
+model, and every path works without one.
+
+1. **Evidence** (`evidence.rs`), deterministic. `why(changed, affected)`
+   runs the impact engine from the changed symbol and takes the chain to
+   the affected one: a certain chain if there is one, else one through
+   ambiguous calls (status *possible*), else none (status *insufficient*,
+   with the reason, and the reverse chain if the dependency runs the other
+   way). `impact(changed)` gives two count facts from the report and up to
+   eight example chains (direct dependents first, then tests). Every step
+   becomes a fact, deduplicated across chains and numbered `E1`, `E2`, …,
+   with its kind, both symbols, file and lines, and one sentence
+   (*`checkout` calls `PaymentService::authorize` (src/checkout.rs:5).*).
+   The evidence also lists the symbols it names.
+2. **Template** (`template.rs`). The facts in order, as text, citing
+   each. Used when there is no model, when the model fails or is rejected,
+   and always for insufficient evidence.
+3. **Prompt** (`prompt.rs`). A system message with the rules (cite facts,
+   name only code in the facts, add no relationships, say when something is
+   only possible, no lists) and a user message with the question, the facts,
+   the chains as fact IDs and the status. No source code or other
+   repository content is sent.
+4. **Model** (`ollama.rs`). `POST /api/chat` on a local Ollama server
+   with temperature 0 and a fixed seed, so the same evidence gives the
+   same answer where the model allows. Configured by `CODEATLAS_OLLAMA_*`;
+   `CODEATLAS_EXPLAIN=template` turns it off. Insufficient evidence is
+   never sent.
+5. **Check** (`verify.rs`). The answer is split into sentences
+   (keeping `file.rs:12` whole) and rejected if it is empty, cites an ID
+   that is not a fact, cites no fact at all, or has a sentence that states a
+   relationship (*calls*, *depends*, *dispatches*, *implements*, *reaches*,
+   *affects*, *invokes*, *uses*) and names code that is not in the evidence
+   (in backticks, or a bare `a::b` path). Names are matched as qualified
+   names, `Type::method`, bare names, suffixes of qualified names, and
+   files. Uncited relationship sentences and unknown names in other
+   sentences are warnings. A rejected answer is replaced by the template,
+   and kept in the result with the reasons.
+
+The check is deliberately narrow: it catches the ways a model can invent
+a dependency (unknown code, fabricated citations), not every misreading. A
+sentence that reverses a call between two known symbols passes it. That is
+why every explanation is shown with its facts, and why the facts, not the
+text, are what the API and UI link to the source.
+
 ## Benchmarks (`cli/src/bench.rs`)
 
 `codeatlas bench` produces the measurements in
@@ -306,4 +355,4 @@ plain, tested functions.
 | 8 | Incremental indexing: per-file reuse by content hash and module path, global re-resolution, graph snapshots and deltas written in one transaction, measured against full indexing | Done |
 | 9 | Test selection (direct, transitive, possible, untested changes) with evidence; ground truth by panic probes (`probe-tests`), precision and recall (`evaluate-tests`) on fixtures and ripgrep | Done |
 | 10 | Benchmark suite (`codeatlas bench`): corpus, resolution, analysis time and throughput, peak memory, full and incremental indexing, query latency, test-impact precision/recall, as JSON; results on ripgrep, CodeAtlas and tokio; UI checked on tokio | Done |
-| 11 | Optional local-model explanations grounded in graph evidence | Planned |
+| 11 | Optional explanations grounded in graph evidence: numbered facts with source locations, evidence-built text, a local model through Ollama whose answers are checked against the facts, `query explain`, `explainImpact`, *Why?* and *Explain* in the Impact view | Done |

@@ -9,6 +9,7 @@ use codeatlas_analyzer::graph::{architecture, impact, test_selection};
 use codeatlas_analyzer::ingest::IngestOptions;
 use codeatlas_analyzer::model::SymbolId;
 use codeatlas_analyzer::RepoSource;
+use codeatlas_explain as explain;
 use codeatlas_store::{Direction as StoreDirection, StoreError};
 
 use super::types::*;
@@ -376,6 +377,43 @@ impl QueryRoot {
         let selection =
             test_selection::select_tests(&graph, &changed, options).map_err(from_impact)?;
         Ok(selection.into())
+    }
+
+    /// Why changing `symbolId` can affect `affectedId`, or with no
+    /// `affectedId` what changing it affects, as numbered facts from the
+    /// graph and an explanation that cites them. The explanation is written
+    /// by the configured local model when `useModel` is true and one
+    /// answers, and only if it passes the check against the facts;
+    /// otherwise it is built from the facts directly. Insufficient evidence
+    /// is never sent to a model.
+    async fn explain_impact(
+        &self,
+        ctx: &Context<'_>,
+        repo_id: ID,
+        symbol_id: ID,
+        affected_id: Option<ID>,
+        #[graphql(default = 8)] max_depth: i32,
+        #[graphql(default = true)] use_model: bool,
+    ) -> Result<Explanation> {
+        let state = state(ctx)?;
+        let options = impact::ImpactOptions {
+            max_depth: depth(max_depth, state.store.limits().max_depth, "maxDepth")?,
+            ..Default::default()
+        };
+        let (_, graph) = state.graphs.get(&state.store, &repo_id).await.gql()?;
+        let changed = SymbolId::from_stored(symbol_id.0);
+        let evidence = match affected_id {
+            Some(affected) => explain::evidence::why(
+                &graph,
+                &changed,
+                &SymbolId::from_stored(affected.0),
+                options,
+            ),
+            None => explain::evidence::impact(&graph, &changed, options),
+        }
+        .map_err(from_impact)?;
+        let model = state.model.as_ref().filter(|_| use_model);
+        Ok(explain::explain(evidence, model).await.into())
     }
 
     /// Strongly connected components at the given level, largest first.

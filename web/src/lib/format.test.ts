@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	callSteps,
+	explanationParts,
 	kindOf,
 	qualifiedName,
 	shortLabel,
@@ -84,5 +85,20 @@ describe('supportCrateNames', () => {
 			{ name: 'tokio', kind: 'test' }
 		]);
 		expect([...names].sort()).toEqual(['chat', 'sync_mpsc']);
+	});
+});
+
+describe('explanation text', () => {
+	it('separates code and citations', () => {
+		expect(explanationParts('`a` calls `b::c` [E1, E2]. See [E3]; [note]')).toEqual([
+			{ kind: 'code', value: 'a' },
+			{ kind: 'text', value: ' calls ' },
+			{ kind: 'code', value: 'b::c' },
+			{ kind: 'text', value: ' ' },
+			{ kind: 'cite', ids: ['E1', 'E2'] },
+			{ kind: 'text', value: '. See ' },
+			{ kind: 'cite', ids: ['E3'] },
+			{ kind: 'text', value: '; [note]' }
+		]);
 	});
 });

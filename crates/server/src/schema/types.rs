@@ -5,6 +5,7 @@
 use async_graphql::{Enum, SimpleObject, ID};
 use codeatlas_analyzer::graph::{architecture, impact, test_selection};
 use codeatlas_analyzer::{diff, git};
+use codeatlas_explain as explain;
 use codeatlas_store as store;
 
 fn int(value: impl TryInto<i32>) -> i32 {
@@ -1147,5 +1148,152 @@ mod tests {
         assert_eq!((call.line, call.callee.as_str()), (12, "(|x| x)(1)"));
         assert_eq!(call.reason, "dynamic_call");
         assert!(UnresolvedCall::parse("nonsense").is_none());
+    }
+}
+
+// ---- Explanations ----------------------------------------------------------
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum EvidenceStatus {
+    /// The facts answer the question.
+    Sufficient,
+    /// The answer depends on ambiguous calls.
+    Possible,
+    /// No chain of facts answers the question.
+    Insufficient,
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum FactKind {
+    Calls,
+    DispatchesTo,
+    Implements,
+    /// An ambiguous call: one of several possible targets.
+    MayCall,
+    /// A count from the impact report.
+    Summary,
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum TextSource {
+    /// Written by the language model and accepted by the check.
+    Model,
+    /// Built from the facts without a model.
+    Template,
+}
+
+/// One numbered fact found by static analysis.
+#[derive(SimpleObject)]
+pub struct Fact {
+    /// `E1`, `E2`, ...
+    pub id: String,
+    pub kind: FactKind,
+    /// The dependent side, for relationships.
+    pub source_id: Option<ID>,
+    /// The side closer to the change, for relationships.
+    pub target_id: Option<ID>,
+    pub file: Option<String>,
+    pub lines: Vec<i32>,
+    pub text: String,
+}
+
+#[derive(SimpleObject)]
+pub struct EvidenceSymbol {
+    pub id: ID,
+    pub qualified_name: String,
+    pub short_name: String,
+    pub file: String,
+    pub line: i32,
+}
+
+/// The check of a model answer against the facts.
+#[derive(SimpleObject)]
+pub struct Verification {
+    pub accepted: bool,
+    /// Fact IDs the answer cites.
+    pub cited: Vec<String>,
+    /// Why the answer was rejected.
+    pub problems: Vec<String>,
+    pub warnings: Vec<String>,
+}
+
+#[derive(SimpleObject)]
+pub struct Explanation {
+    pub question: String,
+    pub status: EvidenceStatus,
+    /// Why the evidence is insufficient, if it is.
+    pub reason: Option<String>,
+    pub facts: Vec<Fact>,
+    /// Chains as fact IDs, from the affected symbol to the change.
+    pub chains: Vec<Vec<String>>,
+    pub symbols: Vec<EvidenceSymbol>,
+    /// The explanation, citing facts as `[E1]`.
+    pub text: String,
+    pub source: TextSource,
+    /// The model that was asked, if one was.
+    pub model: Option<String>,
+    pub verification: Option<Verification>,
+    /// A model answer that failed the check, kept for transparency.
+    pub rejected_text: Option<String>,
+    pub notes: Vec<String>,
+}
+
+impl From<explain::Explanation> for Explanation {
+    fn from(x: explain::Explanation) -> Self {
+        let e = x.evidence;
+        Self {
+            question: e.question,
+            status: match e.status {
+                explain::EvidenceStatus::Sufficient => EvidenceStatus::Sufficient,
+                explain::EvidenceStatus::Possible => EvidenceStatus::Possible,
+                explain::EvidenceStatus::Insufficient => EvidenceStatus::Insufficient,
+            },
+            reason: e.reason,
+            facts: e
+                .facts
+                .into_iter()
+                .map(|f| Fact {
+                    id: f.id,
+                    kind: match f.kind {
+                        explain::FactKind::Calls => FactKind::Calls,
+                        explain::FactKind::DispatchesTo => FactKind::DispatchesTo,
+                        explain::FactKind::Implements => FactKind::Implements,
+                        explain::FactKind::MayCall => FactKind::MayCall,
+                        explain::FactKind::Summary => FactKind::Summary,
+                    },
+                    source_id: f.source.map(|s| ID(s.to_string())),
+                    target_id: f.target.map(|s| ID(s.to_string())),
+                    file: f.file,
+                    lines: f.lines.into_iter().map(int).collect(),
+                    text: f.text,
+                })
+                .collect(),
+            chains: e.chains,
+            symbols: e
+                .symbols
+                .into_iter()
+                .map(|s| EvidenceSymbol {
+                    id: ID(s.id.to_string()),
+                    qualified_name: s.qualified_name,
+                    short_name: s.short_name,
+                    file: s.file,
+                    line: int(s.line),
+                })
+                .collect(),
+            text: x.text,
+            source: match x.source {
+                explain::TextSource::Model => TextSource::Model,
+                explain::TextSource::Template => TextSource::Template,
+            },
+            model: x.model,
+            verification: x.verification.map(|v| Verification {
+                accepted: v.accepted,
+                cited: v.cited,
+                problems: v.problems,
+                warnings: v.warnings,
+            }),
+            rejected_text: x.rejected_text,
+            notes: x.notes,
+        }
     }
 }

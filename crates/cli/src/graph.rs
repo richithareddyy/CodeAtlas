@@ -7,6 +7,7 @@ use clap::Subcommand;
 use codeatlas_analyzer::graph::test_selection::select_tests;
 use codeatlas_analyzer::graph::{architecture, impact, impact::ImpactOptions};
 use codeatlas_analyzer::model::SymbolId;
+use codeatlas_explain as explain;
 
 use crate::test_view;
 use crate::views::{self, LevelArg};
@@ -85,6 +86,18 @@ pub enum Query {
         /// Affected symbols listed in text output.
         #[arg(long, default_value_t = 50)]
         limit: usize,
+    },
+    /// Explain why changing a symbol can affect another (or, with one
+    /// symbol, what it affects), citing the facts in the graph. Uses a local
+    /// model through Ollama when available, checked against the evidence.
+    Explain {
+        changed: String,
+        affected: Option<String>,
+        #[arg(long, default_value_t = 8)]
+        depth: u32,
+        /// Build the explanation from the evidence only.
+        #[arg(long)]
+        no_model: bool,
     },
     /// Circular dependencies with the edges that form them.
     Cycles {
@@ -316,6 +329,37 @@ pub async fn query(repo: Option<&str>, json: bool, query: Query) -> Result<Strin
                 (None, None) => bail!("give a symbol or --file"),
             };
             output(json, &report, || views::impact(&report, limit))
+        }
+        Query::Explain {
+            changed,
+            affected,
+            depth,
+            no_model,
+        } => {
+            if depth == 0 || depth > store.limits().max_depth {
+                bail!("--depth must be between 1 and {}", store.limits().max_depth);
+            }
+            let options = ImpactOptions {
+                max_depth: depth,
+                ..Default::default()
+            };
+            let changed = SymbolId::from_stored(callable(&store, r, &changed).await?);
+            let affected = match &affected {
+                Some(text) => Some(SymbolId::from_stored(callable(&store, r, text).await?)),
+                None => None,
+            };
+            let graph = store.load_graph(r).await?;
+            let evidence = match &affected {
+                Some(affected) => explain::evidence::why(&graph, &changed, affected, options)?,
+                None => explain::evidence::impact(&graph, &changed, options)?,
+            };
+            let model = if no_model {
+                None
+            } else {
+                explain::ModelConfig::from_env()
+            };
+            let explanation = explain::explain(evidence, model.as_ref()).await;
+            output(json, &explanation, || views::explanation(&explanation))
         }
         Query::Cycles { level, limit } => {
             let graph = store.load_graph(r).await?;

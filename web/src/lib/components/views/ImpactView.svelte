@@ -5,15 +5,23 @@
 	import { workspace } from '../../state/workspace.svelte';
 	import EmptyState from '../EmptyState.svelte';
 	import EvidencePath from '../EvidencePath.svelte';
+	import Explanation from '../Explanation.svelte';
 	import GraphCanvas from '../GraphCanvas.svelte';
 	import KindBadge from '../KindBadge.svelte';
 	import Segmented from '../Segmented.svelte';
 
 	const LIST_LIMIT = 300;
-	let tab = $state<'affected' | 'tests' | 'files' | 'score'>('affected');
+	let tab = $state<'affected' | 'tests' | 'files' | 'score' | 'explain'>('affected');
 	let canvas = $state<GraphCanvas>();
 
 	const report = $derived(workspace.impact);
+	const subject = $derived(workspace.impactSubject);
+	/** Affected symbols whose explanation is open. */
+	let explained = $state<Record<string, boolean>>({});
+	$effect(() => {
+		void report;
+		explained = {};
+	});
 	const data = $derived(report ? fromImpact(report) : EMPTY);
 	const tests = $derived(report?.affected.filter((a) => a.symbol.isTest) ?? []);
 	const certainTests = $derived(tests.filter((t) => t.confidence === 'CERTAIN'));
@@ -38,8 +46,20 @@
 					>
 					{#if a.confidence === 'POSSIBLE'}<span class="possible">possible</span>{/if}
 					<span class="loc mono">{a.symbol.file}:{a.symbol.line}</span>
+					{#if subject}
+						<button
+							class="why"
+							class:open={explained[a.symbol.id]}
+							aria-expanded={!!explained[a.symbol.id]}
+							title="Explain, citing the evidence, why this symbol is affected"
+							onclick={() => (explained[a.symbol.id] = !explained[a.symbol.id])}>Why?</button
+						>
+					{/if}
 				</div>
 				<EvidencePath steps={a.path} />
+				{#if subject && explained[a.symbol.id]}
+					<Explanation changedId={subject} affectedId={a.symbol.id} auto />
+				{/if}
 			</li>
 		{/each}
 	</ul>
@@ -155,7 +175,8 @@
 							{ value: 'affected', label: `Affected (${report.affected.length})` },
 							{ value: 'tests', label: `Tests (${tests.length})` },
 							{ value: 'files', label: `Files (${report.files.length})` },
-							{ value: 'score', label: 'Score' }
+							{ value: 'score', label: 'Score' },
+							{ value: 'explain', label: 'Explain' }
 						]}
 					/>
 				</div>
@@ -203,6 +224,18 @@
 								{/each}
 							</tbody>
 						</table>
+					{:else if tab === 'explain'}
+						<p class="faint intro">
+							A short explanation of this impact, built from numbered facts in the graph. Each
+							statement cites its facts; click a citation to open its source. If a local model is
+							configured on the server it words the explanation, and its answer is used only if it
+							cites real facts and names no code outside them.
+						</p>
+						{#if subject}
+							{#key `${subject}:${report.maxDepth}`}
+								<Explanation changedId={subject} />
+							{/key}
+						{/if}
 					{:else}
 						<p class="faint intro">
 							The score sums six factors. Each is <code>ln(1 + value) / ln(1 + saturation)</code>,
@@ -387,6 +420,19 @@
 	}
 	.more {
 		font-size: 12px;
+	}
+	.why {
+		padding: 0 6px;
+		border: 1px solid var(--border);
+		border-radius: 3px;
+		background: none;
+		color: var(--text-muted);
+		font-size: 11px;
+	}
+	.why:hover,
+	.why.open {
+		border-color: var(--accent);
+		color: var(--text);
 	}
 	table {
 		width: 100%;
