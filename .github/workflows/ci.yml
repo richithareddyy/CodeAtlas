@@ -10,6 +10,8 @@ env:
   # Throwaway credential for the per-run Neo4j service container.
   CODEATLAS_NEO4J_PASSWORD: ci-${{ github.run_id }}-${{ github.run_attempt }}
   CODEATLAS_NEO4J_URI: bolt://localhost:7687
+  # Re-record the test-impact ground truth (builds and runs a fixture).
+  CODEATLAS_RUN_PROBES: "1"
 
 jobs:
   rust:

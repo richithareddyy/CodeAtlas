@@ -285,6 +285,6 @@ plain, tested functions.
 | 6 | SvelteKit workspace UI: explorer, graph, impact, architecture zoom and cycle views, inspector with source, command palette (completes the MVP) | Done |
 | 7 | Git diff analysis: changed files and symbols (signatures, moves, cosmetic edits), impact of a diff, `codeatlas diff` (text / Markdown / JSON), `gitImpact` and `gitRefs`, Changes view | Done |
 | 8 | Incremental indexing: per-file reuse by content hash and module path, global re-resolution, graph snapshots and deltas written in one transaction, measured against full indexing | Done |
-| 9 | Test-impact analysis with precision/recall on ground-truth fixtures | Planned |
+| 9 | Test selection (direct, transitive, possible, untested changes) with evidence; ground truth by panic probes (`probe-tests`), precision and recall (`evaluate-tests`) on fixtures and ripgrep | Done |
 | 10 | Benchmark suite (`codeatlas bench`); architecture views tuned on larger repositories | Planned |
 | 11 | Optional local-model explanations grounded in graph evidence | Planned |

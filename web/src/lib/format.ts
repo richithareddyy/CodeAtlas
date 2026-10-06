@@ -132,3 +132,12 @@ export function timestamp(value: string, timeZone?: string): string {
 export function count(n: number, noun: string, plural = `${noun}s`): string {
 	return `${n.toLocaleString()} ${n === 1 ? noun : plural}`;
 }
+
+/**
+ * Call steps in an evidence chain. A test is *direct* when its chain has
+ * one call: dispatch and implementation steps do not count (as in the
+ * server's test selection).
+ */
+export function callSteps(path: { kind: string }[]): number {
+	return path.filter((step) => step.kind === 'CALLS' || step.kind === 'MAY_CALL').length;
+}

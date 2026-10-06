@@ -1,0 +1,58 @@
+{
+  "repository": "simple-repo",
+  "commit": "39c73e1ca1515c466f2713aafa0c86be7f12a8c6",
+  "source_hash": "1495af63cb5c19ec",
+  "method": "panic-on-entry",
+  "toolchain": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "tests": [
+    "fn:checkout_test::checkout_succeeds_for_small_orders",
+    "fn:simple_repo::payments::tests::rejects_amounts_over_limit"
+  ],
+  "baseline_failures": [],
+  "probes": [
+    {
+      "symbol": "fn:simple_repo::checkout::checkout",
+      "status": "ok",
+      "failing": [
+        "fn:checkout_test::checkout_succeeds_for_small_orders"
+      ]
+    },
+    {
+      "symbol": "fn:simple_repo::inventory::reserve",
+      "status": "ok",
+      "failing": [
+        "fn:checkout_test::checkout_succeeds_for_small_orders"
+      ]
+    },
+    {
+      "symbol": "fn:simple_repo::payments::gateway::stripe_call",
+      "status": "ok",
+      "failing": [
+        "fn:checkout_test::checkout_succeeds_for_small_orders"
+      ]
+    },
+    {
+      "symbol": "fn:simple_repo::payments::process_payment",
+      "status": "ok",
+      "failing": [
+        "fn:checkout_test::checkout_succeeds_for_small_orders"
+      ]
+    },
+    {
+      "symbol": "method:simple_repo::payments::PaymentService::authorize",
+      "status": "ok",
+      "failing": [
+        "fn:checkout_test::checkout_succeeds_for_small_orders",
+        "fn:simple_repo::payments::tests::rejects_amounts_over_limit"
+      ]
+    },
+    {
+      "symbol": "method:simple_repo::payments::PaymentService::new",
+      "status": "ok",
+      "failing": [
+        "fn:checkout_test::checkout_succeeds_for_small_orders",
+        "fn:simple_repo::payments::tests::rejects_amounts_over_limit"
+      ]
+    }
+  ]
+}

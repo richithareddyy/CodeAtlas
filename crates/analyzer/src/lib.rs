@@ -20,6 +20,7 @@ pub mod module_tree;
 pub mod parser;
 pub mod resolver;
 pub mod symbols;
+pub mod test_evaluation;
 
 pub use analysis::{
     analyze, analyze_source, analyze_with_cache, AnalysisStats, Analyzed, RepositoryAnalysis,

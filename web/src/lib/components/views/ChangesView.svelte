@@ -193,6 +193,11 @@
 			</div>
 			<div class="metric">
 				<span class="value">{s.affectedTests}</span><span class="label">tests to run</span>
+				{#if s.untestedChanges}
+					<button class="untested-hint" onclick={() => (tab = 'tests')}
+						>{s.untestedChanges} changed {s.untestedChanges === 1 ? 'function' : 'functions'} untested</button
+					>
+				{/if}
 			</div>
 			{#if report.includeAmbiguous}
 				<div class="metric">
@@ -339,6 +344,27 @@
 								No unchanged test reaches the changes through resolved calls.
 							</p>
 						{/if}
+						{#if report.untested.length}
+							<h4 class="label">Modified, but no test reaches it</h4>
+							<p class="faint intro">
+								No resolved call chain leads from a test to these functions. Tests may still run
+								them through code static analysis does not follow (another process, a function
+								passed as a value, a macro, a generic parameter).
+							</p>
+							<ul class="list compact">
+								{#each report.untested as u (u.id)}
+									<li>
+										<div class="head">
+											<KindBadge kind={u.kind} test={u.isTest} />
+											<button class="sym mono" onclick={() => choose(u.id)}
+												>{u.qualifiedName}</button
+											>
+											<span class="loc mono">{u.file}:{u.line}</span>
+										</div>
+									</li>
+								{/each}
+							</ul>
+						{/if}
 					{:else}
 						<table>
 							<thead><tr><th>Status</th><th>File</th><th>Hunks</th></tr></thead>
@@ -424,6 +450,18 @@
 	}
 	.attention {
 		color: var(--warning);
+	}
+	.untested-hint {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--warning);
+		font-size: 11px;
+		text-align: left;
+		white-space: nowrap;
+	}
+	.untested-hint:hover {
+		text-decoration: underline;
 	}
 	.possible-value {
 		color: var(--edge-candidate);

@@ -9,6 +9,7 @@
 pub mod algorithms;
 pub mod architecture;
 pub mod impact;
+pub mod test_selection;
 
 use std::collections::{BTreeMap, HashMap};
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { AffectedSymbol } from '../../api/types';
 	import { EMPTY, fromImpact } from '../../graph/elements';
-	import { count } from '../../format';
+	import { callSteps, count } from '../../format';
 	import { workspace } from '../../state/workspace.svelte';
 	import EmptyState from '../EmptyState.svelte';
 	import EvidencePath from '../EvidencePath.svelte';
@@ -16,6 +16,10 @@
 	const report = $derived(workspace.impact);
 	const data = $derived(report ? fromImpact(report) : EMPTY);
 	const tests = $derived(report?.affected.filter((a) => a.symbol.isTest) ?? []);
+	const certainTests = $derived(tests.filter((t) => t.confidence === 'CERTAIN'));
+	const directTests = $derived(certainTests.filter((t) => callSteps(t.path) <= 1));
+	const transitiveTests = $derived(certainTests.filter((t) => callSteps(t.path) > 1));
+	const possibleTests = $derived(tests.filter((t) => t.confidence === 'POSSIBLE'));
 
 	function rerun() {
 		void workspace.runImpact();
@@ -160,10 +164,23 @@
 						{@render affectedList(report.affected)}
 					{:else if tab === 'tests'}
 						{#if tests.length}
-							<p class="faint intro">Tests whose call chain reaches the change:</p>
-							{@render affectedList(tests)}
+							<h4 class="label">Direct ({directTests.length})</h4>
+							<p class="faint intro">The test calls the changed code.</p>
+							{@render affectedList(directTests)}
+							<h4 class="label">Transitive ({transitiveTests.length})</h4>
+							<p class="faint intro">The test reaches the changed code through other code.</p>
+							{@render affectedList(transitiveTests)}
+							{#if possibleTests.length}
+								<h4 class="label">Possible ({possibleTests.length})</h4>
+								<p class="faint intro">Reached only through ambiguous calls.</p>
+								{@render affectedList(possibleTests)}
+							{/if}
 						{:else}
-							<p class="faint intro">No test reaches this symbol through resolved calls.</p>
+							<p class="faint intro">
+								No test reaches this symbol through resolved calls. Tests may still run it through
+								code static analysis does not follow (another process, a function passed as a value,
+								a macro, a generic parameter).
+							</p>
 						{/if}
 					{:else if tab === 'files'}
 						<table>

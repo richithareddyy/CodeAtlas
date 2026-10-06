@@ -30,9 +30,10 @@ use crate::graph::impact::{
     analyze_impact, expand_change, AffectedGroup, AffectedSymbol, Confidence, ImpactOptions,
     SymbolRef,
 };
+use crate::graph::test_selection::select_tests;
 use crate::graph::CodeGraph;
 use crate::ingest::{ingest, ingest_snapshot, IngestOptions, RepoSource};
-use crate::model::{Symbol, SymbolId, SymbolKind};
+use crate::model::{Symbol, SymbolId, SymbolKind, TargetKind};
 
 #[derive(Debug, Clone, Default)]
 pub struct DiffOptions {
@@ -88,6 +89,9 @@ pub struct DiffImpact {
     pub files: Vec<AffectedGroup>,
     pub modules: Vec<AffectedGroup>,
     pub tests: Vec<SymbolId>,
+    /// Modified functions and methods (not tests) that no test reaches
+    /// through resolved relationships in the head revision.
+    pub untested: Vec<SymbolRef>,
     pub truncated: bool,
 }
 
@@ -119,6 +123,8 @@ pub struct DiffSummary {
     pub affected_modules: u32,
     pub affected_files: u32,
     pub affected_tests: u32,
+    /// Modified functions and methods that no test reaches.
+    pub untested_changes: u32,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -241,7 +247,29 @@ pub fn build_report(
 
     let head_graph = CodeGraph::from_analysis(head);
     let base_graph = CodeGraph::from_analysis(base);
-    let impact = diff_impact(&head_graph, &base_graph, &comparison.changes, options);
+    let mut impact = diff_impact(&head_graph, &base_graph, &comparison.changes, options);
+    // Test-support code (helpers in test, bench and example crates) is not
+    // expected to be reached by tests.
+    let support: HashSet<&str> = head
+        .crates
+        .iter()
+        .filter(|c| {
+            matches!(
+                c.kind,
+                TargetKind::Test | TargetKind::Bench | TargetKind::Example
+            )
+        })
+        .map(|c| c.name.as_str())
+        .collect();
+    let support_files: HashSet<&str> = head
+        .files
+        .iter()
+        .filter(|f| support.contains(f.crate_name.as_str()))
+        .map(|f| f.path.as_str())
+        .collect();
+    impact
+        .untested
+        .retain(|u| !support_files.contains(u.file.as_str()));
 
     let files: Vec<ChangedFile> = file_changes
         .into_iter()
@@ -368,6 +396,28 @@ fn diff_impact(
         .into_iter()
         .collect();
 
+    // Modified code that no test exercises, by the same rules.
+    let modified: HashSet<&SymbolId> = changes
+        .iter()
+        .filter(|c| c.change == ChangeKind::Modified)
+        .map(|c| &c.symbol.id)
+        .collect();
+    let untested = select_tests(
+        head,
+        &seeds(head, ChangeKind::Modified),
+        ImpactOptions {
+            include_ambiguous: false,
+            ..options
+        },
+    )
+    .map(|s| {
+        s.untested
+            .into_iter()
+            .filter(|u| modified.contains(&u.id))
+            .collect()
+    })
+    .unwrap_or_default();
+
     DiffImpact {
         max_depth: options.max_depth,
         include_ambiguous: options.include_ambiguous,
@@ -375,6 +425,7 @@ fn diff_impact(
         files,
         modules,
         tests,
+        untested,
         truncated,
     }
 }
@@ -390,6 +441,7 @@ fn summarize(
         affected_modules: impact.modules.len() as u32,
         affected_files: impact.files.len() as u32,
         affected_tests: impact.tests.len() as u32,
+        untested_changes: impact.untested.len() as u32,
         ..Default::default()
     };
     for f in files {

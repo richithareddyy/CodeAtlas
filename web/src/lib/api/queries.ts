@@ -227,6 +227,7 @@ export async function gitImpact(
 				}
 				cosmetic { ${SYMBOL_REF} }
 				maxDepth includeAmbiguous truncated analysisMs tests
+				untested { ${SYMBOL_REF} }
 				downstream {
 					depth confidence revision symbol { ${SYMBOL_REF} }
 					path { source target kind file lines resolution }
@@ -240,6 +241,7 @@ export async function gitImpact(
 					typesAdded typesRemoved typesModified
 					signaturesChanged moved cosmetic
 					downstreamSymbols possibleSymbols affectedModules affectedFiles affectedTests
+					untestedChanges
 				}
 			}
 		}`,

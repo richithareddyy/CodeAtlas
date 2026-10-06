@@ -858,3 +858,60 @@ async fn git_operations_need_git_history() {
     assert_eq!(code, "SOURCE_UNAVAILABLE");
     api.finish().await;
 }
+
+#[tokio::test]
+async fn test_impact_selects_direct_and_transitive_tests() {
+    let Some(api) = Api::start(&["test-impact"], true).await else {
+        return;
+    };
+    let query = r#"query($repo: ID!, $ids: [ID!]!) {
+        testImpact(repoId: $repo, symbolIds: $ids) {
+            totalTests
+            direct { test { id } calls reaches }
+            transitive { test { id } depth calls path { source target kind file lines } }
+            untested { id }
+            changedTests { id }
+        } }"#;
+    let data = api
+        .data(
+            query,
+            json!({ "repo": api.repos[0], "ids": [
+                "fn:ledger::pricing::subtotal", "fn:ledger::util::unused_helper"
+            ] }),
+        )
+        .await;
+    let s = &data["testImpact"];
+    assert_eq!(s["totalTests"], 9);
+    assert_eq!(
+        s["direct"],
+        json!([{ "test": { "id": "fn:ledger::pricing::tests::subtotal_adds_items" },
+                 "calls": 1, "reaches": ["fn:ledger::pricing::subtotal"] }])
+    );
+    assert_eq!(
+        s["transitive"][0]["test"]["id"],
+        "fn:ledger_tests::summary_includes_tax"
+    );
+    assert_eq!(s["transitive"][0]["calls"], 3);
+    assert_eq!(
+        s["transitive"][0]["path"][0],
+        json!({ "source": "fn:ledger_tests::summary_includes_tax", "target": "fn:ledger::report::summary",
+                "kind": "CALLS", "file": "tests/ledger_tests.rs", "lines": [7] })
+    );
+    assert_eq!(
+        s["untested"],
+        json!([{ "id": "fn:ledger::util::unused_helper" }])
+    );
+    assert_eq!(s["changedTests"], json!([]));
+
+    let vars = |ids: Value| json!({ "repo": api.repos[0], "ids": ids });
+    assert_eq!(
+        api.error_code(query, vars(json!([]))).await,
+        "BAD_USER_INPUT"
+    );
+    assert_eq!(
+        api.error_code(query, vars(json!(["fn:ledger::nope"])))
+            .await,
+        "NOT_FOUND"
+    );
+    api.finish().await;
+}

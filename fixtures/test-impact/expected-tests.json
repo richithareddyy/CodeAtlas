@@ -1,0 +1,162 @@
+{
+  "repository": "test-impact",
+  "commit": "39c73e1ca1515c466f2713aafa0c86be7f12a8c6",
+  "source_hash": "9c02d4b5af8fe7c5",
+  "method": "panic-on-entry",
+  "toolchain": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "tests": [
+    "fn:ledger::pricing::tests::small_orders_are_not_discounted",
+    "fn:ledger::pricing::tests::subtotal_adds_items",
+    "fn:ledger::pricing::tests::tax_is_eight_percent",
+    "fn:ledger_tests::balance_reads_the_memory_store",
+    "fn:ledger_tests::file_store_parses_lines",
+    "fn:ledger_tests::generic_lookup_defaults_to_zero",
+    "fn:ledger_tests::positive_values_are_valid",
+    "fn:ledger_tests::scaled_clamps_values",
+    "fn:ledger_tests::summary_includes_tax"
+  ],
+  "baseline_failures": [],
+  "probes": [
+    {
+      "symbol": "fn:ledger::checks::all_valid",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::positive_values_are_valid"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::parse::number",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::file_store_parses_lines"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::parse::pair",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::file_store_parses_lines"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::pricing::bulk_discount",
+      "status": "ok",
+      "failing": []
+    },
+    {
+      "symbol": "fn:ledger::pricing::route",
+      "status": "ok",
+      "failing": [
+        "fn:ledger::pricing::tests::small_orders_are_not_discounted"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::pricing::subtotal",
+      "status": "ok",
+      "failing": [
+        "fn:ledger::pricing::tests::subtotal_adds_items",
+        "fn:ledger_tests::summary_includes_tax"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::pricing::tax",
+      "status": "ok",
+      "failing": [
+        "fn:ledger::pricing::tests::tax_is_eight_percent",
+        "fn:ledger_tests::summary_includes_tax"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::pricing::total",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::summary_includes_tax"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::report::balance",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::balance_reads_the_memory_store",
+        "fn:ledger_tests::file_store_parses_lines"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::report::scaled",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::scaled_clamps_values"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::report::summary",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::summary_includes_tax"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::store::lookup_or_zero",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::generic_lookup_defaults_to_zero"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::util::clamp",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::scaled_clamps_values"
+      ]
+    },
+    {
+      "symbol": "fn:ledger::util::unused_helper",
+      "status": "ok",
+      "failing": []
+    },
+    {
+      "symbol": "fn:ledger::util::validate",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::positive_values_are_valid"
+      ]
+    },
+    {
+      "symbol": "method:ledger::store::<FileStore as Store>::get",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::file_store_parses_lines"
+      ]
+    },
+    {
+      "symbol": "method:ledger::store::<MemoryStore as Store>::get",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::balance_reads_the_memory_store",
+        "fn:ledger_tests::generic_lookup_defaults_to_zero"
+      ]
+    },
+    {
+      "symbol": "method:ledger::store::FileStore::parse",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::file_store_parses_lines"
+      ]
+    },
+    {
+      "symbol": "method:ledger::store::MemoryStore::insert",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::balance_reads_the_memory_store"
+      ]
+    },
+    {
+      "symbol": "method:ledger::store::MemoryStore::new",
+      "status": "ok",
+      "failing": [
+        "fn:ledger_tests::balance_reads_the_memory_store",
+        "fn:ledger_tests::generic_lookup_defaults_to_zero"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "repository": "change-impact",
+  "commit": "39c73e1ca1515c466f2713aafa0c86be7f12a8c6",
+  "source_hash": "e58ee7cd9e8956fa",
+  "method": "panic-on-entry",
+  "toolchain": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "tests": [
+    "fn:payment_tests::test_authorize_valid",
+    "fn:payment_tests::test_checkout",
+    "fn:payment_tests::test_daily_total",
+    "fn:payment_tests::test_refund"
+  ],
+  "baseline_failures": [],
+  "probes": [
+    {
+      "symbol": "fn:change_impact::checkout::apply_discount",
+      "status": "ok",
+      "failing": [
+        "fn:payment_tests::test_checkout"
+      ]
+    },
+    {
+      "symbol": "fn:change_impact::checkout::checkout",
+      "status": "ok",
+      "failing": [
+        "fn:payment_tests::test_checkout"
+      ]
+    },
+    {
+      "symbol": "fn:change_impact::payments::validate_amount",
+      "status": "ok",
+      "failing": [
+        "fn:payment_tests::test_authorize_valid",
+        "fn:payment_tests::test_checkout"
+      ]
+    },
+    {
+      "symbol": "fn:change_impact::refunds::refund_order",
+      "status": "ok",
+      "failing": [
+        "fn:payment_tests::test_refund"
+      ]
+    },
+    {
+      "symbol": "fn:change_impact::reports::daily_total",
+      "status": "ok",
+      "failing": [
+        "fn:payment_tests::test_daily_total"
+      ]
+    },
+    {
+      "symbol": "method:change_impact::gateway::<FakeGateway as Gateway>::charge",
+      "status": "ok",
+      "failing": [
+        "fn:payment_tests::test_authorize_valid",
+        "fn:payment_tests::test_checkout"
+      ]
+    },
+    {
+      "symbol": "method:change_impact::gateway::<FakeGateway as Gateway>::refund",
+      "status": "ok",
+      "failing": [
+        "fn:payment_tests::test_refund"
+      ]
+    },
+    {
+      "symbol": "method:change_impact::gateway::<StripeGateway as Gateway>::charge",
+      "status": "ok",
+      "failing": []
+    },
+    {
+      "symbol": "method:change_impact::gateway::<StripeGateway as Gateway>::refund",
+      "status": "ok",
+      "failing": []
+    },
+    {
+      "symbol": "method:change_impact::payments::PaymentService::authorize",
+      "status": "ok",
+      "failing": [
+        "fn:payment_tests::test_authorize_valid",
+        "fn:payment_tests::test_checkout"
+      ]
+    },
+    {
+      "symbol": "method:change_impact::payments::PaymentService::new",
+      "status": "ok",
+      "failing": [
+        "fn:payment_tests::test_authorize_valid",
+        "fn:payment_tests::test_checkout"
+      ]
+    }
+  ]
+}

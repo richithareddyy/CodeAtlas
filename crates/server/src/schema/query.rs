@@ -5,7 +5,7 @@ use async_graphql::{Context, Object, Result, ID};
 use codeatlas_analyzer::diff::{analyze_diff, DiffOptions};
 use codeatlas_analyzer::error::{AnalyzerError, GitError};
 use codeatlas_analyzer::git::Git;
-use codeatlas_analyzer::graph::{architecture, impact};
+use codeatlas_analyzer::graph::{architecture, impact, test_selection};
 use codeatlas_analyzer::ingest::IngestOptions;
 use codeatlas_analyzer::model::SymbolId;
 use codeatlas_analyzer::RepoSource;
@@ -22,6 +22,8 @@ const MAX_PAGE: usize = 50;
 const MAX_HOTSPOTS: i32 = 100;
 /// Upper bound for `first` in `gitRefs`.
 const MAX_REFS: i32 = 200;
+/// Upper bound for `symbolIds` in `testImpact`.
+const MAX_TEST_IMPACT_SYMBOLS: usize = 100;
 
 pub struct QueryRoot;
 
@@ -339,6 +341,41 @@ impl QueryRoot {
                 path: a.path.into_iter().map(Into::into).collect(),
             })
             .collect())
+    }
+
+    /// Tests to run when the given symbols change (types and modules
+    /// include their members): direct and transitive tests with the chain
+    /// to the change, and changed code that no test reaches.
+    async fn test_impact(
+        &self,
+        ctx: &Context<'_>,
+        repo_id: ID,
+        symbol_ids: Vec<ID>,
+        #[graphql(default = 8)] max_depth: i32,
+        #[graphql(default = false)] include_ambiguous: bool,
+    ) -> Result<TestSelection> {
+        if symbol_ids.is_empty() || symbol_ids.len() > MAX_TEST_IMPACT_SYMBOLS {
+            return Err(bad_input(format!(
+                "give between 1 and {MAX_TEST_IMPACT_SYMBOLS} symbolIds"
+            )));
+        }
+        let state = state(ctx)?;
+        let options = impact::ImpactOptions {
+            max_depth: depth(max_depth, state.store.limits().max_depth, "maxDepth")?,
+            include_ambiguous,
+            ..Default::default()
+        };
+        let (_, graph) = state.graphs.get(&state.store, &repo_id).await.gql()?;
+        let mut changed = Vec::new();
+        for id in &symbol_ids {
+            let node = graph
+                .node(&SymbolId::from_stored(id.0.clone()))
+                .ok_or_else(|| from_impact(impact::ImpactError::UnknownSymbol(id.0.clone())))?;
+            changed.extend(impact::expand_change(&graph, node));
+        }
+        let selection =
+            test_selection::select_tests(&graph, &changed, options).map_err(from_impact)?;
+        Ok(selection.into())
     }
 
     /// Strongly connected components at the given level, largest first.

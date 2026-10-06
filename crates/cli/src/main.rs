@@ -1,5 +1,7 @@
 mod diff_view;
 mod graph;
+mod probe;
+mod test_view;
 mod views;
 
 use std::fs;
@@ -11,9 +13,11 @@ use clap::{Parser, Subcommand, ValueEnum};
 use codeatlas_analyzer::diff::{analyze_diff, DiffOptions};
 use codeatlas_analyzer::evaluation::{evaluate, Evaluation, GroundTruth, SetComparison};
 use codeatlas_analyzer::graph::impact::ImpactOptions;
+use codeatlas_analyzer::graph::CodeGraph;
 use codeatlas_analyzer::ingest::{default_clone_dir, ingest, DiscoveryOptions, IngestOptions};
 use codeatlas_analyzer::model::SymbolKind;
 use codeatlas_analyzer::parser::RustParser;
+use codeatlas_analyzer::test_evaluation::{evaluate_tests, source_hash, TestGroundTruth};
 use codeatlas_analyzer::{analyze_source, RepoSource, RepositoryAnalysis};
 use codeatlas_store::{prepare, StateDir};
 use tracing_subscriber::EnvFilter;
@@ -102,6 +106,49 @@ enum Command {
         output: Option<PathBuf>,
         #[arg(long, env = "CODEATLAS_CLONE_DIR")]
         clone_dir: Option<PathBuf>,
+    },
+    /// Record which tests execute which functions, by making functions
+    /// panic one at a time and running the test suite. Builds and runs the
+    /// repository's tests (in a scratch copy): use only on repositories you
+    /// trust. The result is the ground truth for `evaluate-tests`.
+    ProbeTests {
+        /// Local repository path.
+        source: PathBuf,
+        /// Number of functions to probe (a deterministic random sample of
+        /// non-test functions and methods).
+        #[arg(long, short = 'n', default_value_t = 20)]
+        sample: usize,
+        /// Seed of the sample.
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        /// Probe these symbol IDs instead of a sample (repeatable).
+        #[arg(long = "symbol")]
+        symbols: Vec<String>,
+        /// Seconds allowed per test binary run.
+        #[arg(long, default_value_t = 300)]
+        timeout: u64,
+        /// Where to write the ground truth (JSON).
+        #[arg(long, short)]
+        output: PathBuf,
+    },
+    /// Compare static test selection with a ground truth from `probe-tests`:
+    /// precision, recall, and every miss.
+    EvaluateTests {
+        /// Repository path (the same state the ground truth was made from).
+        source: PathBuf,
+        #[arg(long)]
+        truth: PathBuf,
+        #[arg(long, default_value_t = 8)]
+        depth: u32,
+        /// Also select tests reached only through ambiguous calls.
+        #[arg(long)]
+        include_ambiguous: bool,
+        /// Print JSON instead of text.
+        #[arg(long)]
+        json: bool,
+        /// Also write the JSON result to this file.
+        #[arg(long, short)]
+        output: Option<PathBuf>,
     },
     /// Delete an indexed repository's graph from Neo4j.
     Remove {
@@ -254,6 +301,80 @@ async fn main() -> Result<()> {
                     .with_context(|| format!("failed to write {}", path.display()))?,
                 None => writeln!(std::io::stdout(), "{rendered}")?,
             }
+        }
+        Command::ProbeTests {
+            source,
+            sample,
+            seed,
+            symbols,
+            timeout,
+            output,
+        } => {
+            let analysis = analyze_source(
+                &RepoSource::Local(source.clone()),
+                &IngestOptions::default(),
+            )
+            .with_context(|| format!("failed to analyse {}", source.display()))?;
+            let truth = probe::probe(
+                &analysis,
+                &probe::ProbeOptions {
+                    symbols,
+                    sample,
+                    seed,
+                    timeout: std::time::Duration::from_secs(timeout),
+                },
+            )?;
+            fs::write(&output, serde_json::to_string_pretty(&truth)? + "\n")
+                .with_context(|| format!("failed to write {}", output.display()))?;
+            writeln!(
+                std::io::stdout(),
+                "Wrote {} probes over {} tests to {}",
+                truth.probes.len(),
+                truth.tests.len(),
+                output.display()
+            )?;
+        }
+        Command::EvaluateTests {
+            source,
+            truth,
+            depth,
+            include_ambiguous,
+            json,
+            output,
+        } => {
+            let truth: TestGroundTruth = serde_json::from_str(
+                &fs::read_to_string(&truth)
+                    .with_context(|| format!("failed to read {}", truth.display()))?,
+            )
+            .context("invalid ground truth")?;
+            let analysis = analyze_source(
+                &RepoSource::Local(source.clone()),
+                &IngestOptions::default(),
+            )
+            .with_context(|| format!("failed to analyse {}", source.display()))?;
+            if truth.source_hash != source_hash(&analysis) {
+                eprintln!(
+                    "warning: the sources differ from those the ground truth was recorded on"
+                );
+            }
+            let graph = CodeGraph::from_analysis(&analysis);
+            let options = ImpactOptions {
+                max_depth: depth,
+                include_ambiguous,
+                ..Default::default()
+            };
+            let evaluation = evaluate_tests(&graph, &truth, options);
+            let rendered = serde_json::to_string_pretty(&evaluation)?;
+            if let Some(path) = output {
+                fs::write(&path, rendered.clone() + "\n")
+                    .with_context(|| format!("failed to write {}", path.display()))?;
+            }
+            let text = if json {
+                rendered
+            } else {
+                test_view::evaluation(&evaluation)
+            };
+            writeln!(std::io::stdout(), "{text}")?;
         }
         Command::Remove { repo, state_dir } => {
             let states = StateDir::new(state_dir.unwrap_or_else(StateDir::default_dir));

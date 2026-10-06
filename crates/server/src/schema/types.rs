@@ -3,7 +3,7 @@
 //! crates do not depend on.
 
 use async_graphql::{Enum, SimpleObject, ID};
-use codeatlas_analyzer::graph::{architecture, impact};
+use codeatlas_analyzer::graph::{architecture, impact, test_selection};
 use codeatlas_analyzer::{diff, git};
 use codeatlas_store as store;
 
@@ -488,6 +488,70 @@ impl From<impact::ImpactReport> for ImpactReport {
 }
 
 #[derive(SimpleObject)]
+pub struct SelectedTest {
+    pub test: SymbolRef,
+    /// Length of the evidence chain.
+    pub depth: i32,
+    /// Call steps in the chain; 1 for direct tests.
+    pub calls: i32,
+    pub confidence: Confidence,
+    /// From the test to a changed symbol.
+    pub path: Vec<EvidenceStep>,
+    /// Changed symbols the test reaches.
+    pub reaches: Vec<ID>,
+}
+
+impl From<test_selection::SelectedTest> for SelectedTest {
+    fn from(t: test_selection::SelectedTest) -> Self {
+        Self {
+            test: t.test.into(),
+            depth: int(t.depth),
+            calls: int(t.calls),
+            confidence: match t.confidence {
+                impact::Confidence::Certain => Confidence::Certain,
+                impact::Confidence::Possible => Confidence::Possible,
+            },
+            path: t.path.into_iter().map(Into::into).collect(),
+            reaches: t.reaches.into_iter().map(|id| ID(id.to_string())).collect(),
+        }
+    }
+}
+
+/// Tests to run for a change.
+#[derive(SimpleObject)]
+pub struct TestSelection {
+    /// Changed symbols, with types and modules expanded to their members.
+    pub changed: Vec<SymbolRef>,
+    /// Tests among the changed symbols.
+    pub changed_tests: Vec<SymbolRef>,
+    /// Tests calling changed code directly.
+    pub direct: Vec<SelectedTest>,
+    /// Tests reaching changed code through other code.
+    pub transitive: Vec<SelectedTest>,
+    /// Tests reached only through ambiguous calls (when requested).
+    pub possible: Vec<SelectedTest>,
+    /// Changed functions and methods no test reaches.
+    pub untested: Vec<SymbolRef>,
+    pub total_tests: i32,
+    pub truncated: bool,
+}
+
+impl From<test_selection::TestSelection> for TestSelection {
+    fn from(s: test_selection::TestSelection) -> Self {
+        Self {
+            changed: s.changed.into_iter().map(Into::into).collect(),
+            changed_tests: s.changed_tests.into_iter().map(Into::into).collect(),
+            direct: s.direct.into_iter().map(Into::into).collect(),
+            transitive: s.transitive.into_iter().map(Into::into).collect(),
+            possible: s.possible.into_iter().map(Into::into).collect(),
+            untested: s.untested.into_iter().map(Into::into).collect(),
+            total_tests: int(s.total_tests),
+            truncated: s.truncated,
+        }
+    }
+}
+
+#[derive(SimpleObject)]
 pub struct AffectedTest {
     pub test: SymbolRef,
     pub depth: i32,
@@ -868,6 +932,7 @@ pub struct DiffSummary {
     pub affected_modules: i32,
     pub affected_files: i32,
     pub affected_tests: i32,
+    pub untested_changes: i32,
 }
 
 #[derive(SimpleObject)]
@@ -892,6 +957,8 @@ pub struct GitImpactReport {
     pub affected_files: Vec<AffectedGroup>,
     pub affected_modules: Vec<AffectedGroup>,
     pub tests: Vec<ID>,
+    /// Modified functions and methods that no test reaches.
+    pub untested: Vec<SymbolRef>,
     pub truncated: bool,
     pub summary: DiffSummary,
     /// Time to analyse both revisions and compare them.
@@ -985,6 +1052,7 @@ impl From<diff::DiffReport> for GitImpactReport {
                 .into_iter()
                 .map(|t| ID(t.to_string()))
                 .collect(),
+            untested: r.impact.untested.into_iter().map(Into::into).collect(),
             truncated: r.impact.truncated,
             summary: DiffSummary {
                 files_changed: int(s.files_changed),
@@ -1009,6 +1077,7 @@ impl From<diff::DiffReport> for GitImpactReport {
                 affected_modules: int(s.affected_modules),
                 affected_files: int(s.affected_files),
                 affected_tests: int(s.affected_tests),
+                untested_changes: int(s.untested_changes),
             },
             analysis_ms: r.stats.total_ms,
         }
