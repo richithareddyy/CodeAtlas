@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ArchitectureLevel } from '../../api/types';
 	import { EMPTY, architectureLabel, fromArchitecture } from '../../graph/elements';
+	import { supportCrateNames } from '../../format';
 	import { workspace } from '../../state/workspace.svelte';
 	import EmptyState from '../EmptyState.svelte';
 	import GraphCanvas from '../GraphCanvas.svelte';
@@ -10,8 +11,22 @@
 	let selected = $state<string | null>(null);
 
 	const graph = $derived(workspace.arch);
-	const data = $derived(graph ? fromArchitecture(graph, workspace.archScope) : EMPTY);
+	/** Tests, benches and examples are hidden until asked for. */
+	let showSupport = $state(false);
+	const supportCrates = $derived(supportCrateNames(workspace.crates));
+	const hidden = $derived(showSupport ? new Set<string>() : supportCrates);
+	const data = $derived(graph ? fromArchitecture(graph, workspace.archScope, hidden) : EMPTY);
 	const node = $derived(graph?.nodes.find((n) => n.id === selected) ?? null);
+	/** Scope path as breadcrumb steps (`tokio`, `tokio::runtime`, ...). */
+	const crumbs = $derived(
+		(workspace.archScope ?? '')
+			.split('::')
+			.filter(Boolean)
+			.map((segment, i, all) => ({ segment, path: all.slice(0, i + 1).join('::') }))
+	);
+	const selectedGroup = $derived(
+		selected?.startsWith('group:') ? data.nodes.find((n) => n.id === selected) : null
+	);
 	const cycleCount = $derived(data.nodes.filter((n) => n.classes.includes('cycle')).length);
 
 	function setLevel(level: ArchitectureLevel) {
@@ -39,12 +54,27 @@
 			]}
 		/>
 		{#if workspace.archScope}
-			<span class="scope">
-				Within <code>{workspace.archScope}</code>
-				<button class="btn small" onclick={() => (workspace.archScope = null)}>Show all</button>
-			</span>
+			<nav class="scope" aria-label="Zoom level">
+				<button class="crumb" onclick={() => (workspace.archScope = null)}>all</button>
+				{#each crumbs as c (c.path)}
+					<span class="faint">›</span>
+					{#if c.path === workspace.archScope}
+						<code>{c.segment}</code>
+					{:else}
+						<button class="crumb mono" onclick={() => (workspace.archScope = c.path)}
+							>{c.segment}</button
+						>
+					{/if}
+				{/each}
+			</nav>
 		{/if}
 		<div class="right">
+			{#if supportCrates.size && workspace.archLevel !== 'FILE'}
+				<label class="legend" title="Test, bench and example crates">
+					<input type="checkbox" bind:checked={showSupport} />
+					tests, benches, examples ({supportCrates.size})
+				</label>
+			{/if}
 			<span class="legend"><span class="swatch cycle"></span>in a cycle ({cycleCount})</span>
 			<span class="faint">{data.nodes.length} nodes · {data.edges.length} dependencies</span>
 			<button class="btn small" onclick={() => canvas?.fit()} disabled={!graph}>Fit</button>
@@ -72,9 +102,18 @@
 			<p class="hint faint">
 				Edges point from dependent to dependency; numbers count the underlying symbol references.
 				{#if workspace.archLevel === 'CRATE'}Double-click a crate to see its modules.{/if}
-				{#if workspace.archLevel === 'MODULE'}Double-click a module to explore its symbols.{/if}
+				{#if workspace.archLevel === 'MODULE'}Nodes marked with a count stand for that many modules:
+					double-click one to zoom in, or a single module to explore its symbols.{/if}
 			</p>
-			{#if node}
+			{#if selectedGroup}
+				<div class="info">
+					<p class="mono name">{selectedGroup.tooltip.split('\n')[0]}</p>
+					<p>{selectedGroup.tooltip.split('\n')[1]}</p>
+					<button class="btn small" onclick={() => selected && workspace.drillDown(selected)}
+						>Zoom in</button
+					>
+				</div>
+			{:else if node}
 				<div class="info">
 					<p class="mono name">{architectureLabel(node.id)}</p>
 					<p>{node.fanIn} dependents · {node.fanOut} dependencies</p>
@@ -103,6 +142,16 @@
 		gap: 12px;
 		padding: 6px 10px;
 		border-bottom: 1px solid var(--border);
+	}
+	.crumb {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--accent);
+		font-size: 12px;
+	}
+	.crumb:hover {
+		text-decoration: underline;
 	}
 	.scope {
 		display: flex;

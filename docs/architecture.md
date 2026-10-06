@@ -242,6 +242,22 @@ token matches the stored graph; otherwise the run indexes in full and saves
 a fresh state. Losing the state therefore costs one full index, never a
 wrong graph.
 
+## Benchmarks (`cli/src/bench.rs`)
+
+`codeatlas bench` produces the measurements in
+[benchmarks/](../benchmarks). Choices worth noting:
+
+* **Analyses in fresh processes.** Each analysis run starts a new
+  `codeatlas` process (a hidden `bench-analysis` subcommand), so memory is
+  that process's peak resident size and no run benefits from another's
+  allocations. The operating system's file cache is warm after the first
+  run, as it would be for a developer re-running an analysis.
+* **Indexing on a scratch copy** under a repository ID of its own, so a
+  benchmark never touches an existing index or the source.
+* **Raw samples kept.** Results contain every sample next to the summary,
+  plus the environment (CPU, Neo4j version, build profile), so they can be
+  checked and compared, not just quoted.
+
 ## Web UI (`web/`)
 
 A SvelteKit 3 app (Svelte 5, TypeScript) built with `adapter-static` as a
@@ -261,7 +277,10 @@ the GraphQL API.
   element builders turn API results into canvas elements. The layouts are
   layered: trees by distance from the focused symbol; dependency graphs by
   longest path, with cycle edges ignored; each in whichever orientation
-  draws the graph largest. Cycles are drawn as a ring in hop order.
+  draws the graph largest, wrapping wide layers. Cycles are drawn as a ring
+  in hop order. `zoom.ts` aggregates the module graph by hierarchy: inside
+  a scope each submodule tree is one node (weights summed), so a crate
+  with hundreds of modules (448 in tokio) shows its top level first.
 * `src/lib/components`: the explorer, graph canvas (Cytoscape.js, updated
   by diffing elements so layouts only rerun when the structure changes),
   inspector, command palette and the five views. Colours are CSS custom
@@ -286,5 +305,5 @@ plain, tested functions.
 | 7 | Git diff analysis: changed files and symbols (signatures, moves, cosmetic edits), impact of a diff, `codeatlas diff` (text / Markdown / JSON), `gitImpact` and `gitRefs`, Changes view | Done |
 | 8 | Incremental indexing: per-file reuse by content hash and module path, global re-resolution, graph snapshots and deltas written in one transaction, measured against full indexing | Done |
 | 9 | Test selection (direct, transitive, possible, untested changes) with evidence; ground truth by panic probes (`probe-tests`), precision and recall (`evaluate-tests`) on fixtures and ripgrep | Done |
-| 10 | Benchmark suite (`codeatlas bench`); architecture views tuned on larger repositories | Planned |
+| 10 | Benchmark suite (`codeatlas bench`): corpus, resolution, analysis time and throughput, peak memory, full and incremental indexing, query latency, test-impact precision/recall, as JSON; results on ripgrep, CodeAtlas and tokio; UI checked on tokio | Done |
 | 11 | Optional local-model explanations grounded in graph evidence | Planned |

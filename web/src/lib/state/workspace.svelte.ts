@@ -272,6 +272,9 @@ class Workspace {
 		if (this.archLevel === 'CRATE') {
 			this.archScope = id;
 			await this.loadArchitecture('MODULE');
+		} else if (this.archLevel === 'MODULE' && id.startsWith('group:')) {
+			// Zoom into a module tree; the graph is already loaded.
+			this.archScope = id.slice('group:'.length);
 		} else if (this.archLevel === 'MODULE' && id.startsWith('mod:')) {
 			await this.focus(id, { view: 'graph' });
 		}

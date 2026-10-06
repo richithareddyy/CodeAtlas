@@ -141,3 +141,19 @@ export function count(n: number, noun: string, plural = `${noun}s`): string {
 export function callSteps(path: { kind: string }[]): number {
 	return path.filter((step) => step.kind === 'CALLS' || step.kind === 'MAY_CALL').length;
 }
+
+/** Crate kinds that hold tests or examples rather than the product. */
+export const SUPPORT_CRATE_KINDS = new Set(['test', 'bench', 'example']);
+
+/**
+ * Names of test, bench and example crates, unless a library or binary
+ * crate has the same name.
+ */
+export function supportCrateNames(crates: { name: string; kind: string }[]): Set<string> {
+	const product = new Set(
+		crates.filter((c) => !SUPPORT_CRATE_KINDS.has(c.kind)).map((c) => c.name)
+	);
+	return new Set(
+		crates.filter((c) => SUPPORT_CRATE_KINDS.has(c.kind) && !product.has(c.name)).map((c) => c.name)
+	);
+}

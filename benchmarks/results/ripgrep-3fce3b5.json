@@ -1,0 +1,813 @@
+{
+  "schema": 1,
+  "codeatlas": "0.1.0",
+  "build": "release",
+  "measured_at": "2026-10-06T06:29:43.750313+00:00",
+  "repository": {
+    "name": "ripgrep",
+    "origin_url": "https://github.com/BurntSushi/ripgrep",
+    "commit": "3fce3b5bb0236da2df6d99672afb8a719642eca7"
+  },
+  "environment": {
+    "os": "macos",
+    "arch": "aarch64",
+    "cpu": "Apple M5",
+    "logical_cpus": 10,
+    "neo4j": "Neo4j Kernel 5.26.31 community"
+  },
+  "parameters": {
+    "runs": 5,
+    "query_runs": 3,
+    "targets": 20,
+    "seed": 1,
+    "base": "HEAD~10"
+  },
+  "corpus": {
+    "source_files": 113,
+    "rust_files": 110,
+    "loc": 51095,
+    "rust_loc": 50953,
+    "symbols": {
+      "enum": 77,
+      "function": 792,
+      "method": 2199,
+      "module": 150,
+      "struct": 311,
+      "trait": 7
+    },
+    "tests": 492,
+    "call_sites": 19035,
+    "relationships": {
+      "ambiguous_candidates": 12944,
+      "calls": 4682,
+      "implements": 963,
+      "imports": 595
+    },
+    "resolution_rate": 0.7626000000000001,
+    "calls_resolved": 9248,
+    "calls_ambiguous": 2873,
+    "calls_unresolved": 6,
+    "stored_nodes": 3668,
+    "stored_relationships": 19010
+  },
+  "analysis": {
+    "samples": [
+      {
+        "total_ms": 330.625542,
+        "parse_ms": 149.42482999999996,
+        "resolve_ms": 22.130792,
+        "peak_rss_bytes": 49512448
+      },
+      {
+        "total_ms": 325.324083,
+        "parse_ms": 147.53174800000005,
+        "resolve_ms": 21.640875,
+        "peak_rss_bytes": 49545216
+      },
+      {
+        "total_ms": 326.94849999999997,
+        "parse_ms": 148.40303799999992,
+        "resolve_ms": 21.652917,
+        "peak_rss_bytes": 48611328
+      },
+      {
+        "total_ms": 328.524834,
+        "parse_ms": 148.770749,
+        "resolve_ms": 21.619833,
+        "peak_rss_bytes": 48562176
+      },
+      {
+        "total_ms": 331.858625,
+        "parse_ms": 148.27753600000003,
+        "resolve_ms": 21.611959,
+        "peak_rss_bytes": 48594944
+      }
+    ],
+    "total_ms": {
+      "n": 5,
+      "min": 325.32,
+      "median": 328.52,
+      "p95": 331.86,
+      "max": 331.86,
+      "mean": 328.66
+    },
+    "parse_ms": {
+      "n": 5,
+      "min": 147.53,
+      "median": 148.4,
+      "p95": 149.42,
+      "max": 149.42,
+      "mean": 148.48
+    },
+    "resolve_ms": {
+      "n": 5,
+      "min": 21.61,
+      "median": 21.64,
+      "p95": 22.13,
+      "max": 22.13,
+      "mean": 21.73
+    },
+    "peak_rss_mb": {
+      "n": 5,
+      "min": 46.31,
+      "median": 46.36,
+      "p95": 47.25,
+      "max": 47.25,
+      "mean": 46.7
+    },
+    "loc_per_second": 155098.62,
+    "files_per_second": 334.84,
+    "parse_loc_per_second": 343349.06
+  },
+  "indexing": {
+    "full": {
+      "description": "full index without saved state (parse everything, write everything)",
+      "samples": [
+        {
+          "mode": "full",
+          "ingest_ms": 27.71,
+          "analysis_ms": 299.66,
+          "write_ms": 547.45,
+          "total_ms": 909.54,
+          "files_parsed": 110,
+          "delta": {
+            "nodes_added": 3668,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 19010,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        },
+        {
+          "mode": "full",
+          "ingest_ms": 24.42,
+          "analysis_ms": 299.29,
+          "write_ms": 667.89,
+          "total_ms": 1021.27,
+          "files_parsed": 110,
+          "delta": {
+            "nodes_added": 3668,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 19010,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        },
+        {
+          "mode": "full",
+          "ingest_ms": 24.89,
+          "analysis_ms": 299.04,
+          "write_ms": 540.41,
+          "total_ms": 890.16,
+          "files_parsed": 110,
+          "delta": {
+            "nodes_added": 3668,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 19010,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        },
+        {
+          "mode": "full",
+          "ingest_ms": 16.47,
+          "analysis_ms": 302.3,
+          "write_ms": 486.84,
+          "total_ms": 836.8,
+          "files_parsed": 110,
+          "delta": {
+            "nodes_added": 3668,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 19010,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        },
+        {
+          "mode": "full",
+          "ingest_ms": 23.39,
+          "analysis_ms": 301.29,
+          "write_ms": 507.57,
+          "total_ms": 849.28,
+          "files_parsed": 110,
+          "delta": {
+            "nodes_added": 3668,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 19010,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        }
+      ],
+      "total_ms": {
+        "n": 5,
+        "min": 836.8,
+        "median": 890.16,
+        "p95": 1021.27,
+        "max": 1021.27,
+        "mean": 901.41
+      },
+      "write_ms": {
+        "n": 5,
+        "min": 486.84,
+        "median": 540.41,
+        "p95": 667.89,
+        "max": 667.89,
+        "mean": 550.03
+      }
+    },
+    "unchanged": {
+      "description": "incremental re-index, nothing changed",
+      "samples": [
+        {
+          "mode": "incremental",
+          "ingest_ms": 16.74,
+          "analysis_ms": 92.51,
+          "write_ms": 5.04,
+          "total_ms": 140.87,
+          "files_parsed": 0,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 15.04,
+          "analysis_ms": 82.79,
+          "write_ms": 6.88,
+          "total_ms": 128.0,
+          "files_parsed": 0,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.83,
+          "analysis_ms": 82.42,
+          "write_ms": 4.28,
+          "total_ms": 127.65,
+          "files_parsed": 0,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 15.02,
+          "analysis_ms": 90.35,
+          "write_ms": 5.69,
+          "total_ms": 140.78,
+          "files_parsed": 0,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.93,
+          "analysis_ms": 82.79,
+          "write_ms": 4.72,
+          "total_ms": 127.17,
+          "files_parsed": 0,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 0,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 0
+          }
+        }
+      ],
+      "total_ms": {
+        "n": 5,
+        "min": 127.17,
+        "median": 128.0,
+        "p95": 140.87,
+        "max": 140.87,
+        "mean": 132.89
+      },
+      "write_ms": {
+        "n": 5,
+        "min": 4.28,
+        "median": 5.04,
+        "p95": 6.88,
+        "max": 6.88,
+        "mean": 5.32
+      }
+    },
+    "one_file": {
+      "description": "incremental re-index after inserting a line at the top of crates/core/flags/defs.rs (the largest file), alternately added and removed",
+      "samples": [
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.48,
+          "analysis_ms": 115.64,
+          "write_ms": 106.99,
+          "total_ms": 264.05,
+          "files_parsed": 1,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 1023,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 1983
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 17.63,
+          "analysis_ms": 118.25,
+          "write_ms": 66.96,
+          "total_ms": 227.15,
+          "files_parsed": 1,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 1023,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 1983
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 16.22,
+          "analysis_ms": 115.97,
+          "write_ms": 57.52,
+          "total_ms": 214.37,
+          "files_parsed": 1,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 1023,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 1983
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 15.54,
+          "analysis_ms": 117.25,
+          "write_ms": 54.29,
+          "total_ms": 211.6,
+          "files_parsed": 1,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 1023,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 1983
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 15.98,
+          "analysis_ms": 116.02,
+          "write_ms": 63.17,
+          "total_ms": 220.98,
+          "files_parsed": 1,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 0,
+            "nodes_changed": 1023,
+            "relationships_added": 0,
+            "relationships_removed": 0,
+            "relationships_changed": 1983
+          }
+        }
+      ],
+      "total_ms": {
+        "n": 5,
+        "min": 211.6,
+        "median": 220.98,
+        "p95": 264.05,
+        "max": 264.05,
+        "mean": 227.63
+      },
+      "write_ms": {
+        "n": 5,
+        "min": 54.29,
+        "median": 63.17,
+        "p95": 106.99,
+        "max": 106.99,
+        "mean": 69.79
+      }
+    },
+    "range_forward": {
+      "description": "incremental re-index from HEAD~10 to HEAD",
+      "samples": [
+        {
+          "mode": "incremental",
+          "ingest_ms": 15.11,
+          "analysis_ms": 114.95,
+          "write_ms": 89.77,
+          "total_ms": 249.54,
+          "files_parsed": 14,
+          "delta": {
+            "nodes_added": 41,
+            "nodes_removed": 0,
+            "nodes_changed": 275,
+            "relationships_added": 207,
+            "relationships_removed": 14,
+            "relationships_changed": 2163
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.76,
+          "analysis_ms": 114.65,
+          "write_ms": 64.2,
+          "total_ms": 218.51,
+          "files_parsed": 14,
+          "delta": {
+            "nodes_added": 41,
+            "nodes_removed": 0,
+            "nodes_changed": 275,
+            "relationships_added": 207,
+            "relationships_removed": 14,
+            "relationships_changed": 2163
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.07,
+          "analysis_ms": 113.94,
+          "write_ms": 80.37,
+          "total_ms": 242.33,
+          "files_parsed": 14,
+          "delta": {
+            "nodes_added": 41,
+            "nodes_removed": 0,
+            "nodes_changed": 275,
+            "relationships_added": 207,
+            "relationships_removed": 14,
+            "relationships_changed": 2163
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.38,
+          "analysis_ms": 116.5,
+          "write_ms": 76.08,
+          "total_ms": 235.52,
+          "files_parsed": 14,
+          "delta": {
+            "nodes_added": 41,
+            "nodes_removed": 0,
+            "nodes_changed": 275,
+            "relationships_added": 207,
+            "relationships_removed": 14,
+            "relationships_changed": 2163
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.19,
+          "analysis_ms": 114.62,
+          "write_ms": 68.08,
+          "total_ms": 222.51,
+          "files_parsed": 14,
+          "delta": {
+            "nodes_added": 41,
+            "nodes_removed": 0,
+            "nodes_changed": 275,
+            "relationships_added": 207,
+            "relationships_removed": 14,
+            "relationships_changed": 2163
+          }
+        }
+      ],
+      "total_ms": {
+        "n": 5,
+        "min": 218.51,
+        "median": 235.52,
+        "p95": 249.54,
+        "max": 249.54,
+        "mean": 233.68
+      },
+      "write_ms": {
+        "n": 5,
+        "min": 64.2,
+        "median": 76.08,
+        "p95": 89.77,
+        "max": 89.77,
+        "mean": 75.7
+      }
+    },
+    "range_back": {
+      "description": "incremental re-index from HEAD back to HEAD~10",
+      "samples": [
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.12,
+          "analysis_ms": 112.86,
+          "write_ms": 120.32,
+          "total_ms": 273.63,
+          "files_parsed": 9,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 41,
+            "nodes_changed": 275,
+            "relationships_added": 14,
+            "relationships_removed": 207,
+            "relationships_changed": 2163
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.5,
+          "analysis_ms": 112.9,
+          "write_ms": 76.48,
+          "total_ms": 234.3,
+          "files_parsed": 9,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 41,
+            "nodes_changed": 275,
+            "relationships_added": 14,
+            "relationships_removed": 207,
+            "relationships_changed": 2163
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.5,
+          "analysis_ms": 112.54,
+          "write_ms": 86.62,
+          "total_ms": 243.86,
+          "files_parsed": 9,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 41,
+            "nodes_changed": 275,
+            "relationships_added": 14,
+            "relationships_removed": 207,
+            "relationships_changed": 2163
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 15.78,
+          "analysis_ms": 113.06,
+          "write_ms": 75.59,
+          "total_ms": 230.73,
+          "files_parsed": 9,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 41,
+            "nodes_changed": 275,
+            "relationships_added": 14,
+            "relationships_removed": 207,
+            "relationships_changed": 2163
+          }
+        },
+        {
+          "mode": "incremental",
+          "ingest_ms": 14.36,
+          "analysis_ms": 112.33,
+          "write_ms": 89.61,
+          "total_ms": 244.28,
+          "files_parsed": 9,
+          "delta": {
+            "nodes_added": 0,
+            "nodes_removed": 41,
+            "nodes_changed": 275,
+            "relationships_added": 14,
+            "relationships_removed": 207,
+            "relationships_changed": 2163
+          }
+        }
+      ],
+      "total_ms": {
+        "n": 5,
+        "min": 230.73,
+        "median": 243.86,
+        "p95": 273.63,
+        "max": 273.63,
+        "mean": 245.36
+      },
+      "write_ms": {
+        "n": 5,
+        "min": 75.59,
+        "median": 86.62,
+        "p95": 120.32,
+        "max": 120.32,
+        "mean": 89.72
+      }
+    }
+  },
+  "queries": [
+    {
+      "name": "symbol by ID",
+      "runs_on": "neo4j",
+      "latency_ms": {
+        "n": 60,
+        "min": 0.73,
+        "median": 0.88,
+        "p95": 1.31,
+        "max": 2.66,
+        "mean": 0.99
+      }
+    },
+    {
+      "name": "search by name prefix",
+      "runs_on": "neo4j",
+      "latency_ms": {
+        "n": 60,
+        "min": 1.4,
+        "median": 2.16,
+        "p95": 4.05,
+        "max": 8.31,
+        "mean": 2.49
+      }
+    },
+    {
+      "name": "callers, depth 1",
+      "runs_on": "neo4j",
+      "latency_ms": {
+        "n": 60,
+        "min": 1.42,
+        "median": 1.63,
+        "p95": 3.12,
+        "max": 4.9,
+        "mean": 1.85
+      }
+    },
+    {
+      "name": "callers, depth 3",
+      "runs_on": "neo4j",
+      "latency_ms": {
+        "n": 60,
+        "min": 1.43,
+        "median": 3.32,
+        "p95": 5.63,
+        "max": 12.17,
+        "mean": 3.33
+      }
+    },
+    {
+      "name": "callees, depth 2",
+      "runs_on": "neo4j",
+      "latency_ms": {
+        "n": 60,
+        "min": 1.35,
+        "median": 1.53,
+        "p95": 2.88,
+        "max": 4.01,
+        "mean": 1.74
+      }
+    },
+    {
+      "name": "shortest path between two targets",
+      "runs_on": "neo4j",
+      "latency_ms": {
+        "n": 60,
+        "min": 2.13,
+        "median": 2.41,
+        "p95": 2.88,
+        "max": 3.73,
+        "mean": 2.45
+      }
+    },
+    {
+      "name": "file dependents",
+      "runs_on": "neo4j",
+      "latency_ms": {
+        "n": 60,
+        "min": 1.34,
+        "median": 1.46,
+        "p95": 1.77,
+        "max": 1.93,
+        "mean": 1.51
+      }
+    },
+    {
+      "name": "load the whole graph",
+      "runs_on": "neo4j",
+      "latency_ms": {
+        "n": 3,
+        "min": 78.74,
+        "median": 92.87,
+        "p95": 108.85,
+        "max": 108.85,
+        "mean": 93.49
+      }
+    },
+    {
+      "name": "impact of a symbol",
+      "runs_on": "memory",
+      "latency_ms": {
+        "n": 60,
+        "min": 0.01,
+        "median": 0.07,
+        "p95": 0.19,
+        "max": 0.41,
+        "mean": 0.08
+      }
+    },
+    {
+      "name": "test selection for a symbol",
+      "runs_on": "memory",
+      "latency_ms": {
+        "n": 60,
+        "min": 0.02,
+        "median": 0.11,
+        "p95": 0.45,
+        "max": 0.71,
+        "mean": 0.18
+      }
+    },
+    {
+      "name": "module cycles",
+      "runs_on": "memory",
+      "latency_ms": {
+        "n": 3,
+        "min": 0.28,
+        "median": 0.3,
+        "p95": 0.35,
+        "max": 0.35,
+        "mean": 0.31
+      }
+    },
+    {
+      "name": "function hotspots (betweenness)",
+      "runs_on": "memory",
+      "latency_ms": {
+        "n": 3,
+        "min": 10.03,
+        "median": 10.6,
+        "p95": 11.96,
+        "max": 11.96,
+        "mean": 10.86
+      }
+    }
+  ],
+  "test_impact": {
+    "truth": "ripgrep-3fce3b5-truth.json",
+    "resolved_only": {
+      "probes": 30,
+      "skipped": 0,
+      "tests": 1195,
+      "unmapped_tests": 716,
+      "actual": 2213,
+      "predicted": 572,
+      "true_positives": 104,
+      "precision": 0.182,
+      "recall": 0.047,
+      "recall_known_tests": 0.193,
+      "exact": 10,
+      "not_executed": 8,
+      "not_executed_and_not_selected": 8,
+      "mean_selected_share": 0.016,
+      "mean_actual_share": 0.062
+    },
+    "with_ambiguous": {
+      "probes": 30,
+      "skipped": 0,
+      "tests": 1195,
+      "unmapped_tests": 716,
+      "actual": 2213,
+      "predicted": 3878,
+      "true_positives": 505,
+      "precision": 0.13,
+      "recall": 0.228,
+      "recall_known_tests": 0.937,
+      "exact": 9,
+      "not_executed": 8,
+      "not_executed_and_not_selected": 7,
+      "mean_selected_share": 0.108,
+      "mean_actual_share": 0.062
+    }
+  },
+  "notes": []
+}

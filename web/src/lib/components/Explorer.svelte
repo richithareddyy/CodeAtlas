@@ -1,8 +1,13 @@
 <script lang="ts">
+	import { SUPPORT_CRATE_KINDS } from '../format';
 	import { workspace } from '../state/workspace.svelte';
 	import ExplorerNode from './ExplorerNode.svelte';
 
 	const crates = $derived(workspace.crates.filter((c) => c.rootModule));
+	/** Library and binary crates first; tests, benches and examples folded. */
+	const product = $derived(crates.filter((c) => !SUPPORT_CRATE_KINDS.has(c.kind)));
+	const support = $derived(crates.filter((c) => SUPPORT_CRATE_KINDS.has(c.kind)));
+	let showSupport = $state(false);
 </script>
 
 <nav class="explorer" aria-label="Repository explorer">
@@ -17,7 +22,7 @@
 	{:else}
 		{#key workspace.repoId}
 			<ul role="tree" aria-label="Crates and modules">
-				{#each crates as c, i (c.id)}
+				{#each product as c, i (c.id)}
 					<ExplorerNode
 						id={c.rootModule ?? c.id}
 						label={c.name}
@@ -28,6 +33,30 @@
 					/>
 				{/each}
 			</ul>
+			{#if support.length}
+				<button
+					class="group"
+					aria-expanded={showSupport}
+					onclick={() => (showSupport = !showSupport)}
+				>
+					<span class="caret">{showSupport ? '▾' : '▸'}</span>
+					Tests, benches and examples ({support.length})
+				</button>
+				{#if showSupport}
+					<ul role="tree" aria-label="Test, bench and example crates">
+						{#each support as c (c.id)}
+							<ExplorerNode
+								id={c.rootModule ?? c.id}
+								label={c.name}
+								kind="MODULE"
+								level={0}
+								note={c.kind}
+								initiallyOpen={false}
+							/>
+						{/each}
+					</ul>
+				{/if}
+			{/if}
 		{/key}
 	{/if}
 </nav>
@@ -59,5 +88,25 @@
 	.hint {
 		padding: 10px;
 		font-size: 12px;
+	}
+	.group {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		width: 100%;
+		padding: 6px 10px;
+		border: 0;
+		border-top: 1px solid var(--border);
+		background: none;
+		color: var(--text-muted);
+		font-size: 12px;
+		text-align: left;
+	}
+	.group:hover {
+		background: var(--bg-hover);
+	}
+	.caret {
+		width: 10px;
+		color: var(--text-faint);
 	}
 </style>

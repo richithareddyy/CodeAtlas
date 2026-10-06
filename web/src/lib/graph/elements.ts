@@ -10,6 +10,7 @@ import type {
 } from '../api/types';
 import { kindOf, shortLabel } from '../format';
 import type { GraphModel } from './model';
+import { zoomModules, type ZoomGraph } from './zoom';
 
 export interface CanvasNode {
 	id: string;
@@ -210,17 +211,31 @@ export function architectureLabel(id: string): string {
  * The architecture graph, optionally limited to nodes whose label starts
  * with `scope` (e.g. one crate's modules) and their direct neighbours.
  */
-export function fromArchitecture(graph: ArchitectureGraph, scope: string | null): CanvasData {
+export function fromArchitecture(
+	graph: ArchitectureGraph,
+	scope: string | null,
+	hiddenCrates: Set<string> = new Set()
+): CanvasData {
 	const inScope = (id: string) => {
 		if (!scope) return true;
 		const label = architectureLabel(id);
 		return label === scope || label.startsWith(`${scope}::`) || label.startsWith(`${scope}/`);
 	};
-	const edges = graph.edges.filter((e) => inScope(e.from) || inScope(e.to));
+	// Crate-level IDs are crate names (`#N` for duplicates); module IDs
+	// start with their crate. File-level nodes are not filtered.
+	const crateOf = (id: string): string | null =>
+		graph.level === 'FILE' ? null : architectureLabel(id).split('::')[0].replace(/#\d+$/, '');
+	const visible = (id: string) => {
+		const name = crateOf(id);
+		return name === null || !hiddenCrates.has(name);
+	};
+	if (graph.level === 'MODULE') return fromZoom(zoomModules(graph, scope, visible));
+	const edges = graph.edges.filter(
+		(e) => (inScope(e.from) || inScope(e.to)) && visible(e.from) && visible(e.to)
+	);
 	const ids = new Set(edges.flatMap((e) => [e.from, e.to]));
-	for (const n of graph.nodes) if (inScope(n.id)) ids.add(n.id);
-	const kind =
-		graph.level === 'MODULE' ? 'kind-module' : graph.level === 'CRATE' ? 'kind-crate' : 'kind-file';
+	for (const n of graph.nodes) if (inScope(n.id) && visible(n.id)) ids.add(n.id);
+	const kind = graph.level === 'CRATE' ? 'kind-crate' : 'kind-file';
 	return {
 		nodes: graph.nodes
 			.filter((n) => ids.has(n.id))
@@ -236,6 +251,35 @@ export function fromArchitecture(graph: ArchitectureGraph, scope: string | null)
 				);
 			}),
 		edges: edges.map((e) => ({
+			id: `${e.from}->${e.to}`,
+			source: e.from,
+			target: e.to,
+			classes: ['rel-depends'],
+			label: e.weight > 1 ? String(e.weight) : undefined
+		})),
+		roots: [],
+		layout: 'dependency'
+	};
+}
+
+/** A zoomed module graph: groups carry their module count. */
+function fromZoom(z: ZoomGraph): CanvasData {
+	return {
+		nodes: z.nodes.map((n) => {
+			const classes = ['kind-module'];
+			if (n.inCycle) classes.push('cycle');
+			if (n.context) classes.push('context');
+			if (n.members > 1) classes.push('group');
+			const label = n.members > 1 ? `${n.label} · ${n.members}` : n.label;
+			const what = n.members > 1 ? `${n.members} modules` : 'module';
+			return node(
+				n.id,
+				label,
+				classes,
+				`${n.path} (${what})\n${n.fanIn} dependents, ${n.fanOut} dependencies`
+			);
+		}),
+		edges: z.edges.map((e) => ({
 			id: `${e.from}->${e.to}`,
 			source: e.from,
 			target: e.to,
