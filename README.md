@@ -1,22 +1,14 @@
 # CodeAtlas
 
-CodeAtlas analyses a Git repository, turns its source code into a dependency
-graph, and answers change-impact questions: *if I change this function,
-type, module or file, what else could be affected, and why?*
+Static analysis and change-impact exploration for Rust repositories. CodeAtlas builds a dependency graph and traces which functions, types, modules, files, and tests may be affected by a change, with links back to source locations.
 
-Answers come from static analysis and graph traversal, not from a language
-model guessing about the code. Every conclusion is meant to be traceable to
-source locations.
+**Stack:** Rust · tree-sitter · Neo4j · GraphQL · SvelteKit · TypeScript
 
-> **Status: Milestone 11 of 11.** Ingestion, Rust module-tree
-> construction, tree-sitter parsing, symbol extraction, symbol resolution
-> (with measured quality), the Neo4j code graph with incremental indexing,
-> bounded graph queries, graph algorithms, the change-impact engine, test
-> selection (with measured precision and recall), Git diff impact, the
-> GraphQL API, the web workspace, a benchmark suite and optional
-> explanations grounded in graph evidence are implemented and tested. See
-> [docs/architecture.md](docs/architecture.md#milestones) and
-> [Known limitations](#known-limitations).
+[Installation](#installation) · [Usage](#usage) · [Screenshots](#screenshots) · [Benchmarks](#benchmarks) · [Known limitations](#known-limitations)
+
+The CLI supports repository analysis and Git diff impact without a database. Neo4j powers the graph queries and web workspace. Optional local-model explanations use graph evidence; core analysis does not require a model.
+
+Implementation milestones and evaluation details are documented in the [architecture guide](docs/architecture.md#milestones). Static analysis has coverage limits; review [known limitations](#known-limitations) when interpreting results.
 
 ## Why static analysis
 
@@ -214,7 +206,7 @@ for the graph database (`analyze` and `evaluate` work without it), and
 Node.js 22.17+ for the web UI.
 
 ```bash
-git clone <this repository> codeatlas
+git clone https://github.com/richithareddyy/CodeAtlas.git codeatlas
 ```
 
 ```bash
