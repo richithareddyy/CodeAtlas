@@ -123,6 +123,13 @@ pub fn ingest(source: &RepoSource, options: &IngestOptions) -> Result<IngestedRe
     let origin_url = origin_override
         .map(|url| git::strip_credentials(url))
         .or(origin_url);
+    // A project below the top of its Git repository (one package of a
+    // monorepo, a fixture) is a repository of its own for CodeAtlas: named
+    // after its directory, identified by the origin plus its path.
+    let prefix = match &git {
+        Some(_) => Git::prefix_of(&root)?.trim_end_matches('/').to_string(),
+        None => String::new(),
+    };
 
     let discovery = discovery::discover(&root, &options.discovery)?;
     tracing::info!(
@@ -131,10 +138,16 @@ pub fn ingest(source: &RepoSource, options: &IngestOptions) -> Result<IngestedRe
         "discovered source files"
     );
 
-    let name = repository_name(origin_url.as_deref(), &root);
-    let id_basis = origin_url
-        .clone()
-        .unwrap_or_else(|| root.to_string_lossy().into_owned());
+    let name = if prefix.is_empty() {
+        repository_name(origin_url.as_deref(), &root)
+    } else {
+        repository_name(None, &root)
+    };
+    let id_basis = match &origin_url {
+        Some(url) if prefix.is_empty() => url.clone(),
+        Some(url) => format!("{url}#{prefix}"),
+        None => root.to_string_lossy().into_owned(),
+    };
     let languages = language_stats(&discovery.files);
 
     let info = RepositoryInfo {

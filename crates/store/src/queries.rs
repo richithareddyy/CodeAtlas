@@ -219,7 +219,8 @@ impl GraphStore {
             .rows(query("MATCH (r:Repository) RETURN r ORDER BY r.name, r.id"))
             .await?;
         rows.iter()
-            .map(|row| repository_node(&row.get("r")?))
+            .filter_map(|row| live(row.get("r")))
+            .map(|node| repository_node(&node))
             .collect()
     }
 
@@ -236,7 +237,8 @@ impl GraphStore {
             .await?;
         let mut repos: Vec<RepositoryNode> = rows
             .iter()
-            .map(|row| repository_node(&row.get("r")?))
+            .filter_map(|row| live(row.get("r")))
+            .map(|node| repository_node(&node))
             .collect::<Result<_>>()?;
         if let Some(exact) = repos.iter().position(|r| r.id == id_or_name) {
             return Ok(repos.swap_remove(exact));
@@ -735,6 +737,13 @@ fn symbol_node(node: &Node) -> Result<SymbolNode> {
         is_test: node.get("is_test")?,
         unresolved_calls: node.get("unresolved_calls").unwrap_or_default(),
     })
+}
+
+/// A node that still exists. Reads are read-committed: a repository deleted
+/// by another client while it is being listed comes back without any
+/// properties, and is skipped.
+fn live(node: std::result::Result<Node, neo4rs::DeError>) -> Option<Node> {
+    node.ok().filter(|n| n.get::<String>("id").is_ok())
 }
 
 fn repository_node(node: &Node) -> Result<RepositoryNode> {
