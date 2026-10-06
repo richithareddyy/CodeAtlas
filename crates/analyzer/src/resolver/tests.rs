@@ -222,6 +222,34 @@ fn cyclic_glob_imports_terminate() {
     assert_eq!(r.unresolved_calls.len(), 1);
 }
 
+/// A dense web of glob re-exports (as in large crates with preludes) with
+/// lookups of names that exist nowhere. Lookups that run into a cycle used
+/// to be recomputed on every path, which grew exponentially with depth.
+#[test]
+fn glob_import_webs_are_resolved_in_polynomial_time() {
+    let n = 24;
+    let mut src = String::new();
+    for i in 0..n {
+        src.push_str(&format!(
+            "mod m{i} {{ pub use crate::m{}::*; pub use crate::m{}::*; pub use crate::m{}::*;{} }}\n",
+            (i + 1) % n,
+            (i + 5) % n,
+            (i + 11) % n,
+            if i == 7 { " pub fn target() {}" } else { "" }
+        ));
+    }
+    src.push_str("fn f() { m0::target(); m0::nowhere(); m3::missing(); m9::absent(); }\n");
+    let started = std::time::Instant::now();
+    let r = single(&src);
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(10),
+        "resolution took {:?}",
+        started.elapsed()
+    );
+    assert_eq!(calls(&r), vec!["fn:app::f -> fn:app::m7::target"]);
+    assert_eq!(r.unresolved_calls.len(), 3);
+}
+
 #[test]
 fn counts_import_outcomes() {
     let r = single(
