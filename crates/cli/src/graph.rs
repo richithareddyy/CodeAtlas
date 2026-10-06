@@ -4,9 +4,11 @@ use std::fmt::Write as _;
 
 use anyhow::{bail, Context, Result};
 use clap::Subcommand;
+use codeatlas_analyzer::graph::test_selection::select_tests;
 use codeatlas_analyzer::graph::{architecture, impact, impact::ImpactOptions};
 use codeatlas_analyzer::model::SymbolId;
 
+use crate::test_view;
 use crate::views::{self, LevelArg};
 use codeatlas_store::{
     AggregateDependency, Direction, GraphEdge, GraphStore, IndexMode, Prepared, RepositoryNode,
@@ -40,11 +42,17 @@ pub enum Query {
         #[arg(long, default_value_t = 1)]
         depth: u32,
     },
-    /// Tests that reach the symbol through resolved calls.
+    /// Tests to run when these symbols change: direct and transitive, with
+    /// the chain to the change, and changed code no test reaches.
     Tests {
-        symbol: String,
-        #[arg(long, default_value_t = 5)]
+        /// One or more symbols.
+        #[arg(required = true)]
+        symbols: Vec<String>,
+        #[arg(long, default_value_t = 8)]
         depth: u32,
+        /// Also list tests reached only through ambiguous calls.
+        #[arg(long)]
+        include_ambiguous: bool,
     },
     /// Shortest dependency path from one symbol to another.
     Path {
@@ -217,9 +225,33 @@ pub async fn query(repo: Option<&str>, json: bool, query: Query) -> Result<Strin
             let id = callable(&store, r, &symbol).await?;
             render(&store.callees(r, &id, depth).await?)
         }
-        Query::Tests { symbol, depth } => {
-            let id = callable(&store, r, &symbol).await?;
-            render(&store.related_tests(r, &id, depth).await?)
+        Query::Tests {
+            symbols,
+            depth,
+            include_ambiguous,
+        } => {
+            if depth == 0 || depth > store.limits().max_depth {
+                bail!("--depth must be between 1 and {}", store.limits().max_depth);
+            }
+            let mut ids = Vec::new();
+            for text in &symbols {
+                ids.push(callable(&store, r, text).await?);
+            }
+            let graph = store.load_graph(r).await?;
+            let mut changed = Vec::new();
+            for id in ids {
+                let node = graph
+                    .node(&SymbolId::from_stored(id.clone()))
+                    .with_context(|| format!("{id} is not in the stored graph"))?;
+                changed.extend(impact::expand_change(&graph, node));
+            }
+            let options = ImpactOptions {
+                max_depth: depth,
+                include_ambiguous,
+                ..Default::default()
+            };
+            let selection = select_tests(&graph, &changed, options)?;
+            output(json, &selection, || test_view::selection(&selection))
         }
         Query::Path {
             from,

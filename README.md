@@ -8,12 +8,13 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 8 of 11.** Ingestion, Rust module-tree
+> **Status: Milestone 9 of 11.** Ingestion, Rust module-tree
 > construction, tree-sitter parsing, symbol extraction, symbol resolution
 > (with measured quality), the Neo4j code graph with incremental indexing,
-> bounded graph queries, graph algorithms, the change-impact engine, Git
-> diff impact, the GraphQL API and the web workspace are implemented and
-> tested. Test-impact evaluation and a benchmark suite are next. See
+> bounded graph queries, graph algorithms, the change-impact engine, test
+> selection (with measured precision and recall), Git diff impact, the
+> GraphQL API and the web workspace are implemented and tested. A
+> benchmark suite and optional local-model explanations remain. See
 > [docs/architecture.md](docs/architecture.md#milestones).
 
 ## Why static analysis
@@ -96,6 +97,16 @@ reach, not the likelihood of breakage. Details:
 function level, each with a shortest cycle and the source lines of every
 hop; hotspots by betweenness centrality and fan-in/fan-out; and dependency
 layers with cycles collapsed.
+
+**Test selection.** For changed symbols, CodeAtlas lists the tests to
+run: *direct* tests that call the changed code, *transitive* tests that
+reach it through other code, *possible* ones reached only through
+ambiguous calls, and changed code that no test reaches, each test with
+the chain of calls that connects it to the change. How well this works is
+measured, not assumed: `probe-tests` makes functions panic one at a time,
+runs the real test suite and records which tests fail; `evaluate-tests`
+compares that with the selection (see
+[Test-impact quality](#test-impact-quality)).
 
 **Incremental indexing.** Re-indexing a repository parses only the files
 whose content changed (or whose module path did), re-resolves references
@@ -298,20 +309,31 @@ Dependents of method:simple_repo::payments::PaymentService::authorize (src/payme
        via fn:checkout_test::checkout_succeeds_for_small_orders -[CALLS import @9]-> fn:simple_repo::checkout::checkout
 ```
 
+Tests to run when symbols change (here on the `test-impact` fixture):
+
 ```bash
-./target/release/codeatlas query -r simple-repo tests stripe_call
+./target/release/codeatlas query -r test-impact tests subtotal unused_helper
 ```
 
 ```
-fn:simple_repo::payments::tests::rejects_amounts_over_limit  (depth 2, src/payments/mod.rs:35)
-    fn:simple_repo::payments::tests::rejects_amounts_over_limit -[CALLS receiver_type @37]-> method:simple_repo::payments::PaymentService::authorize
-    method:simple_repo::payments::PaymentService::authorize -[CALLS scope @21]-> fn:simple_repo::payments::gateway::stripe_call
-fn:checkout_test::checkout_succeeds_for_small_orders  (depth 4, tests/checkout_test.rs:4)
-    fn:checkout_test::checkout_succeeds_for_small_orders -[CALLS import @9]-> fn:simple_repo::checkout::checkout
-    fn:simple_repo::checkout::checkout -[CALLS import @11]-> fn:simple_repo::payments::process_payment
-    fn:simple_repo::payments::process_payment -[CALLS receiver_type @27]-> method:simple_repo::payments::PaymentService::authorize
-    method:simple_repo::payments::PaymentService::authorize -[CALLS scope @21]-> fn:simple_repo::payments::gateway::stripe_call
+Tests for   ledger::pricing::subtotal, ledger::util::unused_helper
+Selected    2 of 9 tests: 1 direct, 1 transitive
+
+Direct (the test calls the changed code)
+  ledger::pricing::tests::subtotal_adds_items                      src/pricing.rs:32
+        ledger::pricing::tests::subtotal_adds_items calls ledger::pricing::subtotal  (src/pricing.rs:33)
+
+Transitive (through other code)
+  ledger_tests::summary_includes_tax                               tests/ledger_tests.rs:6
+        ledger_tests::summary_includes_tax calls ledger::report::summary  (tests/ledger_tests.rs:7)
+        ledger::report::summary calls ledger::pricing::total  (src/report.rs:5)
+        ledger::pricing::total calls ledger::pricing::subtotal  (src/pricing.rs:10)
+
+No test reaches
+  ledger::util::unused_helper                                      src/util.rs:9
 ```
+
+`--include-ambiguous` adds tests reached only through ambiguous calls.
 
 Impact of a change:
 
@@ -439,6 +461,35 @@ Tests to run
 `--format json` the full report. `--depth n`, `--include-ambiguous` and
 `--limit n` work as for `query impact`.
 
+### Measuring test selection (runs the repository's tests)
+
+`probe-tests` records which tests execute which functions: for each
+function in a sample (or given with `--symbol`), it inserts a `panic!` at
+the start of the body in a scratch copy of the repository, builds and runs
+the test suite, and records the tests that fail. It executes the
+repository's code, so use it only on repositories you trust.
+
+```bash
+./target/release/codeatlas probe-tests fixtures/test-impact -n 100 -o truth.json
+```
+
+```bash
+./target/release/codeatlas evaluate-tests fixtures/test-impact --truth truth.json
+```
+
+```
+Test selection compared with observed test failures (panic-on-entry probes)
+Probes      20 evaluated, 0 skipped (did not build or did not finish)
+Tests       9 in the suite, 0 without a symbol (not selectable)
+Precision   0.864  (19 of 22 selections executed the probed function)
+Recall      0.826  (19 of 23 executing tests were selected); 0.826 counting only tests with a symbol
+...
+Missed (executed the function, not selected)
+  ledger::parse::pair
+      ledger_tests::file_store_parses_lines
+...
+```
+
 ### GraphQL API
 
 ```bash
@@ -538,6 +589,13 @@ cargo test
   `crates/server/tests/schema.rs` checks that `docs/schema.graphql` matches
   the code and that the depth and complexity limits reject oversized
   queries.
+* `crates/analyzer/tests/test_impact.rs` checks test selection (direct,
+  transitive, possible, untested, changed tests) and the evaluation of
+  the fixtures against their recorded ground truth, including each known
+  miss. `crates/cli/tests/probe.rs` re-records that ground truth with
+  `probe-tests` and requires the same result; it builds and runs the
+  fixtures' tests, so it runs only with `CODEATLAS_RUN_PROBES=1` (set in
+  CI).
 * `crates/analyzer/tests/incremental.rs` checks that an analysis reusing
   a cache from an older state equals a full analysis of the new state, and
   that only the expected files are parsed: no change, the `pr-impact`
@@ -600,6 +658,47 @@ npm run lint && npm run check && npm run build
 
 The UI itself was checked by hand in a browser against the fixtures and
 ripgrep; there are no automated end-to-end browser tests yet.
+
+## Test-impact quality
+
+Measured with `probe-tests` and `evaluate-tests` (method in
+[docs/impact-analysis.md](docs/impact-analysis.md#measuring-selection-against-reality)).
+Precision: share of selected tests that executed the probed function.
+Recall: share of executing tests that were selected. Each from one run.
+
+| Repository | Probes | Tests | Precision | Recall | Recall, tests with a symbol |
+|---|---|---|---|---|---|
+| `test-impact` fixture (built for this) | 20 | 9 | 0.864 | 0.826 | 0.826 |
+| `change-impact` fixture | 11 | 4 | 0.813 | 1.000 | 1.000 |
+| `simple-repo` fixture | 6 | 2 | 0.889 | 1.000 | 1.000 |
+| ripgrep `3fce3b5`, 30 sampled functions | 30 | 1,195 | 0.182 | 0.047 | 0.193 |
+| ripgrep, ambiguous calls included | 30 | 1,195 | 0.130 | 0.228 | 0.937 |
+
+* The `test-impact` fixture has one function per pattern. Its four misses
+  are the known blind spots: a function passed as a value
+  (`filter_map(parse::pair)`) and the function only it calls, a call
+  inside a `macro_rules!` body, and a call through a generic parameter
+  (found when ambiguous calls are included). Its three extra selections are
+  a branch the test does not take and the other implementation behind a
+  `dyn Trait`.
+* On ripgrep, 716 of the 1,195 tests are generated by macros (`rgtest!`
+  in the integration tests, test macros in `globset`, `ignore` and
+  `grep_matcher`). CodeAtlas does not expand `macro_rules!`, so it cannot
+  select them, and they account for 1,674 of the 2,213 observed test
+  executions; that alone caps recall. The integration tests also run the
+  `rg` binary as a separate process, which no call graph follows.
+* Among the tests CodeAtlas can see, resolved calls alone find 19.3% of
+  the executing tests, because ripgrep calls most of its code through
+  generic `Matcher` and `Sink` parameters. With ambiguous calls the
+  selection finds 93.7% of them, at the price of selecting 10.8% of the
+  suite per change where 6.2% was affected (precision 0.130). The
+  remaining misses reach the code through iteration (`for` over a walker)
+  and worker threads.
+* For code like ripgrep, static selection is therefore a starting point
+  for which tests to run, not a replacement for running the suite.
+
+The fixture numbers are checked by tests; the ripgrep ground truth and
+results are in [benchmarks/test-impact](benchmarks/test-impact).
 
 ## Resolution quality
 
@@ -676,8 +775,10 @@ Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
 * The incremental cache is invalidated by the analyzer version, not by
   the content of the analyzer's code; changes to extraction must bump
   `CACHE_VERSION`.
-* `query tests` follows resolved `CALLS` only; use `query impact`, which
-  also follows trait dispatch.
+* Test functions generated by macros are invisible, as are calls written
+  inside macro definitions, functions passed as values, and calls into
+  another process (see [Test-impact quality](#test-impact-quality)).
+  Calls made by `for` loops (`Iterator::next`) are not modelled either.
 * Type usage is not tracked yet, so changing a struct reaches the callers
   of its methods but not code that only constructs it or reads its fields.
 * Search matches name prefixes (`store` finds `Store` and its methods, not
@@ -690,6 +791,5 @@ Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
 
 ## Roadmap
 
-Test-impact evaluation →
-benchmark suite → optional local-model explanations grounded in graph
+Benchmark suite → optional local-model explanations grounded in graph
 evidence. Details are in [docs/architecture.md](docs/architecture.md).

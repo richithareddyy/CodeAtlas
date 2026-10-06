@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { kindOf, qualifiedName, shortLabel, splitPath, stepSentence, timestamp } from './format';
+import {
+	callSteps,
+	kindOf,
+	qualifiedName,
+	shortLabel,
+	splitPath,
+	stepSentence,
+	timestamp
+} from './format';
 
 describe('symbol labels', () => {
 	it('strips the kind prefix', () => {
@@ -55,5 +63,13 @@ describe('evidence', () => {
 		expect(timestamp(value, 'UTC')).toBe('2026-10-03 17:15');
 		expect(timestamp(value, 'America/Phoenix')).toBe('2026-10-03 10:15');
 		expect(timestamp('not a date')).toBe('not a date');
+	});
+});
+
+describe('callSteps', () => {
+	it('counts calls but not dispatch or implementation steps', () => {
+		expect(callSteps([{ kind: 'CALLS' }, { kind: 'DISPATCHES_TO' }])).toBe(1);
+		expect(callSteps([{ kind: 'CALLS' }, { kind: 'MAY_CALL' }, { kind: 'IMPLEMENTS' }])).toBe(2);
+		expect(callSteps([])).toBe(0);
 	});
 });

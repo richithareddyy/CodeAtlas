@@ -256,6 +256,7 @@ export interface DiffSummary {
 	affectedModules: number;
 	affectedFiles: number;
 	affectedTests: number;
+	untestedChanges: number;
 }
 
 export interface Revision {
@@ -275,6 +276,7 @@ export interface GitImpactReport {
 	affectedFiles: AffectedGroup[];
 	affectedModules: AffectedGroup[];
 	tests: string[];
+	untested: SymbolRef[];
 	truncated: boolean;
 	summary: DiffSummary;
 	analysisMs: number;

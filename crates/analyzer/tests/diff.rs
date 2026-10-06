@@ -208,6 +208,8 @@ fn check_symbols_and_impact(report: &DiffReport, e: &Expected) {
         .all(|d| d.revision == Side::Head));
     let tests: Vec<String> = report.impact.tests.iter().map(|t| t.to_string()).collect();
     assert_eq!(tests, e.tests);
+    // Every modified function is reached by some test.
+    assert!(report.impact.untested.is_empty());
     let mut modules: Vec<String> = report
         .impact
         .modules

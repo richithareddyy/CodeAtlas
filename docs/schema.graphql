@@ -192,6 +192,7 @@ type DiffSummary {
 	affectedModules: Int!
 	affectedFiles: Int!
 	affectedTests: Int!
+	untestedChanges: Int!
 }
 
 enum Direction {
@@ -268,6 +269,10 @@ type GitImpactReport {
 	affectedFiles: [AffectedGroup!]!
 	affectedModules: [AffectedGroup!]!
 	tests: [ID!]!
+	"""
+	Modified functions and methods that no test reaches.
+	"""
+	untested: [SymbolRef!]!
 	truncated: Boolean!
 	summary: DiffSummary!
 	"""
@@ -564,6 +569,12 @@ type Query {
 	"""
 	affectedTests(repoId: ID!, symbolId: ID!, maxDepth: Int! = 8): [AffectedTest!]!
 	"""
+	Tests to run when the given symbols change (types and modules
+	include their members): direct and transitive tests with the chain
+	to the change, and changed code that no test reaches.
+	"""
+	testImpact(repoId: ID!, symbolIds: [ID!]!, maxDepth: Int! = 8, includeAmbiguous: Boolean! = false): TestSelection!
+	"""
 	Strongly connected components at the given level, largest first.
 	"""
 	circularDependencies(repoId: ID!, level: Level! = MODULE): [Cycle!]!
@@ -647,6 +658,27 @@ type ScoreFactor {
 	weight: Float!
 	normalized: Float!
 	contribution: Float!
+}
+
+type SelectedTest {
+	test: SymbolRef!
+	"""
+	Length of the evidence chain.
+	"""
+	depth: Int!
+	"""
+	Call steps in the chain; 1 for direct tests.
+	"""
+	calls: Int!
+	confidence: Confidence!
+	"""
+	From the test to a changed symbol.
+	"""
+	path: [EvidenceStep!]!
+	"""
+	Changed symbols the test reaches.
+	"""
+	reaches: [ID!]!
 }
 
 type SignatureChange {
@@ -739,6 +771,38 @@ type SymbolRef {
 	file: String!
 	line: Int!
 	isTest: Boolean!
+}
+
+"""
+Tests to run for a change.
+"""
+type TestSelection {
+	"""
+	Changed symbols, with types and modules expanded to their members.
+	"""
+	changed: [SymbolRef!]!
+	"""
+	Tests among the changed symbols.
+	"""
+	changedTests: [SymbolRef!]!
+	"""
+	Tests calling changed code directly.
+	"""
+	direct: [SelectedTest!]!
+	"""
+	Tests reaching changed code through other code.
+	"""
+	transitive: [SelectedTest!]!
+	"""
+	Tests reached only through ambiguous calls (when requested).
+	"""
+	possible: [SelectedTest!]!
+	"""
+	Changed functions and methods no test reaches.
+	"""
+	untested: [SymbolRef!]!
+	totalTests: Int!
+	truncated: Boolean!
 }
 
 """

@@ -148,6 +148,18 @@ pub fn text(report: &DiffReport, limit: usize) -> String {
         plural(s.affected_files, "file", "files"),
         plural(s.affected_tests, "test", "tests"),
     );
+    if s.untested_changes > 0 {
+        let _ = writeln!(
+            out,
+            "  {} modified with no test reaching {}",
+            plural(s.untested_changes, "function", "functions"),
+            if s.untested_changes == 1 {
+                "it"
+            } else {
+                "them"
+            }
+        );
+    }
     if report.impact.include_ambiguous {
         let _ = writeln!(
             out,
@@ -240,6 +252,12 @@ pub fn text(report: &DiffReport, limit: usize) -> String {
         let _ = writeln!(out, "\nTests to run");
         for t in report.impact.tests.iter().take(limit) {
             let _ = writeln!(out, "  {}", short(t.as_str()));
+        }
+    }
+    if !report.impact.untested.is_empty() {
+        let _ = writeln!(out, "\nModified, but no test reaches it");
+        for u in report.impact.untested.iter().take(limit) {
+            let _ = writeln!(out, "  {:<64} {}:{}", u.qualified_name, u.file, u.line);
         }
     }
 
@@ -360,6 +378,10 @@ pub fn markdown(report: &DiffReport, limit: usize) -> String {
             ),
         ),
         ("Tests to run", s.affected_tests.to_string()),
+        (
+            "Modified code no test reaches",
+            s.untested_changes.to_string(),
+        ),
     ];
     for (label, value) in rows {
         let _ = writeln!(out, "| {label} | {value} |");
@@ -453,6 +475,17 @@ pub fn markdown(report: &DiffReport, limit: usize) -> String {
         let _ = writeln!(out, "\n### Tests to run\n");
         for t in report.impact.tests.iter().take(limit) {
             let _ = writeln!(out, "- {}", code(short(t.as_str())));
+        }
+    }
+    if !report.impact.untested.is_empty() {
+        let _ = writeln!(out, "\n### Modified code no test reaches\n");
+        for u in report.impact.untested.iter().take(limit) {
+            let _ = writeln!(
+                out,
+                "- {} {}",
+                code(&u.qualified_name),
+                code(&format!("{}:{}", u.file, u.line))
+            );
         }
     }
     let _ = writeln!(

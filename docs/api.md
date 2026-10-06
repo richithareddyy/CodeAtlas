@@ -50,13 +50,14 @@ them).
 | `fileDependencies` / `moduleDependencies(…, direction)` | Aggregated `DEPENDS_ON`, by weight |
 | `impact(repoId, symbolId \| file, maxDepth, includeAmbiguous)` | Affected symbols with evidence chains, files, modules, tests and the decomposed score |
 | `affectedTests(repoId, symbolId, maxDepth)` | Affected tests with their chains (follows trait dispatch) |
+| `testImpact(repoId, symbolIds, maxDepth, includeAmbiguous)` | Tests to run for one or more changed symbols (up to 100): direct and transitive tests with their chains and the changed symbols each reaches, possible tests (ambiguous calls), changed tests, and changed functions no test reaches |
 | `circularDependencies(repoId, level)` | Cycles with per-hop evidence |
 | `hotspots(repoId, level, first)` | Betweenness, fan-in, fan-out |
 | `layers(repoId, level)` | Dependency layers |
 | `architectureGraph(repoId, level)` | Crate, module or file dependency graph: nodes with fan-in, fan-out and cycle membership; weighted edges with the relation kinds behind them. Crate edges are module dependencies rolled up by crate |
 | `source(repoId, file, startLine, endLine)` | Up to 400 lines from the repository's working tree |
 | `gitRefs(repoId, first)` | Branches, remote-tracking branches and tags (newest first), recent commits, current branch |
-| `gitImpact(repoId, base, head, maxDepth, includeAmbiguous)` | Changes between two revisions (`head: null` is the working tree): changed files with hunks; added, removed, modified, moved and cosmetic symbols with changed lines and signature changes; downstream symbols with evidence chains; affected files, modules and tests; a summary |
+| `gitImpact(repoId, base, head, maxDepth, includeAmbiguous)` | Changes between two revisions (`head: null` is the working tree): changed files with hunks; added, removed, modified, moved and cosmetic symbols with changed lines and signature changes; downstream symbols with evidence chains; affected files, modules and tests; modified functions no test reaches (`untested`); a summary |
 | `indexRepository(source, full)` | Analyse a path or URL and store its graph: incrementally when this server indexed it before (only changed files parsed, only the difference written), in full otherwise or with `full: true`. The result reports the mode, the reason for a full write, files changed / parsed / reused, and nodes and relationships added, removed and changed |
 | `removeRepository(id)` | Delete a repository's graph |
 
