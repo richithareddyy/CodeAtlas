@@ -211,3 +211,28 @@ pub fn layers(layers: &[Layer]) -> String {
     }
     out.trim_end().to_string()
 }
+
+/// An explanation, followed by the facts it cites and what happened.
+pub fn explanation(x: &codeatlas_explain::Explanation) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "{}\n", x.text);
+    if !x.evidence.facts.is_empty() {
+        let _ = writeln!(out, "Evidence");
+        for fact in &x.evidence.facts {
+            let _ = writeln!(out, "  [{}] {}", fact.id, fact.text);
+        }
+        let _ = writeln!(out);
+    }
+    let source = match x.source {
+        codeatlas_explain::TextSource::Model => "language model, checked against the evidence",
+        codeatlas_explain::TextSource::Template => "built from the evidence",
+    };
+    let _ = writeln!(out, "Source  {source}");
+    for note in &x.notes {
+        let _ = writeln!(out, "Note    {note}");
+    }
+    if let Some(rejected) = &x.rejected_text {
+        let _ = writeln!(out, "Rejected model answer: {rejected}");
+    }
+    out.trim_end().to_string()
+}

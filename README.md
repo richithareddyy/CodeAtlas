@@ -8,14 +8,15 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 10 of 11.** Ingestion, Rust module-tree
+> **Status: Milestone 11 of 11.** Ingestion, Rust module-tree
 > construction, tree-sitter parsing, symbol extraction, symbol resolution
 > (with measured quality), the Neo4j code graph with incremental indexing,
 > bounded graph queries, graph algorithms, the change-impact engine, test
 > selection (with measured precision and recall), Git diff impact, the
-> GraphQL API, the web workspace and a benchmark suite are implemented and
-> tested. Optional local-model explanations remain. See
-> [docs/architecture.md](docs/architecture.md#milestones).
+> GraphQL API, the web workspace, a benchmark suite and optional
+> explanations grounded in graph evidence are implemented and tested. See
+> [docs/architecture.md](docs/architecture.md#milestones) and
+> [Known limitations](#known-limitations).
 
 ## Why static analysis
 
@@ -37,6 +38,9 @@ ingest → module tree → tree-sitter parse → extract → resolve → Neo4j +
 * `crates/store`: Neo4j persistence and bounded graph queries.
 * `crates/server`: the GraphQL API (`codeatlas-server`).
 * `crates/cli`: the `codeatlas` command.
+* `crates/explain`: optional explanations: numbered facts from the graph,
+  an explanation built from them, and (if configured) a local model through
+  Ollama whose answer is checked against the facts.
 * `web/`: the workspace UI (SvelteKit, TypeScript, Cytoscape.js), a static
   single-page app that talks only to the GraphQL API.
 * `fixtures/`: small Rust repositories with hand-written ground truth
@@ -126,6 +130,21 @@ unchanged symbol that depends on the change, with its evidence chain, and
 the tests to run. Output as text, Markdown for a pull-request comment, or
 JSON. Details: [docs/impact-analysis.md](docs/impact-analysis.md#git-diff-impact).
 
+**Explanations (optional).** *Why* can changing `validate_amount` affect
+`test_checkout`? CodeAtlas answers from numbered facts it collects from the
+graph, each one relationship with its file and line. The explanation cites
+them (`[E1]`), and each citation links to its source. Without a model, the
+explanation is built from the facts directly. With a local model served
+by [Ollama](https://ollama.com), the model gets the question and the facts,
+and no source code. Its answer is shown only if it passes a check against
+the facts. The check rejects answers that cite facts that do not exist,
+cite none, or state a relationship involving code that is not in the
+facts; the evidence-built explanation is shown instead, with the rejected
+answer kept for inspection. When the graph has no chain that answers the
+question, nothing is sent to the model, and the explanation says what is
+missing (and if the dependency runs the other way). Details:
+[docs/architecture.md](docs/architecture.md#explanations).
+
 **Workspace UI.** A browser workspace over the API: an explorer of crates,
 modules and their symbols on the left, a graph in the centre and an
 inspector on the right. Symbols are found with a command palette (`⌘K` /
@@ -135,7 +154,9 @@ inspector on the right. Symbols are found with a command palette (`⌘K` /
   over chosen relations. Double-click expands a node; double-click again
   collapses it.
 * *Impact*: the change-impact report, with the affected graph and the
-  evidence chain of every affected symbol.
+  evidence chain of every affected symbol. *Why?* next to an affected
+  symbol explains its chain, and the *Explain* tab summarises the whole
+  impact, both with citations that open the source.
 * *Changes*: the Git diff impact report for two revisions chosen from
   the repository's branches, tags and commits.
 * *Architecture*: dependencies between crates, zooming into modules or
@@ -177,12 +198,18 @@ behind each dependency.
 
 ![Architecture view](docs/images/architecture.png)
 
+*Why?* for `test_checkout` in the same impact report. No model was running,
+so the explanation is built from the evidence, and the note says so. Each
+`E` citation opens the source line of its fact.
+
+![Explanation in the Impact view](docs/images/explain.png)
+
 Screenshots are from a local run; the status bar, which shows the
 repository's path on disk, is cropped.
 
 ## Installation
 
-Requirements: Rust 1.80+ (`rustup` recommended), `git` on `PATH`, Docker
+Requirements: Rust 1.90+ (`rustup` recommended), `git` on `PATH`, Docker
 for the graph database (`analyze` and `evaluate` work without it), and
 Node.js 22.17+ for the web UI.
 
@@ -394,6 +421,48 @@ indexed repository with `codeatlas remove <repo>`. If a repository was
 indexed by an older version of CodeAtlas, the graph-based analyses ask you
 to index it again.
 
+### Explanations (optional local model)
+
+`query explain` explains why changing one symbol can affect another or,
+given one symbol, what changing it affects:
+
+```bash
+./target/release/codeatlas query --repo change-impact explain validate_amount test_checkout --no-model
+```
+
+```
+Through a chain of resolved relationships (3 steps):
+`test_checkout` calls `checkout` (tests/payment_tests.rs:16) [E1].
+`checkout` calls `PaymentService::authorize` (src/checkout.rs:5) [E2].
+`PaymentService::authorize` calls `validate_amount` (src/payments.rs:13) [E3].
+
+Evidence
+  [E1] `test_checkout` calls `checkout` (tests/payment_tests.rs:16).
+  [E2] `checkout` calls `PaymentService::authorize` (src/checkout.rs:5).
+  [E3] `PaymentService::authorize` calls `validate_amount` (src/payments.rs:13).
+
+Source  built from the evidence
+Note    Language model disabled; this explanation is built from the evidence.
+```
+
+When the graph does not support the claim, the explanation says so:
+`explain checkout validate_amount` answers *CodeAtlas has no evidence for
+this: no chain of relationships leads from `validate_amount` to `checkout`
+within depth 8; the dependency runs the other way*, followed by the facts
+for the reverse direction.
+
+To have a local model word the explanations, install
+[Ollama](https://ollama.com), pull a model and leave the server running:
+
+```bash
+ollama pull llama3.2
+```
+
+Without `--no-model`, `query explain`, the API (`explainImpact`) and the UI
+use the model at `CODEATLAS_OLLAMA_URL` (see [Configuration](#configuration));
+if it is not running, they fall back to the evidence-built text and say
+why. A model is never needed: everything above works without one.
+
 ### Git diff impact (no database needed)
 
 Compare two revisions of a local clone (`--head` defaults to the working
@@ -554,6 +623,10 @@ extractor):
 | `CODEATLAS_NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt address |
 | `CODEATLAS_NEO4J_USER` | `neo4j` | Neo4j user |
 | `CODEATLAS_NEO4J_DATABASE` | `neo4j` | Neo4j database |
+| `CODEATLAS_OLLAMA_URL` | `http://127.0.0.1:11434` | Ollama server used for explanations |
+| `CODEATLAS_OLLAMA_MODEL` | `llama3.2` | Model used for explanations |
+| `CODEATLAS_OLLAMA_TIMEOUT_SECS` | 120 | Time allowed for one model answer |
+| `CODEATLAS_EXPLAIN` | unset | `template` disables the model for explanations entirely |
 | `RUST_LOG` | `warn,codeatlas_analyzer=info,codeatlas_store=info` | Log filter; logs go to stderr |
 
 Variables are read from the environment and, if present, from `.env` in the
@@ -591,6 +664,16 @@ cargo test
   `crates/server/tests/schema.rs` checks that `docs/schema.graphql` matches
   the code and that the depth and complexity limits reject oversized
   queries.
+* `crates/explain/tests/explain.rs` checks the evidence on the fixtures
+  (a certain chain with files and lines, a possible one through an
+  ambiguous call, no chain, a reversed dependency, an impact summary) and
+  the whole explanation flow against a stand-in model server on a local
+  port: an accepted answer and exactly what was sent (the facts, no
+  source), answers rejected for an invented call, a non-existent citation
+  and no citations, a missing model, an unreachable server, and
+  insufficient evidence never reaching the model. The unit tests in
+  `verify.rs` cover citation, sentence and name parsing. No test runs a
+  real language model.
 * `crates/cli/tests/bench.rs` runs `codeatlas bench` on a fixture and
   checks that every section of the report is present and consistent
   (indexing and queries when Neo4j is configured).
@@ -806,12 +889,20 @@ files, 137 downstream symbols) took 0.76–0.82 s end to end over two runs.
   `MemoryStore`).
 * The UI has no authentication and is meant for local use. The API server
   binds to `127.0.0.1` by default; do not expose it on a network as is.
+* Explanations are only as complete as the graph: a dependency that
+  static analysis misses (see above) is reported as missing evidence, not
+  explained. The check of a model's answer catches invented citations and
+  relationships involving code outside the facts. It cannot catch every
+  misreading of the facts that names only known code, such as reversing
+  the direction of a call; the facts are shown with every explanation for
+  that reason. Answer quality depends on the model, and none has been
+  evaluated here (the tests use a stand-in server).
 * The graph canvas draws every node it receives. Neighbourhoods are capped
   by the API's node limits, but expanding many high-fan-in nodes can still
   produce graphs too dense to read.
 
 ## Roadmap
 
-Optional local-model explanations grounded in graph evidence (Milestone
-11); beyond that, expanding `macro_rules!` and `cfg` macros, which limits
-resolution and test selection most on large crates. Details are in [docs/architecture.md](docs/architecture.md).
+All eleven milestones are done. Next: expanding `macro_rules!` and `cfg`
+macros, which limits resolution and test selection most on large crates,
+and measuring explanation quality with real local models. Details are in [docs/architecture.md](docs/architecture.md).

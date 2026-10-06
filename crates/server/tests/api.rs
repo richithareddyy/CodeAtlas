@@ -915,3 +915,57 @@ async fn test_impact_selects_direct_and_transitive_tests() {
     );
     api.finish().await;
 }
+
+#[tokio::test]
+async fn explain_impact_returns_cited_facts() {
+    let Some(api) = Api::start(&["change-impact"], true).await else {
+        return;
+    };
+    let query = r#"query($repo: ID!, $id: ID!, $affected: ID) {
+        explainImpact(repoId: $repo, symbolId: $id, affectedId: $affected, useModel: false) {
+            status reason text source model notes rejectedText chains
+            facts { id kind sourceId targetId file lines text }
+            verification { accepted }
+        } }"#;
+    let vars = |affected: Value| {
+        json!({ "repo": api.repos[0], "id": "fn:change_impact::payments::validate_amount",
+                "affected": affected })
+    };
+    let data = api
+        .data(query, vars(json!("fn:payment_tests::test_checkout")))
+        .await;
+    let x = &data["explainImpact"];
+    assert_eq!(x["status"], "SUFFICIENT");
+    assert_eq!(x["source"], "TEMPLATE");
+    assert_eq!(x["model"], Value::Null);
+    assert_eq!(x["verification"], Value::Null);
+    assert_eq!(x["chains"], json!([["E1", "E2", "E3"]]));
+    assert_eq!(
+        x["facts"][1],
+        json!({ "id": "E2", "kind": "CALLS", "sourceId": "fn:change_impact::checkout::checkout",
+                "targetId": "method:change_impact::payments::PaymentService::authorize",
+                "file": "src/checkout.rs", "lines": [5],
+                "text": "`checkout` calls `PaymentService::authorize` (src/checkout.rs:5)." })
+    );
+    assert!(x["text"].as_str().unwrap().contains("[E3]"));
+
+    let summary = api.data(query, vars(Value::Null)).await;
+    assert_eq!(summary["explainImpact"]["facts"][0]["kind"], "SUMMARY");
+
+    let none = api
+        .data(
+            query,
+            json!({ "repo": api.repos[0], "id": "fn:change_impact::reports::daily_total",
+                    "affected": "fn:payment_tests::test_checkout" }),
+        )
+        .await;
+    assert_eq!(none["explainImpact"]["status"], "INSUFFICIENT");
+    assert_eq!(none["explainImpact"]["facts"], json!([]));
+
+    assert_eq!(
+        api.error_code(query, json!({ "repo": api.repos[0], "id": "fn:missing" }))
+            .await,
+        "NOT_FOUND"
+    );
+    api.finish().await;
+}

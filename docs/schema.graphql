@@ -232,6 +232,21 @@ type EvidenceRef {
 	line: Int!
 }
 
+enum EvidenceStatus {
+	"""
+	The facts answer the question.
+	"""
+	SUFFICIENT
+	"""
+	The answer depends on ambiguous calls.
+	"""
+	POSSIBLE
+	"""
+	No chain of facts answers the question.
+	"""
+	INSUFFICIENT
+}
+
 type EvidenceStep {
 	"""
 	The dependent side (further from the change).
@@ -245,6 +260,80 @@ type EvidenceStep {
 	file: String!
 	lines: [Int!]!
 	resolution: String
+}
+
+type EvidenceSymbol {
+	id: ID!
+	qualifiedName: String!
+	shortName: String!
+	file: String!
+	line: Int!
+}
+
+type Explanation {
+	question: String!
+	status: EvidenceStatus!
+	"""
+	Why the evidence is insufficient, if it is.
+	"""
+	reason: String
+	facts: [Fact!]!
+	"""
+	Chains as fact IDs, from the affected symbol to the change.
+	"""
+	chains: [[String!]!]!
+	symbols: [EvidenceSymbol!]!
+	"""
+	The explanation, citing facts as `[E1]`.
+	"""
+	text: String!
+	source: TextSource!
+	"""
+	The model that was asked, if one was.
+	"""
+	model: String
+	verification: Verification
+	"""
+	A model answer that failed the check, kept for transparency.
+	"""
+	rejectedText: String
+	notes: [String!]!
+}
+
+"""
+One numbered fact found by static analysis.
+"""
+type Fact {
+	"""
+	`E1`, `E2`, ...
+	"""
+	id: String!
+	kind: FactKind!
+	"""
+	The dependent side, for relationships.
+	"""
+	sourceId: ID
+	"""
+	The side closer to the change, for relationships.
+	"""
+	targetId: ID
+	file: String
+	lines: [Int!]!
+	text: String!
+}
+
+enum FactKind {
+	CALLS
+	DISPATCHES_TO
+	IMPLEMENTS
+	"""
+	An ambiguous call: one of several possible targets.
+	"""
+	MAY_CALL
+	"""
+	A count from the impact report.
+	"""
+	SUMMARY
 }
 
 enum FileStatus {
@@ -575,6 +664,16 @@ type Query {
 	"""
 	testImpact(repoId: ID!, symbolIds: [ID!]!, maxDepth: Int! = 8, includeAmbiguous: Boolean! = false): TestSelection!
 	"""
+	Why changing `symbolId` can affect `affectedId`, or with no
+	`affectedId` what changing it affects, as numbered facts from the
+	graph and an explanation that cites them. The explanation is written
+	by the configured local model when `useModel` is true and one
+	answers, and only if it passes the check against the facts;
+	otherwise it is built from the facts directly. Insufficient evidence
+	is never sent to a model.
+	"""
+	explainImpact(repoId: ID!, symbolId: ID!, affectedId: ID, maxDepth: Int! = 8, useModel: Boolean! = true): Explanation!
+	"""
 	Strongly connected components at the given level, largest first.
 	"""
 	circularDependencies(repoId: ID!, level: Level! = MODULE): [Cycle!]!
@@ -805,6 +904,17 @@ type TestSelection {
 	truncated: Boolean!
 }
 
+enum TextSource {
+	"""
+	Written by the language model and accepted by the check.
+	"""
+	MODEL
+	"""
+	Built from the facts without a model.
+	"""
+	TEMPLATE
+}
+
 """
 A call inside a symbol that could not be resolved.
 """
@@ -815,6 +925,22 @@ type UnresolvedCall {
 	e.g. `name_not_in_scope`, `dynamic_call`.
 	"""
 	reason: String!
+}
+
+"""
+The check of a model answer against the facts.
+"""
+type Verification {
+	accepted: Boolean!
+	"""
+	Fact IDs the answer cites.
+	"""
+	cited: [String!]!
+	"""
+	Why the answer was rejected.
+	"""
+	problems: [String!]!
+	warnings: [String!]!
 }
 
 """

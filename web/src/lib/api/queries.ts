@@ -8,6 +8,7 @@ import type {
 	Cycle,
 	CycleLevel,
 	Direction,
+	Explanation,
 	GitImpactReport,
 	GitRefs,
 	ImpactReport,
@@ -124,6 +125,30 @@ export async function impact(
 		{ repo: repoId, id: symbolId, depth: maxDepth, ambiguous: includeAmbiguous }
 	);
 	return data.impact;
+}
+
+/**
+ * Why changing `symbolId` can affect `affectedId` (or, without it, what the
+ * change affects), as cited facts. The server may have a local model word
+ * the explanation; it is checked against the facts either way.
+ */
+export async function explainImpact(
+	repoId: string,
+	symbolId: string,
+	affectedId: string | null,
+	maxDepth: number
+): Promise<Explanation> {
+	const data = await request<{ explainImpact: Explanation }>(
+		`query($repo: ID!, $id: ID!, $affected: ID, $depth: Int!) {
+			explainImpact(repoId: $repo, symbolId: $id, affectedId: $affected, maxDepth: $depth) {
+				question status reason chains text source model rejectedText notes
+				facts { id kind sourceId targetId file lines text }
+				verification { accepted cited problems warnings }
+			}
+		}`,
+		{ repo: repoId, id: symbolId, affected: affectedId, depth: maxDepth }
+	);
+	return data.explainImpact;
 }
 
 export async function cycles(repoId: string, level: CycleLevel): Promise<Cycle[]> {

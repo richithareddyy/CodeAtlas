@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use codeatlas_analyzer::graph::CodeGraph;
+use codeatlas_explain::ModelConfig;
 use codeatlas_store::{GraphStore, Result, StateDir, StoreError, GRAPH_FORMAT_VERSION};
 use tokio::sync::{Mutex, Semaphore};
 
@@ -19,6 +20,9 @@ pub struct AppState {
     /// Incremental indexing state, per repository.
     pub states: StateDir,
     pub diffs: Semaphore,
+    /// The local model for explanations (see `ModelConfig::from_env`);
+    /// `None` when disabled.
+    pub model: Option<ModelConfig>,
 }
 
 impl AppState {
@@ -35,6 +39,7 @@ impl AppState {
             clone_dir,
             states: StateDir::new(state_dir),
             diffs: Semaphore::new(CONCURRENT_DIFFS),
+            model: ModelConfig::from_env(),
         })
     }
 }
