@@ -149,11 +149,11 @@ describe('fromArchitecture', () => {
 		expect(data.edges.find((e) => e.id === 'mod:app->mod:app::db')?.label).toBeUndefined();
 	});
 
-	it('scopes to one crate and keeps outside neighbours as context', () => {
+	it('scopes to one crate and folds outside neighbours into their crate', () => {
 		const data = fromArchitecture(graph, 'tool');
 		const byId = Object.fromEntries(data.nodes.map((n) => [n.id, n.classes]));
-		expect(Object.keys(byId).sort()).toEqual(['mod:app::api', 'mod:tool']);
-		expect(byId['mod:app::api']).toContain('context');
+		expect(Object.keys(byId).sort()).toEqual(['group:app', 'mod:tool']);
+		expect(byId['group:app']).toContain('context');
 		expect(byId['mod:tool']).not.toContain('context');
 	});
 });
@@ -298,5 +298,29 @@ describe('fromDiff depth limit', () => {
 		} as unknown as GitImpactReport;
 		expect(fromDiff(report, 1).nodes.map((n) => n.id)).toEqual(['fn:a', 'fn:b']);
 		expect(fromDiff(report).nodes.map((n) => n.id)).toEqual(['fn:a', 'fn:b', 'fn:c']);
+	});
+});
+
+describe('fromArchitecture crate filter', () => {
+	const graph = {
+		level: 'CRATE',
+		nodes: [
+			{ id: 'tokio', fanIn: 2, fanOut: 0, inCycle: false },
+			{ id: 'tokio_util', fanIn: 0, fanOut: 1, inCycle: false },
+			{ id: 'sync_mpsc', fanIn: 0, fanOut: 1, inCycle: false },
+			{ id: 'sync_mpsc#2', fanIn: 0, fanOut: 1, inCycle: false }
+		],
+		edges: [
+			{ from: 'tokio_util', to: 'tokio', weight: 3, via: [] },
+			{ from: 'sync_mpsc', to: 'tokio', weight: 1, via: [] },
+			{ from: 'sync_mpsc#2', to: 'tokio', weight: 1, via: [] }
+		]
+	} as unknown as ArchitectureGraph;
+
+	it('leaves out hidden crates, including their numbered duplicates', () => {
+		const data = fromArchitecture(graph, null, new Set(['sync_mpsc']));
+		expect(data.nodes.map((n) => n.id).sort()).toEqual(['tokio', 'tokio_util']);
+		expect(data.edges.map((e) => e.id)).toEqual(['tokio_util->tokio']);
+		expect(fromArchitecture(graph, null).nodes).toHaveLength(4);
 	});
 });

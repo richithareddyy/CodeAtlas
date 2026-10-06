@@ -398,7 +398,7 @@ fn run_binary(binary: &TestBinary, timeout: Duration) -> Result<BinaryRun> {
     Ok(BinaryRun { results, complete })
 }
 
-fn copy_tree(from: &Path, to: &Path) -> Result<()> {
+pub(crate) fn copy_tree(from: &Path, to: &Path) -> Result<()> {
     fs::create_dir_all(to)?;
     for entry in fs::read_dir(from)? {
         let entry = entry?;
@@ -436,7 +436,7 @@ fn toolchain() -> String {
 }
 
 /// Deterministic Fisher-Yates shuffle (xorshift64*).
-fn shuffle<T>(items: &mut [T], seed: u64) {
+pub(crate) fn shuffle<T>(items: &mut [T], seed: u64) {
     let mut state = seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1;
     for i in (1..items.len()).rev() {
         state ^= state >> 12;

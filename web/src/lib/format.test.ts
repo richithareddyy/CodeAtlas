@@ -6,6 +6,7 @@ import {
 	shortLabel,
 	splitPath,
 	stepSentence,
+	supportCrateNames,
 	timestamp
 } from './format';
 
@@ -71,5 +72,17 @@ describe('callSteps', () => {
 		expect(callSteps([{ kind: 'CALLS' }, { kind: 'DISPATCHES_TO' }])).toBe(1);
 		expect(callSteps([{ kind: 'CALLS' }, { kind: 'MAY_CALL' }, { kind: 'IMPLEMENTS' }])).toBe(2);
 		expect(callSteps([])).toBe(0);
+	});
+});
+
+describe('supportCrateNames', () => {
+	it('names test, bench and example crates unless a product crate shares the name', () => {
+		const names = supportCrateNames([
+			{ name: 'tokio', kind: 'lib' },
+			{ name: 'sync_mpsc', kind: 'bench' },
+			{ name: 'chat', kind: 'example' },
+			{ name: 'tokio', kind: 'test' }
+		]);
+		expect([...names].sort()).toEqual(['chat', 'sync_mpsc']);
 	});
 });

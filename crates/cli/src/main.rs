@@ -1,3 +1,4 @@
+mod bench;
 mod diff_view;
 mod graph;
 mod probe;
@@ -150,6 +151,39 @@ enum Command {
         #[arg(long, short)]
         output: Option<PathBuf>,
     },
+    /// Measure analysis, indexing and query performance on a local
+    /// repository and write the results as JSON. Indexing and queries need
+    /// Neo4j and run on a scratch copy under a repository ID of their own.
+    Bench {
+        /// Local repository path.
+        source: PathBuf,
+        /// Repetitions of each analysis and indexing measurement.
+        #[arg(long, default_value_t = 5)]
+        runs: usize,
+        /// Repetitions of each query per target symbol.
+        #[arg(long, default_value_t = 3)]
+        query_runs: usize,
+        /// Symbols the queries start from (half the most-called, half sampled).
+        #[arg(long, default_value_t = 20)]
+        targets: usize,
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        /// Also measure incremental indexing from this revision to HEAD and back.
+        #[arg(long)]
+        base: Option<String>,
+        /// Ground truth from `probe-tests`, to report test-selection precision and recall.
+        #[arg(long)]
+        test_truth: Option<PathBuf>,
+        /// Only measure analysis (no Neo4j needed).
+        #[arg(long)]
+        no_database: bool,
+        /// Write the JSON result to this file.
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+    },
+    /// One analysis measured in this process (used by `bench`).
+    #[command(hide = true)]
+    BenchAnalysis { source: PathBuf },
     /// Delete an indexed repository's graph from Neo4j.
     Remove {
         /// Repository ID or name.
@@ -375,6 +409,40 @@ async fn main() -> Result<()> {
                 test_view::evaluation(&evaluation)
             };
             writeln!(std::io::stdout(), "{text}")?;
+        }
+        Command::Bench {
+            source,
+            runs,
+            query_runs,
+            targets,
+            seed,
+            base,
+            test_truth,
+            no_database,
+            output,
+        } => {
+            let report = bench::bench(
+                &source,
+                &bench::BenchOptions {
+                    runs,
+                    query_runs,
+                    targets,
+                    seed,
+                    base,
+                    test_truth,
+                    database: !no_database,
+                },
+            )
+            .await?;
+            if let Some(path) = output {
+                fs::write(&path, serde_json::to_string_pretty(&report)? + "\n")
+                    .with_context(|| format!("failed to write {}", path.display()))?;
+            }
+            writeln!(std::io::stdout(), "{}", bench::text(&report))?;
+        }
+        Command::BenchAnalysis { source } => {
+            let sample = bench::analysis_sample(&source)?;
+            writeln!(std::io::stdout(), "{}", serde_json::to_string(&sample)?)?;
         }
         Command::Remove { repo, state_dir } => {
             let states = StateDir::new(state_dir.unwrap_or_else(StateDir::default_dir));

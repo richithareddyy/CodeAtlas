@@ -66,6 +66,7 @@ export function graphStyle(): StylesheetJson {
 		},
 		{ selector: 'node.cycle', style: { 'border-color': t.cycle, 'border-width': 2 } },
 		{ selector: 'node.context', style: { opacity: 0.45 } },
+		{ selector: 'node.group', style: { 'border-width': 2.5, 'background-color': t.subtle } },
 		{
 			selector: 'node:selected',
 			style: {

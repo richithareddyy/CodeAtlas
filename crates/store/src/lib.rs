@@ -61,6 +61,21 @@ impl GraphStore {
         self.limits
     }
 
+    /// `name version edition` of the connected Neo4j server.
+    pub async fn server_version(&self) -> Result<String> {
+        let mut rows = self
+            .graph
+            .execute(query(
+                "CALL dbms.components() YIELD name, versions, edition \
+                 RETURN name + ' ' + versions[0] + ' ' + edition AS version",
+            ))
+            .await?;
+        Ok(match rows.next().await? {
+            Some(row) => row.get("version")?,
+            None => String::new(),
+        })
+    }
+
     /// Creates constraints and indexes if they do not exist.
     pub async fn ensure_schema(&self) -> Result<()> {
         schema::ensure(&self.graph).await

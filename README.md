@@ -8,13 +8,13 @@ Answers come from static analysis and graph traversal, not from a language
 model guessing about the code. Every conclusion is meant to be traceable to
 source locations.
 
-> **Status: Milestone 9 of 11.** Ingestion, Rust module-tree
+> **Status: Milestone 10 of 11.** Ingestion, Rust module-tree
 > construction, tree-sitter parsing, symbol extraction, symbol resolution
 > (with measured quality), the Neo4j code graph with incremental indexing,
 > bounded graph queries, graph algorithms, the change-impact engine, test
 > selection (with measured precision and recall), Git diff impact, the
-> GraphQL API and the web workspace are implemented and tested. A
-> benchmark suite and optional local-model explanations remain. See
+> GraphQL API, the web workspace and a benchmark suite are implemented and
+> tested. Optional local-model explanations remain. See
 > [docs/architecture.md](docs/architecture.md#milestones).
 
 ## Why static analysis
@@ -139,7 +139,9 @@ inspector on the right. Symbols are found with a command palette (`⌘K` /
 * *Changes*: the Git diff impact report for two revisions chosen from
   the repository's branches, tags and commits.
 * *Architecture*: dependencies between crates, zooming into modules or
-  files.
+  files. Inside a crate, each module tree is one node labelled with its
+  module count; double-clicking zooms into it, and a breadcrumb leads
+  back. Test, bench and example crates are hidden until asked for.
 * *Cycles*: circular dependencies at module, file or function level.
 
 Every edge in a list links to the source line behind it, and the inspector
@@ -589,6 +591,9 @@ cargo test
   `crates/server/tests/schema.rs` checks that `docs/schema.graphql` matches
   the code and that the depth and complexity limits reject oversized
   queries.
+* `crates/cli/tests/bench.rs` runs `codeatlas bench` on a fixture and
+  checks that every section of the report is present and consistent
+  (indexing and queries when Neo4j is configured).
 * `crates/analyzer/tests/test_impact.rs` checks test selection (direct,
   transitive, possible, untested, changed tests) and the evaluation of
   the fixtures against their recorded ground truth, including each known
@@ -716,37 +721,53 @@ Measured, not estimated; full details and method in
 
 ## Benchmarks
 
-The benchmark harness (`codeatlas bench`, with JSON results under
-`benchmarks/results/`) is planned for Milestone 10. Until it exists, the
-only figures in this repository are single-run measurements quoted with
-their conditions. For example, indexing ripgrep (commit `3fce3b5`) wrote
-3,668 nodes and 19,010 relationships in 0.76–0.91 s over two runs. Warm
-`codeatlas query` invocations on that graph took 31–42 ms end to end,
-including process start and connection. Impact, cycle and hotspot queries,
-which load the whole stored graph (3,536 symbols) into memory, took
-103–126 ms end to end. Through the GraphQL server, the first ripgrep `impact`
-request took 116 ms (graph load included) and cached repeats about 2 ms.
-Indexing ripgrep (110 Rust files; 3,668 nodes, 19,010 relationships), one
-run each unless a range is given:
+Measured with `codeatlas bench` (method and result format in
+[benchmarks/README.md](benchmarks/README.md); every sample is in
+[benchmarks/results](benchmarks/results)). Medians of 5 runs (queries: 20
+symbols × 3 runs) on one machine: Apple M5, 10 logical CPUs, macOS, Neo4j
+5.26.31 community in Docker, release build.
 
-| Run | Analysis | Neo4j write | End to end |
+| | CodeAtlas | ripgrep | tokio |
 |---|---|---|---|
-| Full, first index (no state) | 295 ms | 980 ms | 1.79 s |
-| Full (`--full`, two runs) | 88–90 ms | 567–587 ms | 0.75–0.78 s |
-| Incremental, nothing changed (two runs) | 88–92 ms | 3–5 ms | 0.19–0.20 s |
-| Incremental, `HEAD` → `HEAD~10` and back (9–14 files changed; two runs each way) | 117–120 ms | 77–260 ms | 0.29–0.48 s |
+| Commit | `5de56d0` | `3fce3b5` | `b263675` |
+| Rust files / non-blank LOC | 130 / 20,943 | 110 / 50,953 | 808 / 163,157 |
+| Symbols | 1,405 | 3,536 | 9,554 |
+| Resolved relationships (calls, imports, implementations) | 2,143 | 6,240 | 9,437 |
+| Stored nodes / relationships | 1,565 / 6,438 | 3,668 / 19,010 | 10,668 / 104,973 |
+| Call resolution rate | 58.3% | 76.3% | 40.4% |
+| Analysis (fresh process) | 177 ms | 329 ms | 918 ms |
+| Parsing throughput | 295k LOC/s | 343k LOC/s | 369k LOC/s |
+| Peak memory of the analysis | 28 MB | 46 MB | 101 MB |
+| Full index (analysis + write) | 361 ms | 890 ms | 3.61 s |
+| Incremental, nothing changed | 68 ms | 128 ms | 434 ms |
+| Incremental, one line added at the top of the largest file | 78 ms | 221 ms | 472 ms |
+| Incremental over a Git range (files parsed) | 221 ms (41), `HEAD~3` | 236 ms (14), `HEAD~10` | 1.01 s (124), `HEAD~20` |
+| Callers, depth 1 / depth 3 (median, p95) | 1.7 / 2.7 ms, 4.3 | 1.6 / 3.3 ms, 5.6 | 2.1 / 1.7 ms, 12.1 |
+| Load the whole graph for analyses | 42 ms | 93 ms | 410 ms |
+| Impact of a symbol, in memory | 0.01 ms | 0.07 ms | 0.02 ms |
 
-The `--full` runs reuse saved per-file results for the analysis; only the
-first run parses everything. Most of an incremental run's analysis time is
-reading the 6.4 MB state file, re-resolving, and building both snapshots;
-going back and forth over ten commits changes about 2,160 relationships,
-because edits shift the line numbers stored on calls and dependency
-evidence.
+* Incremental indexing is 4–8 times faster than a full index when little
+  changes. It is bounded by discovery (every file is read and hashed),
+  re-resolution and diffing the two graphs, not by Neo4j, whose write
+  shrinks from 0.2–2.6 s to 3–63 ms.
+* tokio stores many relationships because most of its 11,634 ambiguous
+  calls have several candidates, each stored as a `CALLS_CANDIDATE` edge.
+* Most ambiguous calls are method calls whose receiver type the resolver
+  does not infer: 10,286 of 11,634 on tokio, 1,392 of 1,396 on CodeAtlas
+  (see [Known limitations](#known-limitations)). On tokio, 313
+  `cfg_*! { ... }` blocks also declare modules and items that CodeAtlas
+  does not expand, which leaves paths to them unresolved.
+* Test-selection precision and recall are in
+  [Test-impact quality](#test-impact-quality); `bench --test-truth`
+  includes them in a result.
+* Benchmarking tokio found a resolver defect: lookups in cycles of glob
+  imports were recomputed exponentially, and a single analysis did not
+  finish in minutes. It now takes under a second (see the commit
+  "Resolve glob-import cycles in polynomial time"); resolution output on
+  every other repository was unchanged.
 
-Comparing ripgrep `HEAD~10` with `HEAD` (21 changed files, 137 downstream
-symbols) with `codeatlas diff` took 0.76–0.82 s end to end over two runs,
-about 0.32 s of it per revision for exporting and analysing it.
-Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
+Comparing ripgrep `HEAD~10` with `HEAD` with `codeatlas diff` (21 changed
+files, 137 downstream symbols) took 0.76–0.82 s end to end over two runs.
 
 ## Known limitations
 
@@ -791,5 +812,6 @@ Machine: Apple Silicon Mac, local Docker Neo4j 5.26.
 
 ## Roadmap
 
-Benchmark suite → optional local-model explanations grounded in graph
-evidence. Details are in [docs/architecture.md](docs/architecture.md).
+Optional local-model explanations grounded in graph evidence (Milestone
+11); beyond that, expanding `macro_rules!` and `cfg` macros, which limits
+resolution and test selection most on large crates. Details are in [docs/architecture.md](docs/architecture.md).
