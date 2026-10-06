@@ -11,7 +11,7 @@
 //!   namespace. Intermediate path segments are always in the type namespace.
 
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::table::SymbolTable;
 use crate::model::{Import, ResolutionMethod, SymbolId, SymbolKind};
@@ -68,9 +68,18 @@ pub(crate) struct Resolver<'a> {
     type_traits: HashMap<SymbolId, Vec<SymbolId>>,
     /// Trait method each trait-impl method implements.
     pub method_trait: HashMap<SymbolId, SymbolId>,
+    /// Lookups that did not depend on a cut-off cycle; valid for good.
     cache: RefCell<HashMap<CacheKey, Option<Lookup>>>,
-    /// Set when a lookup hit the depth limit; such results are not cached.
-    truncated: Cell<bool>,
+    /// Lookups in progress (the current chain of nested lookups). Meeting
+    /// one again means a cycle of imports (e.g. two modules importing each
+    /// other with `*`); that branch is cut off.
+    in_progress: RefCell<HashSet<CacheKey>>,
+    /// Lookups that depended on a cut (a cycle or the depth limit). Their
+    /// result may differ in another context, so they are reused only within
+    /// the current top-level lookup, which keeps it polynomial.
+    provisional: RefCell<HashMap<CacheKey, Option<Lookup>>>,
+    /// Set when the current lookup depended on a cut.
+    cut: Cell<bool>,
 }
 
 impl<'a> Resolver<'a> {
@@ -80,7 +89,9 @@ impl<'a> Resolver<'a> {
             type_traits: HashMap::new(),
             method_trait: HashMap::new(),
             cache: RefCell::new(HashMap::new()),
-            truncated: Cell::new(false),
+            in_progress: RefCell::new(HashSet::new()),
+            provisional: RefCell::new(HashMap::new()),
+            cut: Cell::new(false),
         }
     }
 
@@ -268,21 +279,37 @@ impl<'a> Resolver<'a> {
         depth: u8,
     ) -> Option<Lookup> {
         if depth > MAX_DEPTH {
-            self.truncated.set(true);
+            self.cut.set(true);
             return None;
         }
         let key = (scope.clone(), name.to_string(), ns, lexical);
         if let Some(cached) = self.cache.borrow().get(&key) {
             return cached.clone();
         }
+        if let Some(provisional) = self.provisional.borrow().get(&key) {
+            self.cut.set(true);
+            return provisional.clone();
+        }
+        if self.in_progress.borrow().contains(&key) {
+            self.cut.set(true);
+            return None;
+        }
 
-        let outer_truncated = self.truncated.replace(false);
+        let top_level = self.in_progress.borrow().is_empty();
+        self.in_progress.borrow_mut().insert(key.clone());
+        let outer_cut = self.cut.replace(false);
         let result = self.lookup_in_uncached(scope, name, ns, lexical, depth);
-        let truncated = self.truncated.get();
-        if !truncated {
+        self.in_progress.borrow_mut().remove(&key);
+        let cut = self.cut.get();
+        if cut {
+            self.provisional.borrow_mut().insert(key, result.clone());
+        } else {
             self.cache.borrow_mut().insert(key, result.clone());
         }
-        self.truncated.set(outer_truncated || truncated);
+        self.cut.set(outer_cut || cut);
+        if top_level {
+            self.provisional.borrow_mut().clear();
+        }
         result
     }
 
