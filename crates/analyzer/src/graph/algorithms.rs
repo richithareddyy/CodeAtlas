@@ -60,7 +60,6 @@ impl Digraph {
     }
 }
 
-/// Result of a breadth-first search.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BfsTree<E> {
     /// Reached nodes in visiting order, excluding the start nodes.
@@ -321,7 +320,6 @@ pub fn dependency_layers(graph: &Digraph) -> Vec<u32> {
         .collect()
 }
 
-/// In-degree and out-degree of every node.
 pub fn degrees(graph: &Digraph) -> (Vec<usize>, Vec<usize>) {
     let mut in_degree = vec![0; graph.len()];
     let out_degree = (0..graph.len())

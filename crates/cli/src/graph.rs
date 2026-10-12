@@ -12,8 +12,8 @@ use codeatlas_explain as explain;
 use crate::test_view;
 use crate::views::{self, LevelArg};
 use codeatlas_store::{
-    AggregateDependency, Direction, GraphEdge, GraphStore, IndexMode, Prepared, RepositoryNode,
-    StateDir, StoreConfig, SymbolNode, Traversal,
+    AggregateDependency, DependencyPath, Direction, GraphEdge, GraphStore, IndexMode, Prepared,
+    RepositoryNode, StateDir, StoreConfig, SymbolNode, Traversal,
 };
 
 #[derive(Subcommand)]
@@ -211,32 +211,26 @@ pub async fn query(repo: Option<&str>, json: bool, query: Query) -> Result<Strin
     let repo = select_repository(&store, repo).await?;
     let r = repo.id.as_str();
 
-    let render = |value: &dyn erased::Render| -> Result<String> {
-        if json {
-            value.json()
-        } else {
-            Ok(value.text())
-        }
-    };
-
     match query {
         Query::Repos => unreachable!("handled above"),
         Query::Search { text, kind, limit } => {
             let kinds = (!kind.is_empty()).then_some(kind.as_slice());
             let hits = store.search(r, &text, kinds, limit).await?;
-            render(&hits)
+            output(json, &hits, || symbols_text(&hits))
         }
         Query::Symbol { symbol } => {
             let symbol = store.find_symbol(r, &symbol).await?;
-            render(&symbol)
+            output(json, &symbol, || symbol_text(&symbol))
         }
         Query::Callers { symbol, depth } => {
             let id = callable(&store, r, &symbol).await?;
-            render(&store.callers(r, &id, depth).await?)
+            let found = store.callers(r, &id, depth).await?;
+            output(json, &found, || traversal_text(&found))
         }
         Query::Callees { symbol, depth } => {
             let id = callable(&store, r, &symbol).await?;
-            render(&store.callees(r, &id, depth).await?)
+            let found = store.callees(r, &id, depth).await?;
+            output(json, &found, || traversal_text(&found))
         }
         Query::Tests {
             symbols,
@@ -273,33 +267,34 @@ pub async fn query(repo: Option<&str>, json: bool, query: Query) -> Result<Strin
         } => {
             let from = callable(&store, r, &from).await?;
             let to = callable(&store, r, &to).await?;
-            render(&store.shortest_path(r, &from, &to, max_depth).await?)
+            let path = store.shortest_path(r, &from, &to, max_depth).await?;
+            output(json, &path, || path_text(path.as_ref()))
         }
-        Query::FileDependents { path } => render(&Aggregate(
-            store
+        Query::FileDependents { path } => {
+            let deps = store
                 .file_dependencies(r, &path, Direction::Dependents)
-                .await?,
-        )),
-        Query::FileDependencies { path } => render(&Aggregate(
-            store
+                .await?;
+            output(json, &deps, || aggregate_text(&deps))
+        }
+        Query::FileDependencies { path } => {
+            let deps = store
                 .file_dependencies(r, &path, Direction::Dependencies)
-                .await?,
-        )),
+                .await?;
+            output(json, &deps, || aggregate_text(&deps))
+        }
         Query::ModuleDependents { module } => {
             let id = store.find_symbol(r, &module).await?.id;
-            render(&Aggregate(
-                store
-                    .module_dependencies(r, &id, Direction::Dependents)
-                    .await?,
-            ))
+            let deps = store
+                .module_dependencies(r, &id, Direction::Dependents)
+                .await?;
+            output(json, &deps, || aggregate_text(&deps))
         }
         Query::ModuleDependencies { module } => {
             let id = store.find_symbol(r, &module).await?.id;
-            render(&Aggregate(
-                store
-                    .module_dependencies(r, &id, Direction::Dependencies)
-                    .await?,
-            ))
+            let deps = store
+                .module_dependencies(r, &id, Direction::Dependencies)
+                .await?;
+            output(json, &deps, || aggregate_text(&deps))
         }
         Query::Impact {
             symbol,
@@ -426,8 +421,8 @@ fn render_repos(repos: &[RepositoryNode]) -> String {
         .iter()
         .map(|r| {
             let revision = match (&r.branch, &r.indexed_sha) {
-                (Some(b), Some(sha)) => format!("{b} @ {}", &sha[..sha.len().min(10)]),
-                (None, Some(sha)) => sha[..sha.len().min(10)].to_string(),
+                (Some(b), Some(sha)) => format!("{b} @ {}", views::short_sha(sha)),
+                (None, Some(sha)) => views::short_sha(sha).to_string(),
                 _ => "no commit".into(),
             };
             format!(
@@ -456,164 +451,96 @@ fn edge_text(e: &GraphEdge) -> String {
     }
 }
 
-/// A list of file or module dependencies.
-struct Aggregate(Vec<AggregateDependency>);
-
-/// Uniform text / JSON rendering of query results.
-mod erased {
-    use super::*;
-    use codeatlas_store::{DependencyPath, RelatedTest};
-    use serde::Serialize;
-
-    pub trait Render {
-        fn text(&self) -> String;
-        fn json(&self) -> Result<String>;
+fn symbols_text(symbols: &[SymbolNode]) -> String {
+    if symbols.is_empty() {
+        return "no matches".into();
     }
+    symbols
+        .iter()
+        .map(|s| format!("{:<8} {:<60} {}", s.kind, s.qualified_name, location(s)))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
 
-    fn to_json<T: Serialize + ?Sized>(value: &T) -> Result<String> {
-        Ok(serde_json::to_string_pretty(value)?)
+fn symbol_text(s: &SymbolNode) -> String {
+    let mut out = format!(
+        "{}\n  kind        {}\n  location    {}-{}\n  crate       {}\n  visibility  {}\n",
+        s.id,
+        s.kind,
+        location(s),
+        s.end_line,
+        s.crate_name,
+        s.visibility
+    );
+    if let Some(signature) = &s.signature {
+        out.push_str(&format!("  signature   {signature}\n"));
     }
-
-    impl Render for Vec<SymbolNode> {
-        fn text(&self) -> String {
-            if self.is_empty() {
-                return "no matches".into();
-            }
-            self.iter()
-                .map(|s| format!("{:<8} {:<60} {}", s.kind, s.qualified_name, location(s)))
-                .collect::<Vec<_>>()
-                .join("\n")
-        }
-        fn json(&self) -> Result<String> {
-            to_json(self)
-        }
+    if s.is_test {
+        out.push_str("  test        yes\n");
     }
-
-    impl Render for SymbolNode {
-        fn text(&self) -> String {
-            let mut out = format!(
-                "{}\n  kind        {}\n  location    {}-{}\n  crate       {}\n  visibility  {}\n",
-                self.id,
-                self.kind,
-                location(self),
-                self.end_line,
-                self.crate_name,
-                self.visibility
-            );
-            if let Some(signature) = &self.signature {
-                out.push_str(&format!("  signature   {signature}\n"));
-            }
-            if self.is_test {
-                out.push_str("  test        yes\n");
-            }
-            for call in &self.unresolved_calls {
-                out.push_str(&format!("  unresolved  {call}\n"));
-            }
-            out.trim_end().to_string()
-        }
-        fn json(&self) -> Result<String> {
-            to_json(self)
-        }
+    for call in &s.unresolved_calls {
+        out.push_str(&format!("  unresolved  {call}\n"));
     }
+    out.trim_end().to_string()
+}
 
-    impl Render for Traversal {
-        fn text(&self) -> String {
-            let label = match self.direction {
-                Direction::Dependents => "Dependents",
-                Direction::Dependencies => "Dependencies",
-            };
-            let mut out = format!(
-                "{label} of {} ({}), depth <= {}\n",
-                self.root.id,
-                location(&self.root),
-                self.max_depth
-            );
-            if self.nodes.is_empty() {
-                out.push_str("  none\n");
-            }
-            let mut nodes: Vec<_> = self.nodes.iter().collect();
-            nodes.sort_by(|a, b| a.depth.cmp(&b.depth).then(a.symbol.id.cmp(&b.symbol.id)));
-            for node in nodes {
-                out.push_str(&format!(
-                    "  {}  {:<60} {}\n       via {}\n",
-                    node.depth,
-                    node.symbol.id,
-                    location(&node.symbol),
-                    edge_text(&node.via)
-                ));
-            }
-            if self.truncated {
-                out.push_str("  (truncated by query limits)\n");
-            }
-            out.trim_end().to_string()
-        }
-        fn json(&self) -> Result<String> {
-            to_json(self)
-        }
+fn traversal_text(t: &Traversal) -> String {
+    let label = match t.direction {
+        Direction::Dependents => "Dependents",
+        Direction::Dependencies => "Dependencies",
+    };
+    let mut out = format!(
+        "{label} of {} ({}), depth <= {}\n",
+        t.root.id,
+        location(&t.root),
+        t.max_depth
+    );
+    if t.nodes.is_empty() {
+        out.push_str("  none\n");
     }
-
-    impl Render for Vec<RelatedTest> {
-        fn text(&self) -> String {
-            if self.is_empty() {
-                return "no tests reach this symbol through resolved calls".into();
-            }
-            let mut out = String::new();
-            for test in self {
-                out.push_str(&format!(
-                    "{}  (depth {}, {})\n",
-                    test.test.id,
-                    test.depth,
-                    location(&test.test)
-                ));
-                for edge in &test.path {
-                    out.push_str(&format!("    {}\n", edge_text(edge)));
-                }
-            }
-            out.trim_end().to_string()
-        }
-        fn json(&self) -> Result<String> {
-            to_json(self)
-        }
+    let mut nodes: Vec<_> = t.nodes.iter().collect();
+    nodes.sort_by(|a, b| a.depth.cmp(&b.depth).then(a.symbol.id.cmp(&b.symbol.id)));
+    for node in nodes {
+        out.push_str(&format!(
+            "  {}  {:<60} {}\n       via {}\n",
+            node.depth,
+            node.symbol.id,
+            location(&node.symbol),
+            edge_text(&node.via)
+        ));
     }
-
-    impl Render for Option<DependencyPath> {
-        fn text(&self) -> String {
-            let Some(path) = self else {
-                return "no dependency path within the depth limit".into();
-            };
-            let mut out = String::new();
-            for (i, node) in path.nodes.iter().enumerate() {
-                out.push_str(&format!("{}  ({})\n", node.id, location(node)));
-                if let Some(edge) = path.edges.get(i) {
-                    let lines = edge
-                        .lines
-                        .iter()
-                        .map(i64::to_string)
-                        .collect::<Vec<_>>()
-                        .join(",");
-                    out.push_str(&format!("  └─ {} at line {lines}\n", edge.kind));
-                }
-            }
-            out.trim_end().to_string()
-        }
-        fn json(&self) -> Result<String> {
-            to_json(self)
-        }
+    if t.truncated {
+        out.push_str("  (truncated by query limits)\n");
     }
+    out.trim_end().to_string()
+}
 
-    impl Render for Aggregate {
-        fn text(&self) -> String {
-            if self.0.is_empty() {
-                return "none".into();
-            }
-            self.0
+fn path_text(path: Option<&DependencyPath>) -> String {
+    let Some(path) = path else {
+        return "no dependency path within the depth limit".into();
+    };
+    let mut out = String::new();
+    for (i, node) in path.nodes.iter().enumerate() {
+        out.push_str(&format!("{}  ({})\n", node.id, location(node)));
+        if let Some(edge) = path.edges.get(i) {
+            let lines = edge
+                .lines
                 .iter()
-                .map(|d| format!("{:>4}  {:<60} via {}", d.weight, d.target, d.via.join(", ")))
+                .map(i64::to_string)
                 .collect::<Vec<_>>()
-                .join("\n")
-        }
-        fn json(&self) -> Result<String> {
-            to_json(&self.0)
+                .join(",");
+            out.push_str(&format!("  └─ {} at line {lines}\n", edge.kind));
         }
     }
+    out.trim_end().to_string()
+}
+
+fn aggregate_text(deps: &[AggregateDependency]) -> String {
+    if deps.is_empty() {
+        return "none".into();
+    }
+    deps.iter()
+        .map(|d| format!("{:>4}  {:<60} via {}", d.weight, d.target, d.via.join(", ")))
+        .collect::<Vec<_>>()
+        .join("\n")
 }

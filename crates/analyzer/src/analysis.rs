@@ -44,7 +44,6 @@ pub struct AnalysisStats {
     pub total_ms: f64,
 }
 
-/// Ingests `source` and analyses it.
 pub fn analyze_source(source: &RepoSource, options: &IngestOptions) -> Result<RepositoryAnalysis> {
     let ingested = ingest::ingest(source, options)?;
     analyze(&ingested)
@@ -54,7 +53,6 @@ pub fn analyze(repo: &IngestedRepository) -> Result<RepositoryAnalysis> {
     Ok(analyze_with_cache(repo, None)?.analysis)
 }
 
-/// The result of [`analyze_with_cache`].
 #[derive(Debug, Clone)]
 pub struct Analyzed {
     pub analysis: RepositoryAnalysis,
@@ -328,6 +326,6 @@ pub(crate) fn compute_stats(files: &[FileAnalysis]) -> AnalysisStats {
     stats
 }
 
-fn elapsed_ms(since: Instant) -> f64 {
+pub(crate) fn elapsed_ms(since: Instant) -> f64 {
     since.elapsed().as_secs_f64() * 1000.0
 }

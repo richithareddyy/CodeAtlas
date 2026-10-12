@@ -27,6 +27,7 @@ use codeatlas_store::{prepare, DeltaStats, Direction, GraphStore, IndexMode, Sta
 use serde::{Deserialize, Serialize};
 
 use crate::probe::copy_tree;
+use crate::views;
 
 /// Version of the result layout.
 const SCHEMA: u32 = 1;
@@ -874,7 +875,7 @@ pub fn text(r: &BenchReport) -> String {
         r.repository
             .commit
             .as_deref()
-            .map_or("no commit", |c| &c[..c.len().min(10)]),
+            .map_or("no commit", |c| views::short_sha(c)),
         r.codeatlas,
         r.build
     );

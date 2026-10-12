@@ -30,6 +30,10 @@ pub(crate) fn short(id: &str) -> &str {
     id.split_once(':').map_or(id, |(_, rest)| rest)
 }
 
+pub(crate) fn short_sha(sha: &str) -> &str {
+    &sha[..sha.len().min(10)]
+}
+
 pub(crate) fn step_text(step: &EvidenceStep) -> String {
     let (source, target) = (short(step.source.as_str()), short(step.target.as_str()));
     let lines = step

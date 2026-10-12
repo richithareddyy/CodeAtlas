@@ -297,8 +297,6 @@ export interface GitRefs {
 	commits: { sha: string; date: string; subject: string }[];
 }
 
-// ---- Explanations ----
-
 export type EvidenceStatus = 'SUFFICIENT' | 'POSSIBLE' | 'INSUFFICIENT';
 export type FactKind = 'CALLS' | 'DISPATCHES_TO' | 'IMPLEMENTS' | 'MAY_CALL' | 'SUMMARY';
 export type TextSource = 'MODEL' | 'TEMPLATE';

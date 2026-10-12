@@ -95,7 +95,7 @@ class Workspace {
 			return result;
 		} catch (error) {
 			this.error = describeError(error);
-			if ((error as { code?: string }).code === 'NETWORK') this.apiReachable = false;
+			if (error instanceof ApiError && error.code === 'NETWORK') this.apiReachable = false;
 			return undefined;
 		} finally {
 			this.pending--;

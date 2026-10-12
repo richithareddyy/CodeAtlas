@@ -1,7 +1,6 @@
 <script lang="ts">
-	// An explanation of an impact result: the text, with each citation linked
-	// to the fact it rests on, the facts themselves (with their source
-	// locations), and who wrote the text. Fetched on demand.
+	// Fetched on demand; each citation in the text links to its fact.
+	import { describeError } from '../api/client';
 	import { explainImpact } from '../api/queries';
 	import type { Explanation, Fact } from '../api/types';
 	import { explanationParts } from '../format';
@@ -30,7 +29,7 @@
 		try {
 			result = await explainImpact(repo, changedId, affectedId, workspace.impactDepth);
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = describeError(e);
 		} finally {
 			loading = false;
 		}

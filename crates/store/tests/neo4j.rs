@@ -595,8 +595,6 @@ async fn crates_and_children_form_the_explorer_tree() {
     });
 }
 
-// ---- Incremental indexing ----------------------------------------------------
-
 mod incremental {
     use std::fs;
     use std::path::Path;

@@ -33,7 +33,6 @@ export function splitPath(path: string): string[] {
 	return segments;
 }
 
-/** Strips a trailing `#N` duplicate suffix for display. */
 function withoutSuffix(segment: string): string {
 	return segment.replace(/#\d+$/, '');
 }
@@ -62,18 +61,13 @@ export const KIND_LABEL: Record<SymbolKind, string> = {
 	METHOD: 'method'
 };
 
-/** Kind from an ID prefix (`fn:` → FUNCTION). */
+// The labels double as ID prefixes (`fn:`, `mod:`, ...).
+const KIND_BY_PREFIX = Object.fromEntries(
+	Object.entries(KIND_LABEL).map(([kind, label]) => [label, kind as SymbolKind])
+);
+
 export function kindOf(id: string): SymbolKind | null {
-	const prefix = id.slice(0, id.indexOf(':'));
-	const map: Record<string, SymbolKind> = {
-		mod: 'MODULE',
-		struct: 'STRUCT',
-		enum: 'ENUM',
-		trait: 'TRAIT',
-		fn: 'FUNCTION',
-		method: 'METHOD'
-	};
-	return map[prefix] ?? null;
+	return KIND_BY_PREFIX[id.slice(0, id.indexOf(':'))] ?? null;
 }
 
 export const RELATION_LABEL: Record<Relation, string> = {
@@ -108,7 +102,6 @@ export function shortSha(sha: string | null): string {
 	return sha ? sha.slice(0, 10) : '';
 }
 
-/** `2026-10-03T17:15:50.65+00:00` → `2026-10-03 17:15`. */
 /** `YYYY-MM-DD HH:MM` in the viewer's time zone (or the one given). */
 export function timestamp(value: string, timeZone?: string): string {
 	const date = new Date(value);

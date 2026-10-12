@@ -260,12 +260,10 @@ impl CodeGraph {
         &self.edges[index]
     }
 
-    /// Indices of edges leaving `node`.
     pub fn outgoing(&self, node: usize) -> &[usize] {
         &self.outgoing[node]
     }
 
-    /// Indices of edges entering `node`.
     pub fn incoming(&self, node: usize) -> &[usize] {
         &self.incoming[node]
     }

@@ -127,11 +127,7 @@ export async function impact(
 	return data.impact;
 }
 
-/**
- * Why changing `symbolId` can affect `affectedId` (or, without it, what the
- * change affects), as cited facts. The server may have a local model word
- * the explanation; it is checked against the facts either way.
- */
+/** Without `affectedId`, explains the impact of the change as a whole. */
 export async function explainImpact(
 	repoId: string,
 	symbolId: string,

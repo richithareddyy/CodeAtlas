@@ -7,11 +7,11 @@ use codeatlas_analyzer::git::FileStatus;
 use codeatlas_analyzer::graph::impact::Confidence;
 use codeatlas_analyzer::model::SymbolKind;
 
-use crate::views::{short, step_text};
+use crate::views::{short, short_sha, step_text};
 
 fn revisions(report: &DiffReport) -> String {
     let sha = |sha: &Option<String>| match sha {
-        Some(sha) => sha[..sha.len().min(10)].to_string(),
+        Some(sha) => short_sha(sha).to_string(),
         None => "working tree".to_string(),
     };
     format!(

@@ -290,8 +290,6 @@ impl From<store::AggregateDependency> for AggregateDependency {
     }
 }
 
-// ---- Impact ----------------------------------------------------------------
-
 #[derive(SimpleObject)]
 pub struct SymbolRef {
     pub id: ID,
@@ -560,8 +558,6 @@ pub struct AffectedTest {
     pub path: Vec<EvidenceStep>,
 }
 
-// ---- Architecture ----------------------------------------------------------
-
 #[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Level {
     Function,
@@ -763,8 +759,6 @@ impl ArchitectureGraph {
     }
 }
 
-// ---- Misc ------------------------------------------------------------------
-
 #[derive(SimpleObject)]
 pub struct SourceSnippet {
     pub file: String,
@@ -811,8 +805,6 @@ pub enum IndexMode {
     /// Only the difference to the previously stored graph was written.
     Incremental,
 }
-
-// ---- Git diff impact --------------------------------------------------------
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum FileStatus {
@@ -1150,8 +1142,6 @@ mod tests {
         assert!(UnresolvedCall::parse("nonsense").is_none());
     }
 }
-
-// ---- Explanations ----------------------------------------------------------
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum EvidenceStatus {

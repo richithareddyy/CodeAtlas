@@ -47,69 +47,52 @@ pub struct Explanation {
     pub notes: Vec<String>,
 }
 
-/// Explains `evidence`, with the model in `model` when there is one.
 pub async fn explain(evidence: Evidence, model: Option<&ModelConfig>) -> Explanation {
-    let template = template::render(&evidence);
-    let fallback = |evidence: Evidence, note: String, model: Option<String>| Explanation {
-        text: template.clone(),
+    let mut x = Explanation {
+        text: template::render(&evidence),
         evidence,
         source: TextSource::Template,
-        model,
+        model: None,
         verification: None,
         rejected_text: None,
-        notes: vec![note],
+        notes: Vec::new(),
     };
-    if evidence.status == EvidenceStatus::Insufficient {
-        return fallback(
-            evidence,
+    if x.evidence.status == EvidenceStatus::Insufficient {
+        x.notes.push(
             "Not sent to a language model: the evidence does not answer the question.".into(),
-            None,
         );
+        return x;
     }
     let Some(config) = model else {
-        return fallback(
-            evidence,
-            "Language model disabled; this explanation is built from the evidence.".into(),
-            None,
-        );
+        x.notes
+            .push("Language model disabled; this explanation is built from the evidence.".into());
+        return x;
     };
-    match ollama::chat(config, &prompt::messages(&evidence)).await {
+    x.model = Some(config.model.clone());
+    match ollama::chat(config, &prompt::messages(&x.evidence)).await {
         Ok(answer) => {
-            let verification = verify::verify(&answer, &evidence);
+            let verification = verify::verify(&answer, &x.evidence);
             if verification.accepted {
-                Explanation {
-                    evidence,
-                    text: answer,
-                    source: TextSource::Model,
-                    model: Some(config.model.clone()),
-                    notes: vec![format!(
-                        "Written by {} from the evidence below and checked against it.",
-                        config.model
-                    )],
-                    verification: Some(verification),
-                    rejected_text: None,
-                }
+                x.text = answer;
+                x.source = TextSource::Model;
+                x.notes.push(format!(
+                    "Written by {} from the evidence below and checked against it.",
+                    config.model
+                ));
             } else {
                 tracing::info!(problems = ?verification.problems, "model answer rejected");
-                Explanation {
-                    text: template.clone(),
-                    evidence,
-                    source: TextSource::Template,
-                    model: Some(config.model.clone()),
-                    notes: vec![format!(
-                        "The answer from {} was rejected ({}); this explanation is built from the evidence.",
-                        config.model,
-                        verification.problems.join("; ")
-                    )],
-                    verification: Some(verification),
-                    rejected_text: Some(answer),
-                }
+                x.notes.push(format!(
+                    "The answer from {} was rejected ({}); this explanation is built from the evidence.",
+                    config.model,
+                    verification.problems.join("; ")
+                ));
+                x.rejected_text = Some(answer);
             }
+            x.verification = Some(verification);
         }
-        Err(err) => fallback(
-            evidence,
-            format!("No model answer ({err}); this explanation is built from the evidence."),
-            Some(config.model.clone()),
-        ),
+        Err(err) => x.notes.push(format!(
+            "No model answer ({err}); this explanation is built from the evidence."
+        )),
     }
+    x
 }

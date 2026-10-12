@@ -16,14 +16,13 @@ pub mod compare;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
-use std::path::Path;
 use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 
 pub use compare::{ChangeKind, LineRange, SignatureChange, SymbolChange};
 
-use crate::analysis::{analyze, RepositoryAnalysis};
+use crate::analysis::{analyze, elapsed_ms, RepositoryAnalysis};
 use crate::error::{AnalyzerError, Result};
 use crate::git::{FileChange, FileStatus, Git, Hunk};
 use crate::graph::impact::{
@@ -483,18 +482,4 @@ fn summarize(
         }
     }
     s
-}
-
-fn elapsed_ms(since: Instant) -> f64 {
-    since.elapsed().as_secs_f64() * 1000.0
-}
-
-/// Convenience for callers that already hold a path.
-pub fn analyze_diff_at(
-    root: &Path,
-    base: &str,
-    head: Option<&str>,
-    options: &DiffOptions,
-) -> Result<DiffReport> {
-    analyze_diff(&RepoSource::Local(root.to_path_buf()), base, head, options)
 }

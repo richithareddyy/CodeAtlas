@@ -1,7 +1,5 @@
-//! Domain types produced by static analysis.
-//!
-//! These types are deliberately independent of any storage backend: the store
-//! crate maps them onto Neo4j, and the algorithms operate on them directly.
+//! Domain types produced by static analysis. The store crate maps them onto
+//! Neo4j; the graph algorithms use them directly.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -154,14 +152,18 @@ pub struct Symbol {
 }
 
 impl Symbol {
-    /// `module::Type::method` → `Type::method`; used for compact display.
     pub fn short_name(&self) -> String {
-        let mut parts = self.qualified_name.rsplitn(3, "::");
-        let last = parts.next().unwrap_or_default();
-        match (self.kind, parts.next()) {
-            (SymbolKind::Method, Some(owner)) => format!("{owner}::{last}"),
-            _ => last.to_string(),
-        }
+        short_name(self.kind, &self.qualified_name)
+    }
+}
+
+/// `module::Type::method` → `Type::method`, `module::f` → `f`.
+pub fn short_name(kind: SymbolKind, qualified_name: &str) -> String {
+    let mut parts = qualified_name.rsplitn(3, "::");
+    let last = parts.next().unwrap_or_default();
+    match (kind, parts.next()) {
+        (SymbolKind::Method, Some(owner)) => format!("{owner}::{last}"),
+        _ => last.to_string(),
     }
 }
 
@@ -314,7 +316,7 @@ pub struct TypeAlias {
     pub line: u32,
 }
 
-/// A named field of a struct, for resolving `self.field.method()`.
+/// Used to resolve `self.field.method()`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FieldDecl {
     pub owner: SymbolId,
@@ -376,7 +378,6 @@ pub struct FileAnalysis {
 }
 
 impl FileAnalysis {
-    /// Rewrites every symbol ID in this file according to `renames`.
     pub(crate) fn remap_ids(&mut self, renames: &HashMap<SymbolId, SymbolId>) {
         let remap = |id: &mut SymbolId| {
             if let Some(new) = renames.get(id) {

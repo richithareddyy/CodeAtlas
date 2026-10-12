@@ -7,7 +7,7 @@ mod views;
 
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
@@ -249,8 +249,7 @@ async fn main() -> Result<()> {
                 Format::Json => serde_json::to_string_pretty(&analysis)?,
             };
             match output {
-                Some(path) => fs::write(&path, rendered)
-                    .with_context(|| format!("failed to write {}", path.display()))?,
+                Some(path) => write_file(&path, &rendered)?,
                 None => writeln!(std::io::stdout(), "{rendered}")?,
             }
         }
@@ -308,10 +307,7 @@ async fn main() -> Result<()> {
                     include_ambiguous,
                     ..Default::default()
                 },
-                ingest: IngestOptions {
-                    clone_dir: clone_dir.unwrap_or_else(default_clone_dir),
-                    ..Default::default()
-                },
+                ingest: ingest_options(clone_dir, false),
             };
             let report = analyze_diff(
                 &RepoSource::parse(&source),
@@ -331,8 +327,7 @@ async fn main() -> Result<()> {
                 DiffFormat::Json => serde_json::to_string_pretty(&report)?,
             };
             match output {
-                Some(path) => fs::write(&path, rendered)
-                    .with_context(|| format!("failed to write {}", path.display()))?,
+                Some(path) => write_file(&path, &rendered)?,
                 None => writeln!(std::io::stdout(), "{rendered}")?,
             }
         }
@@ -358,8 +353,7 @@ async fn main() -> Result<()> {
                     timeout: std::time::Duration::from_secs(timeout),
                 },
             )?;
-            fs::write(&output, serde_json::to_string_pretty(&truth)? + "\n")
-                .with_context(|| format!("failed to write {}", output.display()))?;
+            write_file(&output, &(serde_json::to_string_pretty(&truth)? + "\n"))?;
             writeln!(
                 std::io::stdout(),
                 "Wrote {} probes over {} tests to {}",
@@ -400,8 +394,7 @@ async fn main() -> Result<()> {
             let evaluation = evaluate_tests(&graph, &truth, options);
             let rendered = serde_json::to_string_pretty(&evaluation)?;
             if let Some(path) = output {
-                fs::write(&path, rendered.clone() + "\n")
-                    .with_context(|| format!("failed to write {}", path.display()))?;
+                write_file(&path, &(rendered.clone() + "\n"))?;
             }
             let text = if json {
                 rendered
@@ -435,8 +428,7 @@ async fn main() -> Result<()> {
             )
             .await?;
             if let Some(path) = output {
-                fs::write(&path, serde_json::to_string_pretty(&report)? + "\n")
-                    .with_context(|| format!("failed to write {}", path.display()))?;
+                write_file(&path, &(serde_json::to_string_pretty(&report)? + "\n"))?;
             }
             writeln!(std::io::stdout(), "{}", bench::text(&report))?;
         }
@@ -466,6 +458,10 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+fn write_file(path: &Path, contents: &str) -> Result<()> {
+    fs::write(path, contents).with_context(|| format!("failed to write {}", path.display()))
+}
+
 fn ingest_options(clone_dir: Option<PathBuf>, no_gitignore: bool) -> IngestOptions {
     IngestOptions {
         clone_dir: clone_dir.unwrap_or_else(default_clone_dir),
@@ -493,8 +489,8 @@ fn summary(a: &RepositoryAnalysis) -> String {
     let s = &a.stats;
     let count = |kind| s.symbols.get(&kind).copied().unwrap_or(0);
     let head = match (&repo.branch, &repo.head_sha) {
-        (Some(branch), Some(sha)) => format!("{branch} @ {}", &sha[..sha.len().min(10)]),
-        (None, Some(sha)) => format!("detached @ {}", &sha[..sha.len().min(10)]),
+        (Some(branch), Some(sha)) => format!("{branch} @ {}", views::short_sha(sha)),
+        (None, Some(sha)) => format!("detached @ {}", views::short_sha(sha)),
         (Some(branch), None) => format!("{branch} (no commits)"),
         _ => "not a git repository".to_string(),
     };

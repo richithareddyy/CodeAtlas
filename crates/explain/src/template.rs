@@ -2,7 +2,7 @@
 //! when no model is configured or reachable, when the model's answer is
 //! rejected, and whenever the evidence does not answer the question.
 
-use crate::evidence::{Evidence, EvidenceStatus, Fact};
+use crate::evidence::{Evidence, EvidenceStatus, Fact, FactKind};
 
 fn sentence(fact: &Fact) -> String {
     let text = fact.text.trim_end_matches('.');
@@ -74,5 +74,5 @@ pub fn render(evidence: &Evidence) -> String {
 }
 
 fn is_summary(fact: &Fact) -> bool {
-    fact.kind == crate::evidence::FactKind::Summary
+    fact.kind == FactKind::Summary
 }

@@ -5,7 +5,7 @@ use std::fmt::Write as _;
 use codeatlas_analyzer::graph::test_selection::{SelectedTest, TestSelection};
 use codeatlas_analyzer::test_evaluation::TestImpactEvaluation;
 
-use crate::views::{short, step_text};
+use crate::views::{short, short_sha, step_text};
 
 fn ratio(value: Option<f64>) -> String {
     value.map_or_else(|| "n/a".to_string(), |v| format!("{v:.3}"))
@@ -25,7 +25,7 @@ pub fn evaluation(e: &TestImpactEvaluation) -> String {
         e.repository,
         e.commit
             .as_deref()
-            .map_or("unknown commit", |c| &c[..c.len().min(10)])
+            .map_or("unknown commit", |c| short_sha(c))
     );
     let _ = writeln!(
         out,

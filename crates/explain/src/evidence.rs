@@ -10,13 +10,13 @@ use codeatlas_analyzer::graph::impact::{
     ImpactOptions, ImpactReport,
 };
 use codeatlas_analyzer::graph::CodeGraph;
-use codeatlas_analyzer::model::SymbolId;
+use codeatlas_analyzer::model::{short_name, SymbolId};
 use serde::{Deserialize, Serialize};
 
 /// Chains included in an impact summary.
 const MAX_SUMMARY_CHAINS: usize = 8;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FactKind {
     Calls,
@@ -67,7 +67,6 @@ pub enum EvidenceStatus {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Evidence {
-    /// The question, in words.
     pub question: String,
     pub status: EvidenceStatus,
     /// Why the evidence is insufficient (or only possible), if it is.
@@ -81,15 +80,18 @@ pub struct Evidence {
 
 struct Builder<'g> {
     graph: &'g CodeGraph,
+    max_depth: u32,
     facts: Vec<Fact>,
-    by_step: BTreeMap<(String, String, String), String>,
+    /// Fact ID per (source, target, kind), so chains share their steps.
+    by_step: BTreeMap<(SymbolId, SymbolId, FactKind), String>,
     symbols: BTreeMap<SymbolId, NamedSymbol>,
 }
 
 impl<'g> Builder<'g> {
-    fn new(graph: &'g CodeGraph) -> Self {
+    fn new(graph: &'g CodeGraph, max_depth: u32) -> Self {
         Self {
             graph,
+            max_depth,
             facts: Vec::new(),
             by_step: BTreeMap::new(),
             symbols: BTreeMap::new(),
@@ -103,21 +105,10 @@ impl<'g> Builder<'g> {
         let named = match self.graph.node(id) {
             Some(node) => {
                 let s = self.graph.symbol(node);
-                let short_name = match s.kind {
-                    codeatlas_analyzer::model::SymbolKind::Method => {
-                        let mut parts = s.qualified_name.rsplitn(3, "::");
-                        let name = parts.next().unwrap_or_default();
-                        match parts.next() {
-                            Some(owner) => format!("{owner}::{name}"),
-                            None => name.to_string(),
-                        }
-                    }
-                    _ => s.name.clone(),
-                };
                 NamedSymbol {
                     id: id.clone(),
                     qualified_name: s.qualified_name.clone(),
-                    short_name,
+                    short_name: short_name(s.kind, &s.qualified_name),
                     file: s.file.clone(),
                     line: s.start_line,
                 }
@@ -145,7 +136,6 @@ impl<'g> Builder<'g> {
         id
     }
 
-    /// The fact for one step of an evidence chain (shared between chains).
     fn step(&mut self, step: &EvidenceStep) -> String {
         let kind = match step.kind {
             DependencyKind::Calls => FactKind::Calls,
@@ -153,11 +143,7 @@ impl<'g> Builder<'g> {
             DependencyKind::Implements => FactKind::Implements,
             DependencyKind::MayCall => FactKind::MayCall,
         };
-        let key = (
-            step.source.to_string(),
-            step.target.to_string(),
-            format!("{kind:?}"),
-        );
+        let key = (step.source.clone(), step.target.clone(), kind);
         if let Some(id) = self.by_step.get(&key) {
             return id.clone();
         }
@@ -211,7 +197,6 @@ impl<'g> Builder<'g> {
         status: EvidenceStatus,
         reason: Option<String>,
         chains: Vec<Vec<String>>,
-        max_depth: u32,
     ) -> Evidence {
         Evidence {
             question,
@@ -220,7 +205,7 @@ impl<'g> Builder<'g> {
             facts: self.facts,
             chains,
             symbols: self.symbols.into_values().collect(),
-            max_depth,
+            max_depth: self.max_depth,
         }
     }
 }
@@ -250,7 +235,7 @@ pub fn why(
     if graph.node(affected).is_none() {
         return Err(ImpactError::UnknownSymbol(affected.to_string()));
     }
-    let mut b = Builder::new(graph);
+    let mut b = Builder::new(graph, options.max_depth);
     let (changed_name, affected_name) = (b.name(changed), b.name(affected));
     let question = format!("Why can changing `{changed_name}` affect `{affected_name}`?");
 
@@ -264,13 +249,7 @@ pub fn why(
     )?;
     if let Some(found) = find(&certain, affected) {
         let chain = b.chain(found);
-        return Ok(b.finish(
-            question,
-            EvidenceStatus::Sufficient,
-            None,
-            vec![chain],
-            options.max_depth,
-        ));
+        return Ok(b.finish(question, EvidenceStatus::Sufficient, None, vec![chain]));
     }
     let possible = impact_of_symbol(
         graph,
@@ -287,7 +266,6 @@ pub fn why(
             EvidenceStatus::Possible,
             Some("the only chain found goes through calls static analysis could not resolve to one target, so the effect is possible, not certain".into()),
             vec![chain],
-            options.max_depth,
         ));
     }
 
@@ -318,13 +296,7 @@ pub fn why(
             Vec::new(),
         ),
     };
-    Ok(b.finish(
-        question,
-        EvidenceStatus::Insufficient,
-        Some(reason),
-        chains,
-        options.max_depth,
-    ))
+    Ok(b.finish(question, EvidenceStatus::Insufficient, Some(reason), chains))
 }
 
 fn find<'r>(report: &'r ImpactReport, id: &SymbolId) -> Option<&'r AffectedSymbol> {
@@ -339,7 +311,7 @@ pub fn impact(
     options: ImpactOptions,
 ) -> Result<Evidence, ImpactError> {
     let report = impact_of_symbol(graph, changed, options)?;
-    let mut b = Builder::new(graph);
+    let mut b = Builder::new(graph, options.max_depth);
     let changed_name = b.name(changed);
     let question = format!("What can changing `{changed_name}` affect?");
     let certain: Vec<&AffectedSymbol> = report.certain().collect();
@@ -353,7 +325,6 @@ pub fn impact(
             EvidenceStatus::Insufficient,
             Some(reason),
             Vec::new(),
-            options.max_depth,
         ));
     }
     let direct = report.direct().count();
@@ -367,27 +338,13 @@ pub fn impact(
     ));
     b.summary(format!(
         "{} `{changed_name}`; the blast-radius score is {:.1} of 100 ({:?}), a measure of how much of the graph is reached, not of how likely a breakage is.",
-        match report.tests.len() {
-            1 => "1 test reaches".to_string(),
-            n => format!("{n} tests reach"),
-        },
+        count(report.tests.len(), "test reaches", "tests reach"),
         report.score.total,
         report.score.level
     ));
-    let mut picked: Vec<&AffectedSymbol> =
-        certain.iter().copied().filter(|a| a.depth == 1).collect();
-    picked.extend(
-        certain
-            .iter()
-            .copied()
-            .filter(|a| a.depth > 1 && a.symbol.is_test),
-    );
-    picked.extend(
-        certain
-            .iter()
-            .copied()
-            .filter(|a| a.depth > 1 && !a.symbol.is_test),
-    );
+    // Direct dependents first, then tests, then everything else.
+    let mut picked = certain.clone();
+    picked.sort_by_key(|a| (a.depth > 1, a.depth > 1 && !a.symbol.is_test));
     picked.truncate(MAX_SUMMARY_CHAINS);
     let chains = picked.iter().map(|a| b.chain(a)).collect();
     let possible = report
@@ -400,16 +357,9 @@ pub fn impact(
             "{possible} more symbols are reached only through ambiguous calls and are not included"
         )
     });
-    Ok(b.finish(
-        question,
-        EvidenceStatus::Sufficient,
-        reason,
-        chains,
-        options.max_depth,
-    ))
+    Ok(b.finish(question, EvidenceStatus::Sufficient, reason, chains))
 }
 
-/// `1 file`, `2 files`.
 fn count(n: usize, one: &str, many: &str) -> String {
     format!("{n} {}", if n == 1 { one } else { many })
 }

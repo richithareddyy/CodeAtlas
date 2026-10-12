@@ -1,9 +1,7 @@
-//! Measures resolution quality against hand-written ground truth.
-//!
-//! Ground truth lists every edge and every ambiguous or unresolved call
-//! site a person expects after reading the source. Comparing it with the
-//! resolver's output yields precision and recall per category, plus the
-//! exact differences, so regressions are visible rather than averaged away.
+//! Resolution quality against hand-written ground truth: every edge and
+//! every ambiguous or unresolved call site expected from reading the
+//! source. The comparison keeps the exact differences, not just precision
+//! and recall, so a regression shows up as a named edge.
 
 use std::collections::BTreeSet;
 

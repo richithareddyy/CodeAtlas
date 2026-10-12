@@ -55,7 +55,6 @@ pub struct TestSelection {
     pub possible: Vec<SelectedTest>,
     /// Changed functions and methods that no test reaches.
     pub untested: Vec<SymbolRef>,
-    /// Tests in the repository.
     pub total_tests: u32,
     /// Whether `reaches` and `untested` were computed.
     pub per_symbol: bool,
