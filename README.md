@@ -10,6 +10,20 @@ The CLI supports repository analysis and Git diff impact without a database. Neo
 
 Implementation milestones and evaluation details are documented in the [architecture guide](docs/architecture.md#milestones). Static analysis has coverage limits; review [known limitations](#known-limitations) when interpreting results.
 
+## Try the analyzer first
+
+The smallest useful run needs Rust 1.90+ and Git, with no database or model:
+
+```bash
+git clone https://github.com/richithareddyy/CodeAtlas.git
+cd CodeAtlas
+cargo build --release
+./target/release/codeatlas analyze fixtures/simple-repo
+./target/release/codeatlas evaluate fixtures/cross-module
+```
+
+For the graph workspace, continue with [installation](#installation) and the [web UI](#web-ui). The [test-impact evaluation](#test-impact-quality) is worth reading alongside the demo: macro-generated tests and indirect calls substantially reduce recall on ripgrep.
+
 ## Why static analysis
 
 Impact analysis is only useful if it can be trusted and explained. A parser
@@ -44,6 +58,11 @@ ingest → module tree → tree-sitter parse → extract → resolve → Neo4j +
   [GraphQL API](docs/api.md) with its [schema](docs/schema.graphql).
 
 ## What it does today
+
+The analyzer extracts Rust symbols and resolves references, keeping ambiguous and unresolved calls explicit. Graph traversals produce impact paths, candidate tests, dependency cycles, and architecture views. Incremental indexing reuses unchanged file analysis; Git diff analysis compares symbols across two revisions.
+
+<details>
+<summary>Extraction, resolution, graph analysis, explanations, and UI details</summary>
 
 **Extraction.** For each Rust file: modules, structs, enums, traits,
 functions, methods (inherent, trait-impl, trait default and required),
@@ -161,6 +180,8 @@ Every edge in a list links to the source line behind it, and the inspector
 shows the symbol's source with that line highlighted. Selections are kept
 in the URL, so a view can be shared or bookmarked.
 
+</details>
+
 ## Screenshots
 
 Impact of changing `<StripeGateway as Gateway>::charge` in the
@@ -168,6 +189,9 @@ Impact of changing `<StripeGateway as Gateway>::charge` in the
 affected symbol lists the source lines connecting it to the change.
 
 ![Impact view](docs/images/impact.png)
+
+<details>
+<summary>More screenshots: graph, cycles, changes, architecture, and explanations</summary>
 
 Callers of `RegexMatcherBuilder::build` in ripgrep (tests dashed):
 
@@ -199,6 +223,8 @@ so the explanation is built from the evidence, and the note says so. Each
 Screenshots are from a local run; the status bar, which shows the
 repository's path on disk, is cropped.
 
+</details>
+
 ## Installation
 
 Requirements: Rust 1.90+ (`rustup` recommended), `git` on `PATH`, Docker
@@ -229,6 +255,9 @@ docker compose up -d
 <http://localhost:7474>.
 
 ## Usage
+
+<details>
+<summary>CLI examples and output</summary>
 
 Analyse a local repository:
 
@@ -553,6 +582,8 @@ Missed (executed the function, not selected)
 ...
 ```
 
+</details>
+
 ### GraphQL API
 
 ```bash
@@ -630,6 +661,9 @@ precedence. `.env` is git-ignored.
 ```bash
 cargo test
 ```
+
+<details>
+<summary>What the Rust tests cover and when integration tests run</summary>
 
 * Unit tests sit next to the code they cover: discovery, layout, module
   tree, `use`-tree flattening, attributes, parsing, extraction, and one test
@@ -712,6 +746,8 @@ cargo test
   `CODEATLAS_NEO4J_PASSWORD` is set (directly or via `.env`) and print
   `skipping` otherwise; if Neo4j is configured but unreachable they fail.
   CI runs them against a Neo4j service container.
+
+</details>
 
 Formatting and lints, as enforced in CI:
 
