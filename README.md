@@ -1,6 +1,6 @@
 # CodeAtlas
 
-Before merging a change you want to know what it can break and which tests to run, and you want an answer you can check. CodeAtlas does this for Rust repositories using static analysis: it resolves references from parsed source, follows the resulting graph, and links every connection back to the code behind it.
+You change a function in a Rust project. What else uses it, and which tests should you run? CodeAtlas reads the source code, traces those connections, and shows the files and lines behind each result. It helps you investigate a change before merging it.
 
 ```text
 $ codeatlas diff /tmp/pr-shop --base main --head feature
@@ -37,15 +37,15 @@ For the interactive workspace, follow the [installation guide](GUIDE.md#installa
 
 ## Decisions worth explaining
 
-**Label uncertainty instead of guessing.** tree-sitter gives syntax, not types, so some calls can't be pinned to one definition. The resolver records those as ambiguous, with a reason (receiver type unknown, generic parameter, and so on), and keeps them out of results unless you ask for them.
+**Keep uncertain connections visible.** The parser, tree-sitter, reads code structure but does not have the Rust compiler’s type information. When a call could refer to more than one definition, CodeAtlas records why it is uncertain and excludes it unless you ask to include ambiguous calls.
 
-**The model comes last.** An optional local model (Ollama) can explain an impact report, but it only sees numbered facts from the analysis, and its answer is checked against them. The analysis runs without it.
+**The analysis works without a model.** An optional local model through Ollama can explain the report. It receives numbered analysis facts, and its answer is checked against those facts.
 
-**Test selection is scored against real failures.** `probe-tests` makes functions panic one at a time and records which tests actually run them, and `evaluate-tests` compares the static selection with that. On ripgrep the result is humbling: recall is 0.047, or 0.228 with ambiguous calls included, mostly because 716 of its 1,195 tests are macro-generated and CodeAtlas doesn't expand `macro_rules!`. For code like that, static selection is a starting point and doesn't replace running the suite. See [test-impact quality](GUIDE.md#test-impact-quality).
+**Check the suggested tests against actual failures.** `probe-tests` deliberately makes functions panic, one at a time, and records which tests fail. On ripgrep, CodeAtlas finds only 4.7% of the affected tests, or 22.8% when ambiguous calls are included. Many tests come from macros that it cannot expand. The suggestions help with investigation; they cannot replace the full suite. See [test-impact quality](GUIDE.md#test-impact-quality).
 
 ## Limits
 
-This is static analysis, not the Rust compiler. Macros, `#[cfg]`, and indirect calls reduce coverage, and an impact path means a dependency exists, not that a change will break it. Analysis takes about 330 ms on ripgrep and 920 ms on tokio on an Apple M5, and incremental indexing is 4–8 times faster than a full index when little changed ([method and raw results](benchmarks/README.md)).
+Macros, conditional compilation (`#[cfg]`), and indirect calls can hide connections from the analysis. A dependency path shows what might be affected; it does not prove that a change breaks anything. Analysis takes about 330 ms on ripgrep and 920 ms on tokio on an Apple M5, and incremental indexing is 4–8 times faster than a full index when little changed ([method and raw results](benchmarks/README.md)).
 
 Run `cargo test --workspace` for the Rust suite; database-dependent checks need Neo4j.
 
