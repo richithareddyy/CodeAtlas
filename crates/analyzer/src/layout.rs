@@ -107,7 +107,16 @@ pub fn build_layout(
             None => classify(&package_name, rel, has_lib, has_main),
         };
 
-        let crate_name = normalize(&target_name);
+        let mut crate_name = normalize(&target_name);
+        // A test, bench or example may share the library's name (Cargo
+        // allows it); symbol IDs start with the crate name, so it gets a
+        // suffix, as `src/main.rs` next to a library does.
+        if has_lib
+            && !matches!(kind, TargetKind::Lib | TargetKind::BuildScript)
+            && crate_name == normalize(&package_name)
+        {
+            crate_name = format!("{crate_name}_{}", kind_suffix(kind));
+        }
         let mut module_path = vec![crate_name.clone()];
         module_path.extend(module_rel);
 
@@ -131,6 +140,17 @@ pub fn build_layout(
     layout.targets = targets.into_values().collect();
     layout.dependencies = dependencies;
     layout
+}
+
+fn kind_suffix(kind: TargetKind) -> &'static str {
+    match kind {
+        TargetKind::Lib => "lib",
+        TargetKind::Bin => "bin",
+        TargetKind::Test => "test",
+        TargetKind::Example => "example",
+        TargetKind::Bench => "bench",
+        TargetKind::BuildScript => "build",
+    }
 }
 
 fn owning_package<'p, 'f>(
@@ -386,6 +406,31 @@ mod tests {
         assert_eq!(module(&l, "src/c/mod.rs"), "my_app::c");
         assert_eq!(l.targets.len(), 1);
         assert_eq!(l.targets[0].kind, TargetKind::Lib);
+    }
+
+    #[test]
+    fn targets_named_like_the_library_get_a_suffix() {
+        let l = layout(
+            &["benches/my_app.rs", "src/lib.rs", "src/a.rs", "tests/my_app.rs"],
+            &[("Cargo.toml", PKG)],
+        );
+        assert_eq!(module(&l, "src/a.rs"), "my_app::a");
+        assert_eq!(module(&l, "benches/my_app.rs"), "my_app_bench");
+        assert_eq!(module(&l, "tests/my_app.rs"), "my_app_test");
+        let mut targets: Vec<(&str, TargetKind, &str)> = l
+            .targets
+            .iter()
+            .map(|t| (t.name.as_str(), t.kind, t.root_file.as_str()))
+            .collect();
+        targets.sort_by_key(|t| t.2);
+        assert_eq!(
+            targets,
+            [
+                ("my_app_bench", TargetKind::Bench, "benches/my_app.rs"),
+                ("my_app", TargetKind::Lib, "src/lib.rs"),
+                ("my_app_test", TargetKind::Test, "tests/my_app.rs"),
+            ]
+        );
     }
 
     #[test]

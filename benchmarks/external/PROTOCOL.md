@@ -115,3 +115,11 @@ repositories above.
    by the analyzer) are not counted.
 4. Ground truths without package data (the committed fixture files) are
    compared without `changed-package`.
+5. The first `bytes` run recorded no probes: CodeAtlas dropped the
+   library target because a bench target (`benches/bytes.rs`) has the
+   same name, so no library function was eligible. Fixed in the layout
+   (such targets get a kind suffix, as `src/main.rs` next to a library
+   already did) and `bytes` probed again with the fixed build. No probe
+   of `bytes` had produced a result before. The fix changes no target in
+   the other three repositories, and their comparisons were recomputed
+   with the fixed build (identical results).
