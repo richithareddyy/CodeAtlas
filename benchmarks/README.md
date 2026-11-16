@@ -4,7 +4,9 @@ Measurements of CodeAtlas on real repositories, produced by `codeatlas
 bench` and stored as JSON in [results/](results). Every number in the
 project's documentation that is not marked as a single run comes from one
 of these files. Test-selection precision and recall have their own ground
-truth in [test-impact/](test-impact).
+truth in [test-impact/](test-impact); whether selection can safely leave
+tests out is evaluated against baselines on four external repositories in
+[external/](external/README.md).
 
 ## What is measured
 

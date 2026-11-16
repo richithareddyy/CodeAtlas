@@ -411,7 +411,12 @@ mod tests {
     #[test]
     fn targets_named_like_the_library_get_a_suffix() {
         let l = layout(
-            &["benches/my_app.rs", "src/lib.rs", "src/a.rs", "tests/my_app.rs"],
+            &[
+                "benches/my_app.rs",
+                "src/lib.rs",
+                "src/a.rs",
+                "tests/my_app.rs",
+            ],
             &[("Cargo.toml", PKG)],
         );
         assert_eq!(module(&l, "src/a.rs"), "my_app::a");

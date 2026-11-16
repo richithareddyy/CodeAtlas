@@ -1,0 +1,2967 @@
+{
+  "repository": "ripgrep",
+  "commit": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+  "max_depth": 8,
+  "tests": 1206,
+  "invisible_tests": 722,
+  "flaky_tests": 0,
+  "probes": {
+    "total": 40,
+    "ok": 40,
+    "build_failed": 0,
+    "incomplete": 0,
+    "not_executed": 18
+  },
+  "resolution": {
+    "call_sites": 19035,
+    "resolved": 9248,
+    "ambiguous": 2873,
+    "unresolved": 6,
+    "resolution_rate": 0.763
+  },
+  "reasons": {
+    "ambiguous_callers": 25,
+    "external_trait": 7,
+    "hidden_mentions": 19,
+    "test_macros": 40
+  },
+  "strategies": [
+    {
+      "name": "run-all",
+      "probes_with_failures": 22,
+      "failing": 1955,
+      "true_positives": 1955,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 22,
+      "precision": 0.041,
+      "mean_selected": 1206.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "changed-package",
+      "probes_with_failures": 22,
+      "failing": 1955,
+      "true_positives": 1955,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 22,
+      "precision": 0.09,
+      "mean_selected": 540.15,
+      "mean_selected_share": 0.448,
+      "mean_time_saved": 0.279,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "file-dependency",
+      "probes_with_failures": 22,
+      "failing": 1955,
+      "true_positives": 452,
+      "recall": 0.231,
+      "mean_recall": 0.317,
+      "safe_probes": 4,
+      "precision": 0.068,
+      "mean_selected": 166.6,
+      "mean_selected_share": 0.138,
+      "mean_time_saved": 0.936,
+      "missed_invisible": 1503,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "name-mention",
+      "probes_with_failures": 22,
+      "failing": 1955,
+      "true_positives": 709,
+      "recall": 0.363,
+      "mean_recall": 0.39,
+      "safe_probes": 6,
+      "precision": 0.071,
+      "mean_selected": 248.975,
+      "mean_selected_share": 0.206,
+      "mean_time_saved": 0.847,
+      "missed_invisible": 1244,
+      "missed_visible": 2,
+      "recall_visible": 0.996
+    },
+    {
+      "name": "codeatlas",
+      "probes_with_failures": 22,
+      "failing": 1955,
+      "true_positives": 121,
+      "recall": 0.062,
+      "mean_recall": 0.129,
+      "safe_probes": 2,
+      "precision": 0.528,
+      "mean_selected": 5.725,
+      "mean_selected_share": 0.005,
+      "mean_time_saved": 0.994,
+      "missed_invisible": 1503,
+      "missed_visible": 331,
+      "recall_visible": 0.268
+    },
+    {
+      "name": "codeatlas-ambiguous",
+      "probes_with_failures": 22,
+      "failing": 1955,
+      "true_positives": 450,
+      "recall": 0.23,
+      "mean_recall": 0.226,
+      "safe_probes": 2,
+      "precision": 0.172,
+      "mean_selected": 65.4,
+      "mean_selected_share": 0.054,
+      "mean_time_saved": 0.939,
+      "missed_invisible": 1503,
+      "missed_visible": 2,
+      "recall_visible": 0.996
+    },
+    {
+      "name": "codeatlas-conservative",
+      "probes_with_failures": 22,
+      "failing": 1955,
+      "true_positives": 1955,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 22,
+      "precision": 0.041,
+      "mean_selected": 1206.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    }
+  ],
+  "per_probe": [
+    {
+      "symbol": "fn:grep_cli::pattern::pattern_from_os",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 472,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 118,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 22,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:rg::flags::doc::man::generate_flag",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:rg::messages::set_errored",
+      "failing": 3,
+      "failing_invisible": 3,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:rg::search::search_reader",
+      "failing": 5,
+      "failing_invisible": 5,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 5,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 37,
+          "true_positives": 0,
+          "missed_invisible": 5,
+          "missed_visible": [],
+          "time_share": 0.104
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 5,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 195,
+          "true_positives": 0,
+          "missed_invisible": 5,
+          "missed_visible": [],
+          "time_share": 0.171
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:globset::SuffixStrategy::is_match",
+      "failing": 13,
+      "failing_invisible": 13,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 951,
+          "true_positives": 13,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.755
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 13,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 232,
+          "true_positives": 0,
+          "missed_invisible": 13,
+          "missed_visible": [],
+          "time_share": 0.262
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 13,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 230,
+          "true_positives": 0,
+          "missed_invisible": 13,
+          "missed_visible": [],
+          "time_share": 0.074
+        },
+        "name-mention": {
+          "selected": 423,
+          "true_positives": 13,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.196
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 13,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_cli::decompress::DecompressionReaderBuilder::async_stderr",
+      "failing": 2,
+      "failing_invisible": 2,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 472,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 22,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_cli::process::<Error as From<CommandError>>::from",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 472,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 1196,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.998
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_cli::process::CommandReader::new",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 472,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_cli::process::StderrReader::read_to_end",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "external_trait",
+        "ambiguous_callers",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 472,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 158,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.226
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 22,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_index::literal::Analysis::is_exact",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 453,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:grep_index::literal::tests::queries"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 89,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:grep_index::literal::tests::queries"
+          ],
+          "time_share": 0.174
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 3,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 28,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_index::literal::GramQueryBuilder::ngram_size",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 453,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:grep_index::literal::tests::queries"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:grep_index::literal::tests::queries"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 3,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 3,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_matcher::<&'a M as Matcher>::find_at",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 702,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.899
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 161,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.183
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 317,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.245
+        },
+        "name-mention": {
+          "selected": 475,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.844
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_matcher::<&'a M as Matcher>::line_terminator",
+      "failing": 380,
+      "failing_invisible": 243,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 702,
+          "true_positives": 380,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.899
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 243,
+          "missed_visible": [
+            "fn:grep_printer::json::tests::always_begin_end_no_match",
+            "fn:grep_printer::json::tests::binary_detection",
+            "fn:grep_printer::json::tests::max_matches",
+            "fn:grep_printer::json::tests::max_matches_after_context",
+            "fn:grep_printer::json::tests::missing_crlf",
+            "fn:grep_printer::json::tests::no_match",
+            "fn:grep_printer::standard::tests::byte_offset",
+            "fn:grep_printer::standard::tests::byte_offset_multi_line",
+            "fn:grep_printer::standard::tests::column_number",
+            "fn:grep_printer::standard::tests::column_number_multi_line",
+            "fn:grep_printer::standard::tests::context_break",
+            "fn:grep_printer::standard::tests::context_break_multiple_heading",
+            "fn:grep_printer::standard::tests::context_break_multiple_no_heading",
+            "fn:grep_printer::standard::tests::heading",
+            "fn:grep_printer::standard::tests::heading_multiple",
+            "fn:grep_printer::standard::tests::invert",
+            "fn:grep_printer::standard::tests::invert_context",
+            "fn:grep_printer::standard::tests::invert_context_multi_line",
+            "fn:grep_printer::standard::tests::invert_context_only_matching",
+            "fn:grep_printer::standard::tests::invert_context_only_matching_multi_line",
+            "fn:grep_printer::standard::tests::invert_multi_line",
+            "fn:grep_printer::standard::tests::line_number",
+            "fn:grep_printer::standard::tests::line_number_multi_line",
+            "fn:grep_printer::standard::tests::max_columns",
+            "fn:grep_printer::standard::tests::max_columns_multi_line",
+            "fn:grep_printer::standard::tests::max_columns_multi_line_preview",
+            "fn:grep_printer::standard::tests::max_columns_preview",
+            "fn:grep_printer::standard::tests::max_columns_with_count",
+            "fn:grep_printer::standard::tests::max_columns_with_count_preview_no_match",
+            "fn:grep_printer::standard::tests::max_columns_with_count_preview_one_match",
+            "fn:grep_printer::standard::tests::max_columns_with_count_preview_two_matches",
+            "fn:grep_printer::standard::tests::max_matches",
+            "fn:grep_printer::standard::tests::max_matches_context",
+            "fn:grep_printer::standard::tests::max_matches_context_invert",
+            "fn:grep_printer::standard::tests::max_matches_multi_line1",
+            "fn:grep_printer::standard::tests::max_matches_multi_line2",
+            "fn:grep_printer::standard::tests::max_matches_multi_line3",
+            "fn:grep_printer::standard::tests::max_matches_multi_line4",
+            "fn:grep_printer::standard::tests::no_heading",
+            "fn:grep_printer::standard::tests::no_heading_multiple",
+            "fn:grep_printer::standard::tests::only_matching",
+            "fn:grep_printer::standard::tests::only_matching_max_columns",
+            "fn:grep_printer::standard::tests::only_matching_max_columns_multi_line1",
+            "fn:grep_printer::standard::tests::only_matching_max_columns_multi_line2",
+            "fn:grep_printer::standard::tests::only_matching_max_columns_preview",
+            "fn:grep_printer::standard::tests::only_matching_max_columns_preview_multi_line1",
+            "fn:grep_printer::standard::tests::only_matching_max_columns_preview_multi_line2",
+            "fn:grep_printer::standard::tests::only_matching_multi_line1",
+            "fn:grep_printer::standard::tests::only_matching_multi_line2",
+            "fn:grep_printer::standard::tests::path",
+            "fn:grep_printer::standard::tests::path_terminator",
+            "fn:grep_printer::standard::tests::per_match",
+            "fn:grep_printer::standard::tests::per_match_multi_line1",
+            "fn:grep_printer::standard::tests::per_match_multi_line1_only_first_line",
+            "fn:grep_printer::standard::tests::per_match_multi_line2",
+            "fn:grep_printer::standard::tests::per_match_multi_line2_only_first_line",
+            "fn:grep_printer::standard::tests::per_match_multi_line3",
+            "fn:grep_printer::standard::tests::per_match_multi_line3_only_first_line",
+            "fn:grep_printer::standard::tests::regression_after_context_with_match",
+            "fn:grep_printer::standard::tests::regression_crlf_preserve",
+            "fn:grep_printer::standard::tests::regression_search_empty_with_crlf",
+            "fn:grep_printer::standard::tests::replacement",
+            "fn:grep_printer::standard::tests::replacement_max_columns",
+            "fn:grep_printer::standard::tests::replacement_max_columns_preview1",
+            "fn:grep_printer::standard::tests::replacement_max_columns_preview2",
+            "fn:grep_printer::standard::tests::replacement_multi_line",
+            "fn:grep_printer::standard::tests::replacement_multi_line_combine_lines",
+            "fn:grep_printer::standard::tests::replacement_multi_line_diff_line_term",
+            "fn:grep_printer::standard::tests::replacement_only_matching",
+            "fn:grep_printer::standard::tests::replacement_passthru",
+            "fn:grep_printer::standard::tests::replacement_per_match",
+            "fn:grep_printer::standard::tests::reports_binary",
+            "fn:grep_printer::standard::tests::reports_match",
+            "fn:grep_printer::standard::tests::reports_stats",
+            "fn:grep_printer::standard::tests::reports_stats_multiple",
+            "fn:grep_printer::standard::tests::separator_field",
+            "fn:grep_printer::standard::tests::separator_path",
+            "fn:grep_printer::standard::tests::trim_ascii",
+            "fn:grep_printer::standard::tests::trim_ascii_multi_line",
+            "fn:grep_printer::standard::tests::trim_ascii_with_line_term",
+            "fn:grep_printer::summary::tests::count_matches",
+            "fn:grep_printer::summary::tests::count_max_matches",
+            "fn:grep_printer::summary::tests::count_no_path",
+            "fn:grep_printer::summary::tests::count_no_path_even_with_path",
+            "fn:grep_printer::summary::tests::count_path",
+            "fn:grep_printer::summary::tests::count_path_field_separator",
+            "fn:grep_printer::summary::tests::count_path_separator",
+            "fn:grep_printer::summary::tests::count_path_terminator",
+            "fn:grep_printer::summary::tests::count_path_with_zero",
+            "fn:grep_printer::summary::tests::count_path_without_zero",
+            "fn:grep_printer::summary::tests::path_with_match_error",
+            "fn:grep_printer::summary::tests::path_with_match_found",
+            "fn:grep_printer::summary::tests::path_with_match_not_found",
+            "fn:grep_printer::summary::tests::path_without_match_error",
+            "fn:grep_printer::summary::tests::path_without_match_found",
+            "fn:grep_printer::summary::tests::path_without_match_not_found",
+            "fn:grep_printer::summary::tests::quiet",
+            "fn:grep_printer::summary::tests::quiet_with_stats",
+            "fn:grep_searcher::searcher::glue::tests::basic1",
+            "fn:grep_searcher::searcher::glue::tests::basic2",
+            "fn:grep_searcher::searcher::glue::tests::basic3",
+            "fn:grep_searcher::searcher::glue::tests::basic4",
+            "fn:grep_searcher::searcher::glue::tests::big1",
+            "fn:grep_searcher::searcher::glue::tests::big_error_multi_line",
+            "fn:grep_searcher::searcher::glue::tests::big_error_one_line",
+            "fn:grep_searcher::searcher::glue::tests::binary1",
+            "fn:grep_searcher::searcher::glue::tests::binary2",
+            "fn:grep_searcher::searcher::glue::tests::binary3",
+            "fn:grep_searcher::searcher::glue::tests::binary4",
+            "fn:grep_searcher::searcher::glue::tests::context_code1",
+            "fn:grep_searcher::searcher::glue::tests::context_code2",
+            "fn:grep_searcher::searcher::glue::tests::context_code3",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock1",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock2",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock3",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock4",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock5",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock6",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock_invert1",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock_invert2",
+            "fn:grep_searcher::searcher::glue::tests::empty_line1",
+            "fn:grep_searcher::searcher::glue::tests::empty_line2",
+            "fn:grep_searcher::searcher::glue::tests::empty_line3",
+            "fn:grep_searcher::searcher::glue::tests::empty_line4",
+            "fn:grep_searcher::searcher::glue::tests::empty_line5",
+            "fn:grep_searcher::searcher::glue::tests::empty_line6",
+            "fn:grep_searcher::searcher::glue::tests::invert1",
+            "fn:grep_searcher::searcher::glue::tests::line_number1",
+            "fn:grep_searcher::searcher::glue::tests::line_number_invert1",
+            "fn:grep_searcher::searcher::glue::tests::multi_line_overlap1",
+            "fn:grep_searcher::searcher::glue::tests::multi_line_overlap2",
+            "fn:grep_searcher::searcher::glue::tests::passthru_sherlock1",
+            "fn:grep_searcher::searcher::glue::tests::passthru_sherlock_invert1",
+            "fn:grep_searcher::searcher::glue::tests::regression_2260",
+            "fn:grep_searcher::searcher::glue::tests::scratch",
+            "fn:grep_searcher::searcher::tests::config_error_line_terminator",
+            "fn:grep_searcher::searcher::tests::uft8_bom_sniffing"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 381,
+          "true_positives": 137,
+          "missed_invisible": 243,
+          "missed_visible": [],
+          "time_share": 0.279
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 380,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 317,
+          "true_positives": 137,
+          "missed_invisible": 243,
+          "missed_visible": [],
+          "time_share": 0.245
+        },
+        "name-mention": {
+          "selected": 238,
+          "true_positives": 137,
+          "missed_invisible": 243,
+          "missed_visible": [],
+          "time_share": 0.227
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 380,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_printer::hyperlink::HyperlinkEnvironment::wsl_prefix",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 559,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.71
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 224,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.055
+        },
+        "name-mention": {
+          "selected": 227,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.055
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_printer::standard::<StandardSink as Sink>::context_break",
+      "failing": 15,
+      "failing_invisible": 9,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 559,
+          "true_positives": 15,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.71
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [
+            "fn:grep_printer::standard::tests::context_break",
+            "fn:grep_printer::standard::tests::context_break_multiple_heading",
+            "fn:grep_printer::standard::tests::context_break_multiple_no_heading",
+            "fn:grep_printer::standard::tests::max_matches_context",
+            "fn:grep_printer::standard::tests::max_matches_context_invert",
+            "fn:grep_printer::standard::tests::separator_field"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 205,
+          "true_positives": 6,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.27
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 15,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 190,
+          "true_positives": 6,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.055
+        },
+        "name-mention": {
+          "selected": 186,
+          "true_positives": 6,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.226
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 15,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_printer::summary::SummaryBuilder::exclude_zero",
+      "failing": 34,
+      "failing_invisible": 32,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 559,
+          "true_positives": 34,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.71
+        },
+        "codeatlas": {
+          "selected": 2,
+          "true_positives": 2,
+          "missed_invisible": 32,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 2,
+          "true_positives": 2,
+          "missed_invisible": 32,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 34,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 134,
+          "true_positives": 2,
+          "missed_invisible": 32,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 109,
+          "true_positives": 2,
+          "missed_invisible": 32,
+          "missed_visible": [],
+          "time_share": 0.055
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 34,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_regex::error::<Error as std::fmt::Display>::fmt",
+      "failing": 1,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 661,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.882
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 291,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.228
+        },
+        "name-mention": {
+          "selected": 858,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.326
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_regex::literal::Extractor::class_over_limit_unicode",
+      "failing": 21,
+      "failing_invisible": 11,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 661,
+          "true_positives": 21,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.882
+        },
+        "codeatlas": {
+          "selected": 118,
+          "true_positives": 10,
+          "missed_invisible": 11,
+          "missed_visible": [],
+          "time_share": 0.123
+        },
+        "codeatlas-ambiguous": {
+          "selected": 142,
+          "true_positives": 10,
+          "missed_invisible": 11,
+          "missed_visible": [],
+          "time_share": 0.127
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 21,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 289,
+          "true_positives": 10,
+          "missed_invisible": 11,
+          "missed_visible": [],
+          "time_share": 0.227
+        },
+        "name-mention": {
+          "selected": 28,
+          "true_positives": 8,
+          "missed_invisible": 11,
+          "missed_visible": [
+            "fn:grep_printer::standard::tests::regression_crlf_preserve",
+            "fn:grep_searcher::searcher::glue::tests::regression_2260"
+          ],
+          "time_share": 0.001
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 21,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_regex::matcher::RegexMatcher::new_line_matcher",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 661,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.882
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 275,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.227
+        },
+        "name-mention": {
+          "selected": 25,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_regex::matcher::RegexMatcherBuilder::new",
+      "failing": 350,
+      "failing_invisible": 246,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 661,
+          "true_positives": 350,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.882
+        },
+        "codeatlas": {
+          "selected": 104,
+          "true_positives": 104,
+          "missed_invisible": 246,
+          "missed_visible": [],
+          "time_share": 0.123
+        },
+        "codeatlas-ambiguous": {
+          "selected": 104,
+          "true_positives": 104,
+          "missed_invisible": 246,
+          "missed_visible": [],
+          "time_share": 0.123
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 350,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 275,
+          "true_positives": 104,
+          "missed_invisible": 246,
+          "missed_visible": [],
+          "time_share": 0.227
+        },
+        "name-mention": {
+          "selected": 1206,
+          "true_positives": 350,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 350,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_searcher::searcher::Searcher::fill_multi_line_buffer_from_file",
+      "failing": 6,
+      "failing_invisible": 6,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "ambiguous_callers",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 636,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.881
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 270,
+          "true_positives": 0,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": 0.226
+        },
+        "name-mention": {
+          "selected": 77,
+          "true_positives": 0,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": 0.171
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_searcher::sink::<&'a mut S as Sink>::begin",
+      "failing": 284,
+      "failing_invisible": 243,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 636,
+          "true_positives": 284,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.881
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 243,
+          "missed_visible": [
+            "fn:grep_printer::standard::tests::reports_binary",
+            "fn:grep_printer::standard::tests::reports_match",
+            "fn:grep_printer::standard::tests::reports_stats",
+            "fn:grep_printer::standard::tests::reports_stats_multiple",
+            "fn:grep_printer::summary::tests::quiet",
+            "fn:grep_printer::summary::tests::quiet_with_stats",
+            "fn:grep_searcher::searcher::glue::tests::basic1",
+            "fn:grep_searcher::searcher::glue::tests::basic2",
+            "fn:grep_searcher::searcher::glue::tests::basic3",
+            "fn:grep_searcher::searcher::glue::tests::basic4",
+            "fn:grep_searcher::searcher::glue::tests::big1",
+            "fn:grep_searcher::searcher::glue::tests::big_error_one_line",
+            "fn:grep_searcher::searcher::glue::tests::binary1",
+            "fn:grep_searcher::searcher::glue::tests::binary2",
+            "fn:grep_searcher::searcher::glue::tests::binary3",
+            "fn:grep_searcher::searcher::glue::tests::binary4",
+            "fn:grep_searcher::searcher::glue::tests::context_code1",
+            "fn:grep_searcher::searcher::glue::tests::context_code2",
+            "fn:grep_searcher::searcher::glue::tests::context_code3",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock1",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock2",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock3",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock4",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock5",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock6",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock_invert1",
+            "fn:grep_searcher::searcher::glue::tests::context_sherlock_invert2",
+            "fn:grep_searcher::searcher::glue::tests::empty_line1",
+            "fn:grep_searcher::searcher::glue::tests::empty_line2",
+            "fn:grep_searcher::searcher::glue::tests::empty_line3",
+            "fn:grep_searcher::searcher::glue::tests::empty_line4",
+            "fn:grep_searcher::searcher::glue::tests::empty_line5",
+            "fn:grep_searcher::searcher::glue::tests::empty_line6",
+            "fn:grep_searcher::searcher::glue::tests::invert1",
+            "fn:grep_searcher::searcher::glue::tests::line_number1",
+            "fn:grep_searcher::searcher::glue::tests::line_number_invert1",
+            "fn:grep_searcher::searcher::glue::tests::multi_line_overlap1",
+            "fn:grep_searcher::searcher::glue::tests::multi_line_overlap2",
+            "fn:grep_searcher::searcher::glue::tests::passthru_sherlock1",
+            "fn:grep_searcher::searcher::glue::tests::passthru_sherlock_invert1",
+            "fn:grep_searcher::searcher::tests::uft8_bom_sniffing"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 378,
+          "true_positives": 41,
+          "missed_invisible": 243,
+          "missed_visible": [],
+          "time_share": 0.289
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 284,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 270,
+          "true_positives": 41,
+          "missed_invisible": 243,
+          "missed_visible": [],
+          "time_share": 0.226
+        },
+        "name-mention": {
+          "selected": 186,
+          "true_positives": 41,
+          "missed_invisible": 243,
+          "missed_visible": [],
+          "time_share": 0.226
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 284,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:grep_searcher::sink::SinkContext::absolute_byte_offset",
+      "failing": 42,
+      "failing_invisible": 28,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 636,
+          "true_positives": 42,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.881
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 28,
+          "missed_visible": [
+            "fn:grep_printer::json::tests::max_matches_after_context",
+            "fn:grep_printer::standard::tests::context_break",
+            "fn:grep_printer::standard::tests::context_break_multiple_heading",
+            "fn:grep_printer::standard::tests::context_break_multiple_no_heading",
+            "fn:grep_printer::standard::tests::invert_context",
+            "fn:grep_printer::standard::tests::invert_context_multi_line",
+            "fn:grep_printer::standard::tests::invert_context_only_matching",
+            "fn:grep_printer::standard::tests::invert_context_only_matching_multi_line",
+            "fn:grep_printer::standard::tests::max_matches_context",
+            "fn:grep_printer::standard::tests::max_matches_context_invert",
+            "fn:grep_printer::standard::tests::regression_after_context_with_match",
+            "fn:grep_printer::standard::tests::replacement_passthru",
+            "fn:grep_printer::standard::tests::separator_field",
+            "fn:grep_printer::standard::tests::trim_ascii_with_line_term"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 297,
+          "true_positives": 14,
+          "missed_invisible": 28,
+          "missed_visible": [],
+          "time_share": 0.234
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 42,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 270,
+          "true_positives": 14,
+          "missed_invisible": 28,
+          "missed_visible": [],
+          "time_share": 0.226
+        },
+        "name-mention": {
+          "selected": 186,
+          "true_positives": 14,
+          "missed_invisible": 28,
+          "missed_visible": [],
+          "time_share": 0.226
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 42,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:ignore::Error::io_error",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 639,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.732
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 217,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.073
+        },
+        "name-mention": {
+          "selected": 183,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.075
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:ignore::incremental::IncrementalMatch::is_within_depth",
+      "failing": 4,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 639,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.732
+        },
+        "codeatlas": {
+          "selected": 4,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.002
+        },
+        "codeatlas-ambiguous": {
+          "selected": 4,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.002
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 217,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.073
+        },
+        "name-mention": {
+          "selected": 183,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.075
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:ignore::types::FileTypeDef::globs",
+      "failing": 1,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 639,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.732
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 217,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.073
+        },
+        "name-mention": {
+          "selected": 613,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.099
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:ignore::walk::DirEntryRaw::from_path#2",
+      "failing": 161,
+      "failing_invisible": 143,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 639,
+          "true_positives": 161,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.732
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 143,
+          "missed_visible": [
+            "fn:ignore::walk::tests::custom_ignore",
+            "fn:ignore::walk::tests::custom_ignore_exclusive_use",
+            "fn:ignore::walk::tests::explicit_ignore",
+            "fn:ignore::walk::tests::explicit_ignore_exclusive_use",
+            "fn:ignore::walk::tests::filter",
+            "fn:ignore::walk::tests::first_path_not_symlink",
+            "fn:ignore::walk::tests::from_iter",
+            "fn:ignore::walk::tests::gitignore",
+            "fn:ignore::walk::tests::gitignore_parent",
+            "fn:ignore::walk::tests::max_depth",
+            "fn:ignore::walk::tests::max_depth_does_not_load_unreachable_ignore_files",
+            "fn:ignore::walk::tests::max_filesize",
+            "fn:ignore::walk::tests::min_depth",
+            "fn:ignore::walk::tests::no_ignores",
+            "fn:ignore::walk::tests::panic_in_parallel_builder",
+            "fn:ignore::walk::tests::same_file_system",
+            "fn:ignore::walk::tests::symlink_loop",
+            "fn:ignore::walk::tests::symlinks"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 21,
+          "true_positives": 18,
+          "missed_invisible": 143,
+          "missed_visible": [],
+          "time_share": 0.027
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 161,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 217,
+          "true_positives": 18,
+          "missed_invisible": 143,
+          "missed_visible": [],
+          "time_share": 0.073
+        },
+        "name-mention": {
+          "selected": 292,
+          "true_positives": 18,
+          "missed_invisible": 143,
+          "missed_visible": [],
+          "time_share": 0.13
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 161,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<Colors as Flag>::doc_category",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<FieldContextSeparator as Flag>::doc_long",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<Follow as Flag>::doc_short",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<HostnameBin as Flag>::doc_category",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<HostnameBin as Flag>::doc_short",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<IgnoreFileCaseInsensitive as Flag>::name_long",
+      "failing": 383,
+      "failing_invisible": 271,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 383,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 271,
+          "missed_visible": [
+            "fn:rg::flags::defs::test_after_context",
+            "fn:rg::flags::defs::test_auto_hybrid_regex",
+            "fn:rg::flags::defs::test_before_context",
+            "fn:rg::flags::defs::test_binary",
+            "fn:rg::flags::defs::test_block_buffered",
+            "fn:rg::flags::defs::test_byte_offset",
+            "fn:rg::flags::defs::test_case_sensitive",
+            "fn:rg::flags::defs::test_color",
+            "fn:rg::flags::defs::test_colors",
+            "fn:rg::flags::defs::test_column",
+            "fn:rg::flags::defs::test_context",
+            "fn:rg::flags::defs::test_context_separator",
+            "fn:rg::flags::defs::test_count",
+            "fn:rg::flags::defs::test_count_matches",
+            "fn:rg::flags::defs::test_crlf",
+            "fn:rg::flags::defs::test_debug",
+            "fn:rg::flags::defs::test_dfa_size_limit",
+            "fn:rg::flags::defs::test_encoding",
+            "fn:rg::flags::defs::test_engine",
+            "fn:rg::flags::defs::test_field_context_separator",
+            "fn:rg::flags::defs::test_field_match_separator",
+            "fn:rg::flags::defs::test_file",
+            "fn:rg::flags::defs::test_files",
+            "fn:rg::flags::defs::test_files_with_matches",
+            "fn:rg::flags::defs::test_files_without_match",
+            "fn:rg::flags::defs::test_fixed_strings",
+            "fn:rg::flags::defs::test_follow",
+            "fn:rg::flags::defs::test_generate",
+            "fn:rg::flags::defs::test_glob",
+            "fn:rg::flags::defs::test_glob_case_insensitive",
+            "fn:rg::flags::defs::test_heading",
+            "fn:rg::flags::defs::test_help",
+            "fn:rg::flags::defs::test_hidden",
+            "fn:rg::flags::defs::test_hostname_bin",
+            "fn:rg::flags::defs::test_hyperlink_format",
+            "fn:rg::flags::defs::test_iglob",
+            "fn:rg::flags::defs::test_ignore_case",
+            "fn:rg::flags::defs::test_ignore_file",
+            "fn:rg::flags::defs::test_ignore_file_case_insensitive",
+            "fn:rg::flags::defs::test_include_zero",
+            "fn:rg::flags::defs::test_index",
+            "fn:rg::flags::defs::test_index_crud",
+            "fn:rg::flags::defs::test_index_force",
+            "fn:rg::flags::defs::test_index_path",
+            "fn:rg::flags::defs::test_invert_match",
+            "fn:rg::flags::defs::test_json",
+            "fn:rg::flags::defs::test_line_buffered",
+            "fn:rg::flags::defs::test_line_number",
+            "fn:rg::flags::defs::test_line_regexp",
+            "fn:rg::flags::defs::test_max_columns",
+            "fn:rg::flags::defs::test_max_columns_preview",
+            "fn:rg::flags::defs::test_max_count",
+            "fn:rg::flags::defs::test_max_depth",
+            "fn:rg::flags::defs::test_max_filesize",
+            "fn:rg::flags::defs::test_mmap",
+            "fn:rg::flags::defs::test_multiline",
+            "fn:rg::flags::defs::test_multiline_dotall",
+            "fn:rg::flags::defs::test_no_config",
+            "fn:rg::flags::defs::test_no_ignore",
+            "fn:rg::flags::defs::test_no_ignore_dot",
+            "fn:rg::flags::defs::test_no_ignore_exclude",
+            "fn:rg::flags::defs::test_no_ignore_files",
+            "fn:rg::flags::defs::test_no_ignore_global",
+            "fn:rg::flags::defs::test_no_ignore_messages",
+            "fn:rg::flags::defs::test_no_ignore_parent",
+            "fn:rg::flags::defs::test_no_ignore_vcs",
+            "fn:rg::flags::defs::test_no_line_number",
+            "fn:rg::flags::defs::test_no_messages",
+            "fn:rg::flags::defs::test_no_pcre2_unicode",
+            "fn:rg::flags::defs::test_no_require_git",
+            "fn:rg::flags::defs::test_no_unicode",
+            "fn:rg::flags::defs::test_null",
+            "fn:rg::flags::defs::test_null_data",
+            "fn:rg::flags::defs::test_one_file_system",
+            "fn:rg::flags::defs::test_only_matching",
+            "fn:rg::flags::defs::test_passthru",
+            "fn:rg::flags::defs::test_path_separator",
+            "fn:rg::flags::defs::test_pcre2",
+            "fn:rg::flags::defs::test_pcre2_version",
+            "fn:rg::flags::defs::test_pre",
+            "fn:rg::flags::defs::test_pre_glob",
+            "fn:rg::flags::defs::test_pretty",
+            "fn:rg::flags::defs::test_quiet",
+            "fn:rg::flags::defs::test_regex_size_limit",
+            "fn:rg::flags::defs::test_regexp",
+            "fn:rg::flags::defs::test_replace",
+            "fn:rg::flags::defs::test_search_zip",
+            "fn:rg::flags::defs::test_smart_case",
+            "fn:rg::flags::defs::test_sort",
+            "fn:rg::flags::defs::test_sort_files",
+            "fn:rg::flags::defs::test_sortr",
+            "fn:rg::flags::defs::test_stats",
+            "fn:rg::flags::defs::test_stop_on_nonmatch",
+            "fn:rg::flags::defs::test_text",
+            "fn:rg::flags::defs::test_threads",
+            "fn:rg::flags::defs::test_trace",
+            "fn:rg::flags::defs::test_trim",
+            "fn:rg::flags::defs::test_type",
+            "fn:rg::flags::defs::test_type_add",
+            "fn:rg::flags::defs::test_type_clear",
+            "fn:rg::flags::defs::test_type_list",
+            "fn:rg::flags::defs::test_type_not",
+            "fn:rg::flags::defs::test_unrestricted",
+            "fn:rg::flags::defs::test_version",
+            "fn:rg::flags::defs::test_vimgrep",
+            "fn:rg::flags::defs::test_with_filename",
+            "fn:rg::flags::defs::test_with_filename_no",
+            "fn:rg::flags::defs::test_word_regexp",
+            "fn:rg::flags::defs::tests::choices_ascii_alphanumeric",
+            "fn:rg::flags::defs::tests::longs_all_ascii_alphanumeric",
+            "fn:rg::flags::defs::tests::longs_no_duplicates",
+            "fn:rg::flags::defs::tests::switches_have_no_choices"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 143,
+          "true_positives": 112,
+          "missed_invisible": 271,
+          "missed_visible": [],
+          "time_share": 0.002
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 383,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 112,
+          "missed_invisible": 271,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 112,
+          "missed_invisible": 271,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 383,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<LineBuffered as Flag>::doc_category",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<NoIgnoreParent as Flag>::update",
+      "failing": 2,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:rg::flags::defs::test_no_ignore_parent"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 261,
+          "true_positives": 1,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.129
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 1,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 1,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<NoUnicode as Flag>::doc_category",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<Passthru as Flag>::doc_category",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<PathSeparator as Flag>::doc_short",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::flags::defs::<TypeClear as Flag>::doc_category",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:rg::search::SearchWorkerBuilder::binary_detection_implicit",
+      "failing": 245,
+      "failing_invisible": 245,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 450,
+          "true_positives": 245,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.655
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 245,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 245,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1206,
+          "true_positives": 245,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 116,
+          "true_positives": 0,
+          "missed_invisible": 245,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "name-mention": {
+          "selected": 118,
+          "true_positives": 0,
+          "missed_invisible": 245,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1206,
+          "true_positives": 245,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    }
+  ]
+}

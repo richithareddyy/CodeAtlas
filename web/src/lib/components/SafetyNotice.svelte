@@ -54,6 +54,7 @@
 		font-size: 12px;
 	}
 	.banner {
+		display: block;
 		margin: 6px 0;
 		font-size: 12px;
 	}

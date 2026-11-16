@@ -1,0 +1,3123 @@
+{
+  "repository": "bytes",
+  "commit": "76c0fbb54ed4336caf9d2311658a2f4a5627c21d",
+  "max_depth": 8,
+  "tests": 1055,
+  "invisible_tests": 873,
+  "flaky_tests": 0,
+  "probes": {
+    "total": 40,
+    "ok": 40,
+    "build_failed": 0,
+    "incomplete": 0,
+    "not_executed": 11
+  },
+  "resolution": {
+    "call_sites": 2471,
+    "resolved": 771,
+    "ambiguous": 668,
+    "unresolved": 17,
+    "resolution_rate": 0.53
+  },
+  "reasons": {
+    "ambiguous_callers": 24,
+    "external_trait": 21,
+    "hidden_mentions": 25,
+    "test_macros": 40,
+    "unresolved_calls": 5
+  },
+  "strategies": [
+    {
+      "name": "run-all",
+      "probes_with_failures": 29,
+      "failing": 859,
+      "true_positives": 859,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 29,
+      "precision": 0.02,
+      "mean_selected": 1055.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "changed-package",
+      "probes_with_failures": 29,
+      "failing": 859,
+      "true_positives": 859,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 29,
+      "precision": 0.02,
+      "mean_selected": 1055.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "file-dependency",
+      "probes_with_failures": 29,
+      "failing": 859,
+      "true_positives": 192,
+      "recall": 0.224,
+      "mean_recall": 0.6,
+      "safe_probes": 15,
+      "precision": 0.027,
+      "mean_selected": 177.45,
+      "mean_selected_share": 0.168,
+      "mean_time_saved": 0.032,
+      "missed_invisible": 667,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "name-mention",
+      "probes_with_failures": 29,
+      "failing": 859,
+      "true_positives": 699,
+      "recall": 0.814,
+      "mean_recall": 0.571,
+      "safe_probes": 11,
+      "precision": 0.046,
+      "mean_selected": 383.25,
+      "mean_selected_share": 0.363,
+      "mean_time_saved": 0.775,
+      "missed_invisible": 22,
+      "missed_visible": 138,
+      "recall_visible": 0.281
+    },
+    {
+      "name": "codeatlas",
+      "probes_with_failures": 29,
+      "failing": 859,
+      "true_positives": 68,
+      "recall": 0.079,
+      "mean_recall": 0.135,
+      "safe_probes": 1,
+      "precision": 0.84,
+      "mean_selected": 2.025,
+      "mean_selected_share": 0.002,
+      "mean_time_saved": 0.97,
+      "missed_invisible": 667,
+      "missed_visible": 124,
+      "recall_visible": 0.354
+    },
+    {
+      "name": "codeatlas-ambiguous",
+      "probes_with_failures": 29,
+      "failing": 859,
+      "true_positives": 165,
+      "recall": 0.192,
+      "mean_recall": 0.334,
+      "safe_probes": 5,
+      "precision": 0.182,
+      "mean_selected": 22.65,
+      "mean_selected_share": 0.021,
+      "mean_time_saved": 0.915,
+      "missed_invisible": 667,
+      "missed_visible": 27,
+      "recall_visible": 0.859
+    },
+    {
+      "name": "codeatlas-conservative",
+      "probes_with_failures": 29,
+      "failing": 859,
+      "true_positives": 859,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 29,
+      "precision": 0.02,
+      "mean_selected": 1055.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    }
+  ],
+  "per_probe": [
+    {
+      "symbol": "fn:bytes::buf::writer::new",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 1038,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:bytes::bytes::owned_is_unique",
+      "failing": 2,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::owned_is_unique_always_false",
+            "fn:test_bytes::owned_to_mut"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::owned_is_unique_always_false",
+            "fn:test_bytes::owned_to_mut"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::owned_is_unique_always_false",
+            "fn:test_bytes::owned_to_mut"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:bytes::bytes::promotable_even_clone",
+      "failing": 14,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 14,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::arc_is_unique",
+            "fn:test_bytes::freeze_clone_unique",
+            "fn:test_bytes::shared_is_unique",
+            "fn:test_bytes::split_to_1",
+            "fn:test_bytes::stress",
+            "fn:test_bytes::test_bytes_into_vec_promotable_even",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_1",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_2",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_offset",
+            "fn:test_bytes_vec_alloc::test_bytes_into_vec",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate_and_advance",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_take::take_copy_to_bytes"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::arc_is_unique",
+            "fn:test_bytes::freeze_clone_unique",
+            "fn:test_bytes::shared_is_unique",
+            "fn:test_bytes::split_to_1",
+            "fn:test_bytes::stress",
+            "fn:test_bytes::test_bytes_into_vec_promotable_even",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_1",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_2",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_offset",
+            "fn:test_bytes_vec_alloc::test_bytes_into_vec",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate_and_advance",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_take::take_copy_to_bytes"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 14,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 14,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::arc_is_unique",
+            "fn:test_bytes::freeze_clone_unique",
+            "fn:test_bytes::shared_is_unique",
+            "fn:test_bytes::split_to_1",
+            "fn:test_bytes::stress",
+            "fn:test_bytes::test_bytes_into_vec_promotable_even",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_1",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_2",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_offset",
+            "fn:test_bytes_vec_alloc::test_bytes_into_vec",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate_and_advance",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_take::take_copy_to_bytes"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 14,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::buf_impl::<Cursor as Buf>::chunk",
+      "failing": 49,
+      "failing_invisible": 49,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 49,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 49,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 14,
+          "true_positives": 0,
+          "missed_invisible": 49,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 49,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 49,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 881,
+          "true_positives": 49,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 49,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::buf_impl::Buf::chain",
+      "failing": 175,
+      "failing_invisible": 168,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "unresolved_calls"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 175,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 2,
+          "true_positives": 2,
+          "missed_invisible": 168,
+          "missed_visible": [
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs",
+            "fn:test_chain::iterating_two_bufs",
+            "fn:test_chain::vectored_read",
+            "fn:test_take::take_chunks_vectored"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 7,
+          "true_positives": 7,
+          "missed_invisible": 168,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 175,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 7,
+          "missed_invisible": 168,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 891,
+          "true_positives": 175,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 175,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::buf_impl::Buf::get_f32_ne",
+      "failing": 9,
+      "failing_invisible": 9,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 877,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::buf_impl::Buf::get_i128_ne",
+      "failing": 9,
+      "failing_invisible": 9,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 877,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::buf_impl::Buf::get_u16_ne",
+      "failing": 9,
+      "failing_invisible": 9,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 877,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::buf_impl::Buf::take",
+      "failing": 77,
+      "failing_invisible": 71,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "unresolved_calls"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 77,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 2,
+          "true_positives": 1,
+          "missed_invisible": 71,
+          "missed_visible": [
+            "fn:test_buf_mut::test_bytes_mut_reuse",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs",
+            "fn:test_take::long_take",
+            "fn:test_take::take_copy_to_bytes"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 11,
+          "true_positives": 6,
+          "missed_invisible": 71,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 77,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 6,
+          "missed_invisible": 71,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 881,
+          "true_positives": 74,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_buf_mut::test_bytes_mut_reuse",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs"
+          ],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 77,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::buf_mut::BufMut::limit",
+      "failing": 8,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_limit::limit_advance_mut",
+            "fn:test_limit::limit_advance_mut_panic_1",
+            "fn:test_limit::limit_advance_mut_panic_2",
+            "fn:test_limit::limit_chunk_mut",
+            "fn:test_limit::limit_get_mut",
+            "fn:test_limit::limit_into_inner",
+            "fn:test_limit::limit_set_limit",
+            "fn:test_limit::long_limit"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 7,
+          "true_positives": 7,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_limit::limit_into_inner"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 10,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::buf_mut::BufMut::put_f64_le",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::buf_mut::BufMut::put_i8",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::chain::<Chain as BufMut>::advance_mut",
+      "failing": 3,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 3,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_chain::chain_growing_buffer",
+            "fn:test_chain::chain_overflow_remaining_mut",
+            "fn:test_chain::writing_chained"
+          ],
+          "time_share": 0.006
+        },
+        "codeatlas-ambiguous": {
+          "selected": 127,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.603
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 25,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_chain::chain_growing_buffer",
+            "fn:test_chain::chain_overflow_remaining_mut",
+            "fn:test_chain::writing_chained"
+          ],
+          "time_share": 0.008
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::iter::IntoIter::get_mut",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 13,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::iter::IntoIter::get_ref",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 31,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 10,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::reader::<Reader as io::Read>::read",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_reader::read"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_reader::read"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 5,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::take::<Take as Buf>::chunk",
+      "failing": 67,
+      "failing_invisible": 63,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 67,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 63,
+          "missed_visible": [
+            "fn:test_buf_mut::test_bytes_mut_reuse",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs",
+            "fn:test_take::long_take"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 14,
+          "true_positives": 4,
+          "missed_invisible": 63,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 67,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 4,
+          "missed_invisible": 63,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 881,
+          "true_positives": 64,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_buf_mut::test_bytes_mut_reuse",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs"
+          ],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 67,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::take::Take::set_limit",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::uninit_slice::<&'a mut UninitSlice as From<&'a mut [MaybeUninit<u8>]>>::from",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "unresolved_calls",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::bytes_buf_mut_advance"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::bytes_buf_mut_advance"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 1019,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.992
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::uninit_slice::<UninitSlice as fmt::Debug>::fmt",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 144,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.992
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::buf::vec_deque::<VecDeque as Buf>::chunks_vectored",
+      "failing": 2,
+      "failing_invisible": 2,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "name-mention": {
+          "selected": 888,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes::<Bytes as AsRef<[u8]>>::as_ref",
+      "failing": 4,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::fmt",
+            "fn:test_bytes::slice_ref_empty",
+            "fn:test_debug::fmt"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 42,
+          "true_positives": 2,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::fmt",
+            "fn:test_debug::fmt"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 120,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_debug::fmt"
+          ],
+          "time_share": 0.984
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes::<Bytes as Buf>::advance",
+      "failing": 120,
+      "failing_invisible": 104,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "unresolved_calls",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 120,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 6,
+          "true_positives": 2,
+          "missed_invisible": 104,
+          "missed_visible": [
+            "fn:test_buf_mut::test_bytes_mut_reuse",
+            "fn:test_bytes::advance_static",
+            "fn:test_bytes::advance_vec",
+            "fn:test_bytes::freeze_after_advance",
+            "fn:test_bytes::freeze_after_truncate",
+            "fn:test_bytes::freeze_clone_unique",
+            "fn:test_bytes::test_bytes_mut_conversion",
+            "fn:test_bytes::test_bytes_vec_conversion",
+            "fn:test_bytes_vec_alloc::test_bytes_advance",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate_and_advance",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs",
+            "fn:test_chain::iterating_two_bufs",
+            "fn:test_chain::vectored_read"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 82,
+          "true_positives": 16,
+          "missed_invisible": 104,
+          "missed_visible": [],
+          "time_share": 0.003
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 120,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 16,
+          "missed_invisible": 104,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 995,
+          "true_positives": 113,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_buf_mut::test_bytes_mut_reuse",
+            "fn:test_bytes_vec_alloc::test_bytes_advance",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate_and_advance",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs",
+            "fn:test_chain::iterating_two_bufs",
+            "fn:test_chain::vectored_read"
+          ],
+          "time_share": 0.991
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 120,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes::<Bytes as Buf>::copy_to_bytes",
+      "failing": 9,
+      "failing_invisible": 6,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 6,
+          "missed_visible": [
+            "fn:test_bytes::bytes_mut_put_bytes_specialization",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_take::take_copy_to_bytes"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 9,
+          "true_positives": 3,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 3,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 877,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::bytes_mut_put_bytes_specialization",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_take::take_copy_to_bytes"
+          ],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes::<Bytes as Buf>::remaining",
+      "failing": 121,
+      "failing_invisible": 112,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 121,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 112,
+          "missed_visible": [
+            "fn:test_bytes::bytes_mut_put_bytes_specialization",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs",
+            "fn:test_chain::iterating_two_bufs",
+            "fn:test_chain::vectored_read",
+            "fn:test_iter::empty_iter_len",
+            "fn:test_iter::iter_len",
+            "fn:test_take::take_chunks_vectored",
+            "fn:test_take::take_copy_to_bytes"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 30,
+          "true_positives": 8,
+          "missed_invisible": 112,
+          "missed_visible": [
+            "fn:test_chain::iterating_two_bufs"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 121,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 9,
+          "missed_invisible": 112,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 1002,
+          "true_positives": 115,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs",
+            "fn:test_chain::iterating_two_bufs",
+            "fn:test_chain::vectored_read",
+            "fn:test_iter::empty_iter_len",
+            "fn:test_iter::iter_len"
+          ],
+          "time_share": 0.991
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 121,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes::<Bytes as Clone>::clone",
+      "failing": 37,
+      "failing_invisible": 4,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "unresolved_calls",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "ambiguous_callers",
+        "ambiguous_callers",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 37,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 7,
+          "true_positives": 6,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:test_bytes::arc_is_unique",
+            "fn:test_bytes::freeze_clone_shared",
+            "fn:test_bytes::freeze_clone_unique",
+            "fn:test_bytes::from_static",
+            "fn:test_bytes::shared_is_unique",
+            "fn:test_bytes::slice",
+            "fn:test_bytes::split_off",
+            "fn:test_bytes::split_off_to_loop",
+            "fn:test_bytes::split_to_2",
+            "fn:test_bytes::stress",
+            "fn:test_bytes::test_bytes_into_vec",
+            "fn:test_bytes::test_bytes_into_vec_promotable_even",
+            "fn:test_bytes::test_bytesmut_from_bytes_bytes_mut_shared",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_1",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_2",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_offset",
+            "fn:test_bytes::try_reclaim_arc",
+            "fn:test_bytes_odd_alloc::test_bytes_clone_drop",
+            "fn:test_bytes_odd_alloc::test_bytes_into_vec",
+            "fn:test_bytes_odd_alloc::test_bytesmut_from_bytes_arc_1",
+            "fn:test_bytes_odd_alloc::test_bytesmut_from_bytes_arc_2",
+            "fn:test_bytes_odd_alloc::test_bytesmut_from_bytes_arc_offset",
+            "fn:test_bytes_vec_alloc::test_bytes_into_vec",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate_and_advance",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_take::take_copy_to_bytes"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 71,
+          "true_positives": 33,
+          "missed_invisible": 4,
+          "missed_visible": [],
+          "time_share": 0.39
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 37,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 33,
+          "missed_invisible": 4,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:test_bytes::arc_is_unique",
+            "fn:test_bytes::freeze_clone_shared",
+            "fn:test_bytes::freeze_clone_unique",
+            "fn:test_bytes::from_static",
+            "fn:test_bytes::owned_buf_sharing",
+            "fn:test_bytes::owned_buf_slicing",
+            "fn:test_bytes::owned_dropped_exactly_once",
+            "fn:test_bytes::owned_is_unique_always_false",
+            "fn:test_bytes::shared_is_unique",
+            "fn:test_bytes::slice",
+            "fn:test_bytes::slice_ref_works",
+            "fn:test_bytes::split_off",
+            "fn:test_bytes::split_off_to_loop",
+            "fn:test_bytes::split_to_1",
+            "fn:test_bytes::split_to_2",
+            "fn:test_bytes::stress",
+            "fn:test_bytes::test_bytes_into_vec",
+            "fn:test_bytes::test_bytes_into_vec_promotable_even",
+            "fn:test_bytes::test_bytesmut_from_bytes_bytes_mut_shared",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_1",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_2",
+            "fn:test_bytes::test_bytesmut_from_bytes_promotable_even_arc_offset",
+            "fn:test_bytes::try_reclaim_arc",
+            "fn:test_bytes_odd_alloc::test_bytes_clone_drop",
+            "fn:test_bytes_odd_alloc::test_bytes_into_vec",
+            "fn:test_bytes_odd_alloc::test_bytesmut_from_bytes_arc_1",
+            "fn:test_bytes_odd_alloc::test_bytesmut_from_bytes_arc_2",
+            "fn:test_bytes_odd_alloc::test_bytesmut_from_bytes_arc_offset",
+            "fn:test_bytes_vec_alloc::test_bytes_into_vec",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate_and_advance",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_take::take_copy_to_bytes"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 37,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes::<str as PartialOrd<Bytes>>::partial_cmp",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes::Bytes::truncate",
+      "failing": 3,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::truncate",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate_and_advance"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 5,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 120,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes_vec_alloc::test_bytes_truncate",
+            "fn:test_bytes_vec_alloc::test_bytes_truncate_and_advance"
+          ],
+          "time_share": 0.984
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::<BytesMut as Buf>::advance",
+      "failing": 51,
+      "failing_invisible": 43,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 51,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 5,
+          "true_positives": 5,
+          "missed_invisible": 43,
+          "missed_visible": [
+            "fn:test_bytes::advance_bytes_mut",
+            "fn:test_bytes::freeze_after_advance",
+            "fn:test_bytes::freeze_after_advance_arc"
+          ],
+          "time_share": 0.585
+        },
+        "codeatlas-ambiguous": {
+          "selected": 26,
+          "true_positives": 8,
+          "missed_invisible": 43,
+          "missed_visible": [],
+          "time_share": 0.586
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 51,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 8,
+          "missed_invisible": 43,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 995,
+          "true_positives": 51,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.991
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 51,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::<BytesMut as BufMut>::put_slice",
+      "failing": 14,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "external_trait",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 14,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 10,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::extend_mut",
+            "fn:test_bytes::extend_mut_without_size_hint",
+            "fn:test_bytes::extend_past_lower_limit_of_size_hint",
+            "fn:test_bytes::fmt_write",
+            "fn:test_bytes::test_bytes_mut_conversion"
+          ],
+          "time_share": 0.006
+        },
+        "codeatlas-ambiguous": {
+          "selected": 125,
+          "true_positives": 13,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::fmt_write"
+          ],
+          "time_share": 0.603
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 14,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 14,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_buf_mut::test_clone",
+            "fn:test_bytes::bytes_into_vec",
+            "fn:test_bytes::bytes_put_bytes",
+            "fn:test_bytes::extend_mut",
+            "fn:test_bytes::extend_mut_without_size_hint",
+            "fn:test_bytes::extend_past_lower_limit_of_size_hint",
+            "fn:test_bytes::fmt_write",
+            "fn:test_bytes::reserve_allocates_at_least_original_capacity",
+            "fn:test_bytes::reserve_max_original_capacity_value",
+            "fn:test_bytes::reserve_shared_reuse",
+            "fn:test_bytes::split_off_to_at_gt_len",
+            "fn:test_bytes::test_bytes_mut_conversion",
+            "fn:test_bytes::try_reclaim_arc",
+            "fn:test_bytes::try_reclaim_vec"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 14,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::<BytesMut as Ord>::cmp",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 877,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.007
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::<BytesMut as PartialEq<Bytes>>::eq",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::partial_eq_bytesmut"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::partial_eq_bytesmut"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::partial_eq_bytesmut"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::<BytesMut as PartialEq>::eq",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_buf_mut::test_clone"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_buf_mut::test_clone"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_buf_mut::test_clone"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::<BytesMut as PartialOrd<Vec<u8>>>::partial_cmp",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::<BytesMut as fmt::Write>::write_fmt",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::fmt_write"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::fmt_write"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::fmt_write"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::<BytesMut as hash::Hash>::hash",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::BytesMut::extend_from_slice",
+      "failing": 51,
+      "failing_invisible": 18,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "external_trait",
+        "ambiguous_callers",
+        "external_trait",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 51,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 28,
+          "true_positives": 25,
+          "missed_invisible": 18,
+          "missed_visible": [
+            "fn:test_bytes::extend_mut",
+            "fn:test_bytes::extend_mut_from_bytes",
+            "fn:test_bytes::extend_mut_without_size_hint",
+            "fn:test_bytes::extend_past_lower_limit_of_size_hint",
+            "fn:test_bytes::fmt_write",
+            "fn:test_bytes::test_bytes_mut_conversion",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs"
+          ],
+          "time_share": 0.006
+        },
+        "codeatlas-ambiguous": {
+          "selected": 130,
+          "true_positives": 32,
+          "missed_invisible": 18,
+          "missed_visible": [
+            "fn:test_bytes::fmt_write"
+          ],
+          "time_share": 0.603
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 51,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 33,
+          "missed_invisible": 18,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 18,
+          "missed_visible": [
+            "fn:test_buf_mut::test_bytes_mut_reuse",
+            "fn:test_buf_mut::test_clone",
+            "fn:test_bytes::bytes_buf_mut_reuse_when_fully_consumed",
+            "fn:test_bytes::bytes_into_vec",
+            "fn:test_bytes::bytes_mut_split_boundary_capacities",
+            "fn:test_bytes::bytes_mut_unsplit_arc_different",
+            "fn:test_bytes::bytes_mut_unsplit_arc_non_contiguous",
+            "fn:test_bytes::bytes_mut_unsplit_basic",
+            "fn:test_bytes::bytes_mut_unsplit_empty_other",
+            "fn:test_bytes::bytes_mut_unsplit_empty_other_keeps_capacity",
+            "fn:test_bytes::bytes_mut_unsplit_empty_self",
+            "fn:test_bytes::bytes_mut_unsplit_other_keeps_capacity",
+            "fn:test_bytes::bytes_mut_unsplit_two_split_offs",
+            "fn:test_bytes::bytes_put_bytes",
+            "fn:test_bytes::extend_from_slice_mut",
+            "fn:test_bytes::extend_from_within_normal",
+            "fn:test_bytes::extend_mut",
+            "fn:test_bytes::extend_mut_from_bytes",
+            "fn:test_bytes::extend_mut_without_size_hint",
+            "fn:test_bytes::extend_past_lower_limit_of_size_hint",
+            "fn:test_bytes::fmt_write",
+            "fn:test_bytes::reserve_allocates_at_least_original_capacity",
+            "fn:test_bytes::reserve_growth",
+            "fn:test_bytes::reserve_max_original_capacity_value",
+            "fn:test_bytes::reserve_shared_reuse",
+            "fn:test_bytes::reserve_vec_recycling",
+            "fn:test_bytes::split_off_to_at_gt_len",
+            "fn:test_bytes::test_bytes_mut_conversion",
+            "fn:test_bytes::test_bytesmut_from_bytes_bytes_mut_vec",
+            "fn:test_bytes::try_reclaim_arc",
+            "fn:test_bytes::try_reclaim_vec",
+            "fn:test_chain::chain_get_bytes",
+            "fn:test_chain::collect_two_bufs"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 51,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::BytesMut::is_empty",
+      "failing": 9,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 8,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::len"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 24,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 995,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.991
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::BytesMut::set_len",
+      "failing": 3,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "ambiguous_callers",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::freeze_after_truncate",
+            "fn:test_bytes::freeze_after_truncate_arc"
+          ],
+          "time_share": 0.585
+        },
+        "codeatlas-ambiguous": {
+          "selected": 138,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.603
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::advance_bytes_mut_remaining_capacity",
+            "fn:test_bytes::freeze_after_truncate",
+            "fn:test_bytes::freeze_after_truncate_arc"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:bytes::bytes_mut::BytesMut::unsplit",
+      "failing": 8,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 1055,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 8,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 8,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 1055,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 182,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.993
+        },
+        "name-mention": {
+          "selected": 2,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_bytes::bytes_mut_unsplit_arc_different",
+            "fn:test_bytes::bytes_mut_unsplit_arc_non_contiguous",
+            "fn:test_bytes::bytes_mut_unsplit_basic",
+            "fn:test_bytes::bytes_mut_unsplit_empty_other",
+            "fn:test_bytes::bytes_mut_unsplit_empty_other_keeps_capacity",
+            "fn:test_bytes::bytes_mut_unsplit_empty_self",
+            "fn:test_bytes::bytes_mut_unsplit_other_keeps_capacity",
+            "fn:test_bytes::bytes_mut_unsplit_two_split_offs"
+          ],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 1055,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    }
+  ]
+}

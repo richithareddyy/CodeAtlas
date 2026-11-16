@@ -1,0 +1,2867 @@
+{
+  "repository": "itertools",
+  "commit": "37bd72aa6d58e594711d127b52418ca5e58b6091",
+  "max_depth": 8,
+  "tests": 444,
+  "invisible_tests": 298,
+  "flaky_tests": 0,
+  "probes": {
+    "total": 40,
+    "ok": 40,
+    "build_failed": 0,
+    "incomplete": 0,
+    "not_executed": 1
+  },
+  "resolution": {
+    "call_sites": 4763,
+    "resolved": 782,
+    "ambiguous": 1560,
+    "unresolved": 22,
+    "resolution_rate": 0.331
+  },
+  "reasons": {
+    "ambiguous_callers": 32,
+    "external_trait": 17,
+    "hidden_mentions": 33,
+    "test_macros": 40
+  },
+  "strategies": [
+    {
+      "name": "run-all",
+      "probes_with_failures": 39,
+      "failing": 250,
+      "true_positives": 250,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 39,
+      "precision": 0.014,
+      "mean_selected": 444.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "changed-package",
+      "probes_with_failures": 39,
+      "failing": 250,
+      "true_positives": 250,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 39,
+      "precision": 0.014,
+      "mean_selected": 444.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "file-dependency",
+      "probes_with_failures": 39,
+      "failing": 250,
+      "true_positives": 78,
+      "recall": 0.312,
+      "mean_recall": 0.4,
+      "safe_probes": 5,
+      "precision": 0.014,
+      "mean_selected": 143.0,
+      "mean_selected_share": 0.322,
+      "mean_time_saved": 0.999,
+      "missed_invisible": 172,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "name-mention",
+      "probes_with_failures": 39,
+      "failing": 250,
+      "true_positives": 143,
+      "recall": 0.572,
+      "mean_recall": 0.628,
+      "safe_probes": 20,
+      "precision": 0.02,
+      "mean_selected": 182.65,
+      "mean_selected_share": 0.411,
+      "mean_time_saved": 0.536,
+      "missed_invisible": 66,
+      "missed_visible": 41,
+      "recall_visible": 0.474
+    },
+    {
+      "name": "codeatlas",
+      "probes_with_failures": 39,
+      "failing": 250,
+      "true_positives": 5,
+      "recall": 0.02,
+      "mean_recall": 0.021,
+      "safe_probes": 0,
+      "precision": 1.0,
+      "mean_selected": 0.125,
+      "mean_selected_share": 0.0,
+      "mean_time_saved": 1.0,
+      "missed_invisible": 172,
+      "missed_visible": 73,
+      "recall_visible": 0.064
+    },
+    {
+      "name": "codeatlas-ambiguous",
+      "probes_with_failures": 39,
+      "failing": 250,
+      "true_positives": 53,
+      "recall": 0.212,
+      "mean_recall": 0.322,
+      "safe_probes": 5,
+      "precision": 0.095,
+      "mean_selected": 13.875,
+      "mean_selected_share": 0.031,
+      "mean_time_saved": 1.0,
+      "missed_invisible": 172,
+      "missed_visible": 25,
+      "recall_visible": 0.679
+    },
+    {
+      "name": "codeatlas-conservative",
+      "probes_with_failures": 39,
+      "failing": 250,
+      "true_positives": 250,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 39,
+      "precision": 0.014,
+      "mean_selected": 444.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    }
+  ],
+  "per_probe": [
+    {
+      "symbol": "fn:itertools::Itertools::tree_reduce::inner0",
+      "failing": 3,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test_core::tree_reduce",
+            "fn:test_std::tree_reduce"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 2,
+          "true_positives": 2,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 2,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test_core::tree_reduce",
+            "fn:test_std::tree_reduce"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:itertools::combinations_with_replacement::remaining_for",
+      "failing": 3,
+      "failing_invisible": 2,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:test_std::combinations_with_replacement_range_count"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 20,
+          "true_positives": 1,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:test_std::combinations_with_replacement_range_count"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:itertools::flatten_ok::flatten_ok",
+      "failing": 8,
+      "failing_invisible": 2,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:flatten_ok::flatten_ok_collect_mixed_forward",
+            "fn:flatten_ok::flatten_ok_collect_mixed_reverse",
+            "fn:flatten_ok::flatten_ok_collect_ok_forward",
+            "fn:flatten_ok::flatten_ok_collect_ok_reverse",
+            "fn:flatten_ok::flatten_ok_mixed_expected_forward",
+            "fn:flatten_ok::flatten_ok_mixed_expected_reverse"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:flatten_ok::flatten_ok_collect_mixed_forward",
+            "fn:flatten_ok::flatten_ok_collect_mixed_reverse",
+            "fn:flatten_ok::flatten_ok_collect_ok_forward",
+            "fn:flatten_ok::flatten_ok_collect_ok_reverse",
+            "fn:flatten_ok::flatten_ok_mixed_expected_forward",
+            "fn:flatten_ok::flatten_ok_mixed_expected_reverse"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 131,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.695
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:itertools::free::zip",
+      "failing": 1,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 187,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.281
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:itertools::group_map::into_group_map_with_hasher",
+      "failing": 19,
+      "failing_invisible": 17,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 19,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 17,
+          "missed_visible": [
+            "fn:test_std::into_group_map_by_with_hasher",
+            "fn:test_std::into_group_map_with_hasher"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 2,
+          "true_positives": 2,
+          "missed_invisible": 17,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 19,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 2,
+          "missed_invisible": 17,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 93,
+          "true_positives": 2,
+          "missed_invisible": 17,
+          "missed_visible": [],
+          "time_share": 0.024
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 19,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:itertools::grouping_map::new_map_for_grouping",
+      "failing": 20,
+      "failing_invisible": 19,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 20,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 19,
+          "missed_visible": [
+            "fn:test_std::into_grouping_map_by_with_hasher"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 19,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 20,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 19,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 19,
+          "missed_visible": [
+            "fn:test_std::into_grouping_map_by_with_hasher"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 20,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:itertools::intersperse::intersperse_with",
+      "failing": 9,
+      "failing_invisible": 6,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 2,
+          "true_positives": 2,
+          "missed_invisible": 6,
+          "missed_visible": [
+            "fn:test_std::intersperse"
+          ],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 3,
+          "true_positives": 3,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 155,
+          "true_positives": 6,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:test_std::intersperse"
+          ],
+          "time_share": 0.695
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:itertools::powerset::remaining_for",
+      "failing": 3,
+      "failing_invisible": 2,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:test_std::powerset"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 11,
+          "true_positives": 1,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:test_std::powerset"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:itertools::tuple_impl::tuple_windows",
+      "failing": 22,
+      "failing_invisible": 19,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 22,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 19,
+          "missed_visible": [
+            "fn:arrays::array_windows_equal_tuple_windows",
+            "fn:arrays::circular_array_windows_equal_circular_tuple_windows",
+            "fn:tuples::tuple_windows"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 3,
+          "true_positives": 3,
+          "missed_invisible": 19,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 22,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 19,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 286,
+          "true_positives": 20,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:arrays::array_windows_equal_tuple_windows",
+            "fn:arrays::circular_array_windows_equal_circular_tuple_windows"
+          ],
+          "time_share": 0.976
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 22,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:itertools::zip_eq_impl::zip_eq",
+      "failing": 3,
+      "failing_invisible": 3,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 282,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.976
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::FoldWhile::into_inner",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_std::fold_while"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 157,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_std::fold_while"
+          ],
+          "time_share": 0.281
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::collect_array",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_core::collect_array"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 30,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::counts_with_hasher",
+      "failing": 3,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test_std::counts_by_with_hasher",
+            "fn:test_std::counts_with_hasher"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 2,
+          "true_positives": 2,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 2,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 93,
+          "true_positives": 2,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.024
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::exactly_one",
+      "failing": 5,
+      "failing_invisible": 3,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [
+            "fn:test_core::exactly_one",
+            "fn:test_std::exactly_one_question_mark_syntax_works"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 2,
+          "true_positives": 2,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 2,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 245,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_std::exactly_one_question_mark_syntax_works"
+          ],
+          "time_share": 0.976
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::group_by",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::into_grouping_map_with_hasher",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_std::into_grouping_map_with_hasher"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 93,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.024
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::pad_using",
+      "failing": 7,
+      "failing_invisible": 6,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 7,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 6,
+          "missed_visible": [
+            "fn:test_std::pad_using"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 7,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 6,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 375,
+          "true_positives": 7,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 7,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::powerset",
+      "failing": 4,
+      "failing_invisible": 3,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [
+            "fn:test_std::powerset"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 375,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::set_from",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_core::write_to"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_core::write_to"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::sorted",
+      "failing": 17,
+      "failing_invisible": 17,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 17,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 17,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 17,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 17,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 17,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 151,
+          "true_positives": 17,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.719
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 17,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::sorted_unstable_by",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_std::sorted_unstable_by"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 93,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.024
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::tee",
+      "failing": 4,
+      "failing_invisible": 3,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [
+            "fn:test_std::tee"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 317,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.304
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::tree_reduce",
+      "failing": 3,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test_core::tree_reduce",
+            "fn:test_std::tree_reduce"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 2,
+          "true_positives": 2,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 2,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 280,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.304
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::Itertools::tuple_combinations",
+      "failing": 10,
+      "failing_invisible": 9,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 10,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [
+            "fn:test_std::combinations"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 10,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 282,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test_std::combinations"
+          ],
+          "time_share": 0.976
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 10,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::adaptors::<Interleave as Iterator>::next",
+      "failing": 4,
+      "failing_invisible": 3,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [
+            "fn:test_core::test_interleave"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 86,
+          "true_positives": 1,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 424,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::adaptors::<InterleaveShortest as Iterator>::size_hint",
+      "failing": 4,
+      "failing_invisible": 3,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [
+            "fn:test_std::interleave_shortest"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 14,
+          "true_positives": 1,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 380,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::adaptors::<Update as Iterator>::size_hint",
+      "failing": 1,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 14,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 380,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::combinations::<Box as PoolIndex<T>>::extract_item",
+      "failing": 5,
+      "failing_invisible": 2,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:adaptors_no_collect::combinations_with_replacement_no_collect",
+            "fn:test_std::combinations_with_replacement",
+            "fn:test_std::combinations_with_replacement_range_count"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 86,
+          "true_positives": 2,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:adaptors_no_collect::combinations_with_replacement_no_collect"
+          ],
+          "time_share": 0.001
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:adaptors_no_collect::combinations_with_replacement_no_collect",
+            "fn:test_std::combinations_with_replacement",
+            "fn:test_std::combinations_with_replacement_range_count"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::combinations::CombinationsGeneric::increment_indices",
+      "failing": 11,
+      "failing_invisible": 5,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 5,
+          "missed_visible": [
+            "fn:adaptors_no_collect::combinations_no_collect",
+            "fn:test_std::combinations",
+            "fn:test_std::combinations_inexact_size_hints",
+            "fn:test_std::combinations_range_count",
+            "fn:test_std::combinations_zero",
+            "fn:test_std::powerset"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 86,
+          "true_positives": 5,
+          "missed_invisible": 5,
+          "missed_visible": [
+            "fn:adaptors_no_collect::combinations_no_collect"
+          ],
+          "time_share": 0.001
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 5,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 5,
+          "missed_visible": [
+            "fn:adaptors_no_collect::combinations_no_collect",
+            "fn:test_std::combinations",
+            "fn:test_std::combinations_inexact_size_hints",
+            "fn:test_std::combinations_range_count",
+            "fn:test_std::combinations_zero",
+            "fn:test_std::powerset"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::combinations::CombinationsGeneric::try_nth",
+      "failing": 3,
+      "failing_invisible": 3,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::combinations_with_replacement::CombinationsWithReplacementGeneric::increment_indices",
+      "failing": 9,
+      "failing_invisible": 4,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:adaptors_no_collect::array_combinations_with_replacement_no_collect",
+            "fn:adaptors_no_collect::combinations_with_replacement_no_collect",
+            "fn:test_std::array_combinations_with_replacement",
+            "fn:test_std::combinations_with_replacement",
+            "fn:test_std::combinations_with_replacement_range_count"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 86,
+          "true_positives": 3,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:adaptors_no_collect::array_combinations_with_replacement_no_collect",
+            "fn:adaptors_no_collect::combinations_with_replacement_no_collect"
+          ],
+          "time_share": 0.001
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 5,
+          "missed_invisible": 4,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:adaptors_no_collect::array_combinations_with_replacement_no_collect",
+            "fn:adaptors_no_collect::combinations_with_replacement_no_collect",
+            "fn:test_std::array_combinations_with_replacement",
+            "fn:test_std::combinations_with_replacement",
+            "fn:test_std::combinations_with_replacement_range_count"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::groupbylazy::<F as KeyFunction<A>>::call_mut",
+      "failing": 8,
+      "failing_invisible": 4,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:test_std::all_equal",
+            "fn:test_std::chunk_by",
+            "fn:test_std::chunk_by_lazy_2",
+            "fn:test_std::chunk_by_lazy_3"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:test_std::all_equal",
+            "fn:test_std::chunk_by",
+            "fn:test_std::chunk_by_lazy_2",
+            "fn:test_std::chunk_by_lazy_3"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 4,
+          "missed_invisible": 4,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:test_std::all_equal",
+            "fn:test_std::chunk_by",
+            "fn:test_std::chunk_by_lazy_2",
+            "fn:test_std::chunk_by_lazy_3"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 8,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::grouping_map::GroupingMap::max_by_key",
+      "failing": 1,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 157,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.281
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::kmerge_impl::<KMergeBy as Iterator>::next",
+      "failing": 11,
+      "failing_invisible": 8,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 8,
+          "missed_visible": [
+            "fn:test_std::kmerge",
+            "fn:test_std::kmerge_2",
+            "fn:test_std::kmerge_empty"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 8,
+          "missed_visible": [
+            "fn:test_std::kmerge",
+            "fn:test_std::kmerge_2",
+            "fn:test_std::kmerge_empty"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 8,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 424,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::lazy_buffer::LazyBuffer::size_hint",
+      "failing": 15,
+      "failing_invisible": 9,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "hidden_mentions",
+        "external_trait",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 15,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 9,
+          "missed_visible": [
+            "fn:test_std::combinations_inexact_size_hints",
+            "fn:test_std::combinations_range_count",
+            "fn:test_std::combinations_with_replacement_range_count",
+            "fn:test_std::permutations_overflowed_size_hints",
+            "fn:test_std::permutations_range_count",
+            "fn:test_std::powerset"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 14,
+          "true_positives": 6,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 15,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 9,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 380,
+          "true_positives": 15,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 15,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::merge_join::<MergeBy as Iterator>::size_hint",
+      "failing": 11,
+      "failing_invisible": 5,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 5,
+          "missed_visible": [
+            "fn:merge_join::first_left_then_right",
+            "fn:merge_join::first_right_then_left",
+            "fn:merge_join::interspersed_left_and_right",
+            "fn:merge_join::left_only",
+            "fn:merge_join::overlapping_left_and_right",
+            "fn:merge_join::right_only"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 5,
+          "missed_visible": [
+            "fn:merge_join::first_left_then_right",
+            "fn:merge_join::first_right_then_left",
+            "fn:merge_join::interspersed_left_and_right",
+            "fn:merge_join::left_only",
+            "fn:merge_join::overlapping_left_and_right",
+            "fn:merge_join::right_only"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 5,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 380,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:merge_join::first_left_then_right",
+            "fn:merge_join::first_right_then_left",
+            "fn:merge_join::interspersed_left_and_right",
+            "fn:merge_join::left_only",
+            "fn:merge_join::overlapping_left_and_right",
+            "fn:merge_join::right_only"
+          ],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::multipeek_impl::<MultiPeek as Iterator>::fold",
+      "failing": 1,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 23,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 308,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::multipeek_impl::<MultiPeek as Iterator>::next",
+      "failing": 5,
+      "failing_invisible": 2,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "external_trait",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 3,
+          "true_positives": 3,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 3,
+          "true_positives": 3,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 424,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::next_array::<ArrayBuilder as AsMut<[T]>>::as_mut",
+      "failing": 9,
+      "failing_invisible": 4,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:arrays::array_windows",
+            "fn:arrays::array_windows_equal_tuple_windows",
+            "fn:test_core::batching",
+            "fn:test_core::collect_array",
+            "fn:test_core::next_array"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 86,
+          "true_positives": 4,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:arrays::array_windows"
+          ],
+          "time_share": 0.001
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 5,
+          "missed_invisible": 4,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 4,
+          "missed_visible": [
+            "fn:arrays::array_windows",
+            "fn:arrays::array_windows_equal_tuple_windows",
+            "fn:test_core::batching",
+            "fn:test_core::collect_array",
+            "fn:test_core::next_array"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:itertools::powerset::<Powerset as Iterator>::next",
+      "failing": 3,
+      "failing_invisible": 2,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:test_std::powerset"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 2,
+          "missed_visible": [
+            "fn:test_std::powerset"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.001
+        },
+        "name-mention": {
+          "selected": 424,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.999
+        },
+        "run-all": {
+          "selected": 444,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    }
+  ]
+}

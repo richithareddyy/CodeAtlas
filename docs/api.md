@@ -24,7 +24,7 @@ cargo run --release -p codeatlas-server
 |---|---|---|
 | `CODEATLAS_HTTP_ADDR` | `127.0.0.1:8080` | Listen address |
 | `CODEATLAS_CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Browser origins allowed to call the API |
-| `CODEATLAS_ALLOW_INDEXING` | `true` | Enables `indexRepository` / `removeRepository` |
+| `CODEATLAS_ALLOW_INDEXING` | `true` on a loopback address, `false` otherwise | Enables `indexRepository` / `removeRepository` |
 | `CODEATLAS_GRAPHIQL` | `true` | Serves GraphiQL |
 | `CODEATLAS_CLONE_DIR` | as for the CLI | Where URLs given to `indexRepository` are cloned |
 | `CODEATLAS_STATE_DIR` | `~/.cache/codeatlas/index` | Incremental indexing state, one file per repository |
@@ -52,7 +52,7 @@ them).
 | `fileDependencies` / `moduleDependencies(…, direction)` | Aggregated `DEPENDS_ON`, by weight |
 | `impact(repoId, symbolId \| file, maxDepth, includeAmbiguous)` | Affected symbols with evidence chains, files, modules, tests and the decomposed score |
 | `affectedTests(repoId, symbolId, maxDepth)` | Affected tests with their chains (follows trait dispatch) |
-| `testImpact(repoId, symbolIds, maxDepth, includeAmbiguous)` | Tests to run for one or more changed symbols (up to 100): direct and transitive tests with their chains and the changed symbols each reaches, possible tests (ambiguous calls), changed tests, and changed functions no test reaches |
+| `testImpact(repoId, symbolIds, maxDepth, includeAmbiguous)` | Tests to run for one or more changed symbols (up to 100): direct and transitive tests with their chains and the changed symbols each reaches, possible tests (ambiguous calls), changed tests, changed functions no test reaches, and `safety`: whether running only these tests can be recommended, with the reasons when it cannot (a heuristic, not a guarantee) |
 | `explainImpact(repoId, symbolId, affectedId, maxDepth, useModel)` | Why changing `symbolId` can affect `affectedId` (or, without `affectedId`, what it affects): the status (`SUFFICIENT`, `POSSIBLE`, `INSUFFICIENT` with a `reason`), numbered `facts` with their symbols, file and lines, `chains` of fact IDs, and `text` citing the facts as `[E1]`. `source` says whether the text is `TEMPLATE` (built from the facts) or `MODEL` (written by `model` and accepted by the check in `verification`); a rejected answer is returned in `rejectedText`, and `notes` say what happened |
 | `circularDependencies(repoId, level)` | Cycles with per-hop evidence |
 | `hotspots(repoId, level, first)` | Betweenness, fan-in, fan-out |
@@ -60,7 +60,7 @@ them).
 | `architectureGraph(repoId, level)` | Crate, module or file dependency graph: nodes with fan-in, fan-out and cycle membership; weighted edges with the relation kinds behind them. Crate edges are module dependencies rolled up by crate |
 | `source(repoId, file, startLine, endLine)` | Up to 400 lines from the repository's working tree |
 | `gitRefs(repoId, first)` | Branches, remote-tracking branches and tags (newest first), recent commits, current branch |
-| `gitImpact(repoId, base, head, maxDepth, includeAmbiguous)` | Changes between two revisions (`head: null` is the working tree): changed files with hunks; added, removed, modified, moved and cosmetic symbols with changed lines and signature changes; downstream symbols with evidence chains; affected files, modules and tests; modified functions no test reaches (`untested`); a summary |
+| `gitImpact(repoId, base, head, maxDepth, includeAmbiguous)` | Changes between two revisions (`head: null` is the working tree): changed files with hunks; added, removed, modified, moved and cosmetic symbols with changed lines and signature changes; downstream symbols with evidence chains; affected files, modules and tests; modified functions no test reaches (`untested`); `selection`, the same verdict as `testImpact.safety`; a summary |
 | `indexRepository(source, full)` | Analyse a path or URL and store its graph: incrementally when this server indexed it before (only changed files parsed, only the difference written), in full otherwise or with `full: true`. The result reports the mode, the reason for a full write, files changed / parsed / reused, and nodes and relationships added, removed and changed |
 | `removeRepository(id)` | Delete a repository's graph |
 
@@ -120,9 +120,10 @@ Errors are standard GraphQL errors with a machine-readable
   components. They are resolved and checked to stay inside the
   repository root, symlinks included. Files over 2 MiB are refused.
 * **Indexing** makes the server read any local path or clone any URL it can
-  reach. The server binds to `127.0.0.1` by default and warns at start-up if
-  it listens elsewhere with indexing enabled; set
-  `CODEATLAS_ALLOW_INDEXING=false` on shared deployments.
+  reach. The server binds to `127.0.0.1` by default. On any other address
+  indexing is off unless `CODEATLAS_ALLOW_INDEXING=true` is set, and the
+  server warns at start-up when it is. Do not expose an indexing-enabled
+  server beyond the developer's machine.
 * **Explanations** send only the question and the facts to the configured
   model server, never source code, and never anything when the evidence
   is insufficient. Each model call is bounded by

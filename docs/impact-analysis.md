@@ -133,6 +133,31 @@ Every selected test carries its evidence chain. Diff reports list the
 untested modified functions as well (code in test, bench and example
 crates excluded).
 
+### When selective execution is unsafe
+
+A selection is only as complete as the graph, so it comes with a verdict
+(`safety` in `testImpact`, `selection` in `gitImpact`, a *Recommendation*
+line in `query tests` and `diff`). Running only the selected tests is
+reported as unsafe, and the full suite recommended, when any of these
+holds:
+
+* test code (test, bench and example crates, `#[cfg(test)]` modules)
+  invokes macros at item level, which can generate tests the analysis
+  never sees;
+* a changed symbol, or any symbol that depends on it, is a candidate of an
+  ambiguous call, is named by an unresolved or dynamic call, is used where
+  no call is recorded (inside macro definitions or unparsed macro bodies,
+  or as a bare path in value position, e.g. `iter.map(parse)`), or is a
+  method implementing a trait from outside the repository;
+* the traversal stopped at the node limit.
+
+The extractor records the item-level macros and the name mentions for
+this; they are stored with each file. Every reason names the symbol and
+up to five source locations. The check is a heuristic: when none of these
+fires, the selection is still not proven complete, and the output says
+so. Its effect is measured in
+[benchmarks/external](../benchmarks/external/README.md).
+
 ### Measuring selection against reality
 
 Selection is only useful if it finds the tests that actually exercise a
@@ -151,7 +176,15 @@ hand-written list:
    function and compares: *precision* is the share of selected tests that
    executed the function, *recall* the share of executing tests that were
    selected, both micro-averaged over probes; every miss and extra
-   selection is listed.
+   selection is listed. `codeatlas compare-tests` scores CodeAtlas (with
+   and without ambiguous calls, and with the conservative fallback)
+   against run-all, changed-package, file-dependency and name-mention
+   baselines on the same ground truth, and splits misses into tests the
+   analysis cannot see and visible tests it missed.
+
+The baseline runs twice; tests whose outcome differs are flaky and left
+out. libtest's JSON output supplies each test's time, which gives the
+test time a selection saves. Custom-harness binaries count as one test.
 
 Precision below 1 is expected of any static selection: a selected test may
 not execute the function in this run (a branch not taken, another

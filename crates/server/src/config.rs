@@ -13,10 +13,11 @@ pub struct ServerConfig {
     /// `CODEATLAS_CORS_ORIGINS`, comma-separated. Defaults to the SvelteKit
     /// dev server (`http://localhost:5173`, `http://127.0.0.1:5173`).
     pub cors_origins: Vec<String>,
-    /// `CODEATLAS_ALLOW_INDEXING` (default `true`): whether the
-    /// `indexRepository` / `removeRepository` mutations are enabled. Indexing
-    /// reads any local path or clones any URL the server can reach, so
-    /// disable it when the server is reachable by others.
+    /// `CODEATLAS_ALLOW_INDEXING`: whether the `indexRepository` /
+    /// `removeRepository` mutations are enabled. Indexing reads any local
+    /// path or clones any URL the server can reach, so it defaults to on
+    /// only when the server listens on a loopback address; elsewhere it has
+    /// to be enabled explicitly.
     pub allow_indexing: bool,
     /// `CODEATLAS_GRAPHIQL` (default `true`): serve GraphiQL at `GET /graphql`.
     pub graphiql: bool,
@@ -28,7 +29,11 @@ pub struct ServerConfig {
 
 impl ServerConfig {
     pub fn from_env() -> Result<Self> {
-        let var = |name: &str| std::env::var(name).ok().filter(|v| !v.trim().is_empty());
+        Self::from_lookup(|name| std::env::var(name).ok())
+    }
+
+    fn from_lookup(lookup: impl Fn(&str) -> Option<String>) -> Result<Self> {
+        let var = |name: &str| lookup(name).filter(|v| !v.trim().is_empty());
         let flag = |name: &str, default: bool| -> Result<bool> {
             match var(name).as_deref().map(str::trim) {
                 None => Ok(default),
@@ -37,7 +42,7 @@ impl ServerConfig {
                 Some(other) => anyhow::bail!("{name} must be true or false, got `{other}`"),
             }
         };
-        let addr = var("CODEATLAS_HTTP_ADDR")
+        let addr: SocketAddr = var("CODEATLAS_HTTP_ADDR")
             .unwrap_or_else(|| "127.0.0.1:8080".into())
             .parse()
             .context("CODEATLAS_HTTP_ADDR must be an address such as 127.0.0.1:8080")?;
@@ -50,7 +55,7 @@ impl ServerConfig {
         Ok(Self {
             addr,
             cors_origins,
-            allow_indexing: flag("CODEATLAS_ALLOW_INDEXING", true)?,
+            allow_indexing: flag("CODEATLAS_ALLOW_INDEXING", addr.ip().is_loopback())?,
             graphiql: flag("CODEATLAS_GRAPHIQL", true)?,
             clone_dir: var("CODEATLAS_CLONE_DIR")
                 .map(PathBuf::from)
@@ -59,5 +64,34 @@ impl ServerConfig {
                 .map(PathBuf::from)
                 .unwrap_or_else(StateDir::default_dir),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config(vars: &[(&str, &str)]) -> ServerConfig {
+        ServerConfig::from_lookup(|name| {
+            vars.iter()
+                .find(|(k, _)| *k == name)
+                .map(|(_, v)| v.to_string())
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn indexing_is_on_by_default_only_on_loopback() {
+        assert!(config(&[]).allow_indexing);
+        assert!(config(&[("CODEATLAS_HTTP_ADDR", "[::1]:8080")]).allow_indexing);
+        assert!(!config(&[("CODEATLAS_HTTP_ADDR", "0.0.0.0:8080")]).allow_indexing);
+        assert!(
+            config(&[
+                ("CODEATLAS_HTTP_ADDR", "0.0.0.0:8080"),
+                ("CODEATLAS_ALLOW_INDEXING", "true")
+            ])
+            .allow_indexing
+        );
+        assert!(!config(&[("CODEATLAS_ALLOW_INDEXING", "false")]).allow_indexing);
     }
 }

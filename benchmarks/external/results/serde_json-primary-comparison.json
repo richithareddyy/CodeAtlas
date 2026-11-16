@@ -1,0 +1,2808 @@
+{
+  "repository": "json",
+  "commit": "20572a6d066958542d79cdd6cf1a7cd9f0c8e1f8",
+  "max_depth": 8,
+  "tests": 143,
+  "invisible_tests": 8,
+  "flaky_tests": 0,
+  "probes": {
+    "total": 40,
+    "ok": 40,
+    "build_failed": 0,
+    "incomplete": 0,
+    "not_executed": 23
+  },
+  "resolution": {
+    "call_sites": 4901,
+    "resolved": 1380,
+    "ambiguous": 1059,
+    "unresolved": 109,
+    "resolution_rate": 0.542
+  },
+  "reasons": {
+    "ambiguous_callers": 19,
+    "external_trait": 27,
+    "hidden_mentions": 7,
+    "test_macros": 40,
+    "unresolved_calls": 3
+  },
+  "strategies": [
+    {
+      "name": "run-all",
+      "probes_with_failures": 17,
+      "failing": 114,
+      "true_positives": 114,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 17,
+      "precision": 0.02,
+      "mean_selected": 143.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "changed-package",
+      "probes_with_failures": 17,
+      "failing": 114,
+      "true_positives": 114,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 17,
+      "precision": 0.02,
+      "mean_selected": 143.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    },
+    {
+      "name": "file-dependency",
+      "probes_with_failures": 17,
+      "failing": 114,
+      "true_positives": 87,
+      "recall": 0.763,
+      "mean_recall": 0.616,
+      "safe_probes": 8,
+      "precision": 0.026,
+      "mean_selected": 85.0,
+      "mean_selected_share": 0.594,
+      "mean_time_saved": 0.204,
+      "missed_invisible": 7,
+      "missed_visible": 20,
+      "recall_visible": 0.813
+    },
+    {
+      "name": "name-mention",
+      "probes_with_failures": 17,
+      "failing": 114,
+      "true_positives": 75,
+      "recall": 0.658,
+      "mean_recall": 0.353,
+      "safe_probes": 6,
+      "precision": 0.146,
+      "mean_selected": 12.825,
+      "mean_selected_share": 0.09,
+      "mean_time_saved": 0.882,
+      "missed_invisible": 2,
+      "missed_visible": 37,
+      "recall_visible": 0.654
+    },
+    {
+      "name": "codeatlas",
+      "probes_with_failures": 17,
+      "failing": 114,
+      "true_positives": 48,
+      "recall": 0.421,
+      "mean_recall": 0.126,
+      "safe_probes": 0,
+      "precision": 0.98,
+      "mean_selected": 1.225,
+      "mean_selected_share": 0.009,
+      "mean_time_saved": 0.977,
+      "missed_invisible": 7,
+      "missed_visible": 59,
+      "recall_visible": 0.449
+    },
+    {
+      "name": "codeatlas-ambiguous",
+      "probes_with_failures": 17,
+      "failing": 114,
+      "true_positives": 87,
+      "recall": 0.763,
+      "mean_recall": 0.561,
+      "safe_probes": 6,
+      "precision": 0.156,
+      "mean_selected": 13.95,
+      "mean_selected_share": 0.098,
+      "mean_time_saved": 0.794,
+      "missed_invisible": 7,
+      "missed_visible": 20,
+      "recall_visible": 0.813
+    },
+    {
+      "name": "codeatlas-conservative",
+      "probes_with_failures": 17,
+      "failing": 114,
+      "true_positives": 114,
+      "recall": 1.0,
+      "mean_recall": 1.0,
+      "safe_probes": 17,
+      "precision": 0.02,
+      "mean_selected": 143.0,
+      "mean_selected_share": 1.0,
+      "mean_time_saved": 0.0,
+      "missed_invisible": 0,
+      "missed_visible": 0,
+      "recall_visible": 1.0
+    }
+  ],
+  "per_probe": [
+    {
+      "symbol": "fn:serde_json::de::from_slice",
+      "failing": 29,
+      "failing_invisible": 3,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 29,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 26,
+          "true_positives": 26,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.535
+        },
+        "codeatlas-ambiguous": {
+          "selected": 26,
+          "true_positives": 26,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.535
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 29,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 26,
+          "missed_invisible": 3,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 96,
+          "true_positives": 29,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.937
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 29,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:serde_json::lexical::math::large::karatsuba_uneven_mul",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "unresolved_calls",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:serde_json::lexical::math::scalar::sub",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:serde_json::lexical::math::small::ishl_limbs",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "unresolved_calls",
+        "unresolved_calls",
+        "ambiguous_callers",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::parse::parse_f64_test"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::parse::parse_f64_test"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::parse::parse_f64_test"
+          ],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::parse::parse_f64_test"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:serde_json::lexical::rounding::internal_n_mask",
+      "failing": 6,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "unresolved_calls",
+        "unresolved_calls",
+        "unresolved_calls",
+        "ambiguous_callers",
+        "ambiguous_callers",
+        "ambiguous_callers",
+        "unresolved_calls"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::float::round_to_f32_test",
+            "fn:lexical::float::to_f32_test",
+            "fn:lexical::float::to_f64_test",
+            "fn:lexical::parse::parse_f64_test",
+            "fn:lexical::rounding::avoid_overflow_test",
+            "fn:lexical::rounding::internal_n_mask_test"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 7,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::parse::parse_f64_test",
+            "fn:lexical::rounding::avoid_overflow_test",
+            "fn:lexical::rounding::internal_n_mask_test"
+          ],
+          "time_share": 0.002
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::float::round_to_f32_test",
+            "fn:lexical::float::to_f32_test",
+            "fn:lexical::float::to_f64_test",
+            "fn:lexical::parse::parse_f64_test",
+            "fn:lexical::rounding::avoid_overflow_test",
+            "fn:lexical::rounding::internal_n_mask_test"
+          ],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 35,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.054
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:serde_json::value::from_value",
+      "failing": 23,
+      "failing_invisible": 2,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 23,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 21,
+          "true_positives": 21,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.38
+        },
+        "codeatlas-ambiguous": {
+          "selected": 21,
+          "true_positives": 21,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.38
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 23,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 21,
+          "missed_invisible": 2,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 85,
+          "true_positives": 23,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.916
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 23,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:serde_json::value::partial_eq::eq_u64",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_partialeq_number"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_partialeq_number"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_partialeq_number"
+          ],
+          "time_share": -0.0
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_partialeq_number"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "fn:serde_json::value::ser::key_must_be_a_string",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait",
+        "ambiguous_callers",
+        "external_trait",
+        "external_trait",
+        "external_trait",
+        "ambiguous_callers",
+        "external_trait",
+        "external_trait",
+        "ambiguous_callers",
+        "external_trait",
+        "external_trait",
+        "external_trait",
+        "external_trait",
+        "external_trait",
+        "ambiguous_callers",
+        "external_trait",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 47,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.682
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::de::<UnitVariantAccess as de::VariantAccess<'de>>::struct_variant",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 21,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.38
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::iter::LineColIterator::byte_offset",
+      "failing": 11,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "ambiguous_callers",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:stream::test_error",
+            "fn:stream::test_json_stream_empty",
+            "fn:stream::test_json_stream_invalid_literal",
+            "fn:stream::test_json_stream_invalid_number",
+            "fn:stream::test_json_stream_newlines",
+            "fn:stream::test_json_stream_primitive",
+            "fn:stream::test_json_stream_trailing_whitespaces",
+            "fn:stream::test_json_stream_truncated",
+            "fn:stream::test_json_stream_truncated_decimal",
+            "fn:stream::test_json_stream_truncated_exponent",
+            "fn:stream::test_json_stream_truncated_negative"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 32,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.4
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 11,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.02
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 11,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::lexical::num::Float::exponent",
+      "failing": 3,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::float::from_float",
+            "fn:lexical::parse::parse_f32_test",
+            "fn:lexical::parse::parse_f64_test"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::float::from_float",
+            "fn:lexical::parse::parse_f32_test",
+            "fn:lexical::parse::parse_f64_test"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:lexical::float::from_float",
+            "fn:lexical::parse::parse_f32_test",
+            "fn:lexical::parse::parse_f64_test"
+          ],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 35,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.054
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::map::<Map as de::Deserialize<'de>>::deserialize::<Visitor as de::Visitor<'de>>::expecting",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 85,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.916
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::map::Map::keys",
+      "failing": 3,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 1,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:map::test_preserve_order",
+            "fn:map::test_retain"
+          ],
+          "time_share": 0.002
+        },
+        "codeatlas-ambiguous": {
+          "selected": 3,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.004
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 3,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.004
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::number::<Number as Deserialize<'de>>::deserialize::<NumberVisitor as Visitor<'de>>::visit_u128",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::number::Number::as_i128",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "hidden_mentions"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::number::Number::from_f32",
+      "failing": 3,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test::test_encode_nonfinite_float_yields_null",
+            "fn:test::test_partialeq_number"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 47,
+          "true_positives": 1,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test::test_partialeq_number"
+          ],
+          "time_share": 0.682
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 2,
+          "missed_invisible": 1,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test::test_encode_nonfinite_float_yields_null",
+            "fn:test::test_partialeq_number"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 3,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::number::Number::from_string_unchecked",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 1,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.002
+        },
+        "codeatlas-ambiguous": {
+          "selected": 1,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.002
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 77,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.906
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::raw::<&'de RawValue as Deserializer<'de>>::deserialize_byte_buf",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<Compound as ser::SerializeSeq>::end",
+      "failing": 6,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_serialize_seq_with_no_len",
+            "fn:test::test_write_enum",
+            "fn:test::test_write_list",
+            "fn:test::test_write_object",
+            "fn:test::test_write_option",
+            "fn:test::test_write_tuple"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 47,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.682
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_serialize_seq_with_no_len",
+            "fn:test::test_write_enum",
+            "fn:test::test_write_list",
+            "fn:test::test_write_object",
+            "fn:test::test_write_option",
+            "fn:test::test_write_tuple"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::collect_str",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::serialize_f64",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_deny_non_finite_f64_key"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 47,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.682
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_deny_non_finite_f64_key"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::serialize_newtype_struct",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_effectively_string_keys"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_effectively_string_keys"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_effectively_string_keys"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::serialize_tuple",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::serialize_u32",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<NumberStrEmitter as ser::Serializer>::serialize_f32",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 47,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.682
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<NumberStrEmitter as ser::Serializer>::serialize_i8",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<NumberStrEmitter as ser::Serializer>::serialize_newtype_variant",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<RawValueStrEmitter as ser::Serializer>::serialize_f32",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 47,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.682
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<RawValueStrEmitter as ser::Serializer>::serialize_i16",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::Formatter::write_null",
+      "failing": 5,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_integer128_key",
+            "fn:test::test_write_list",
+            "fn:test::test_write_null",
+            "fn:test::test_write_object",
+            "fn:test::test_write_option"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 47,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.682
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_integer128_key",
+            "fn:test::test_write_list",
+            "fn:test::test_write_null",
+            "fn:test::test_write_object",
+            "fn:test::test_write_option"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 5,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::<Value as From<&[T]>>::from",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "hidden_mentions",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 47,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.682
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "name-mention": {
+          "selected": 86,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.912
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::de::<&'de Map<String, Value> as serde::Deserializer<'de>>::deserialize_ignored_any",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::de::<&'de Value as serde::Deserializer<'de>>::deserialize_ignored_any",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::de::<KeyClass as serde::Deserializer<'de>>::deserialize_struct",
+      "failing": 6,
+      "failing_invisible": 1,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test::test_missing_option_field",
+            "fn:test::test_missing_renamed_field",
+            "fn:test::test_parse_option",
+            "fn:test::test_parse_struct",
+            "fn:test::test_value_into_deserializer"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test::test_missing_option_field",
+            "fn:test::test_missing_renamed_field",
+            "fn:test::test_parse_option",
+            "fn:test::test_parse_struct",
+            "fn:test::test_value_into_deserializer"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test::test_missing_option_field",
+            "fn:test::test_missing_renamed_field",
+            "fn:test::test_parse_option",
+            "fn:test::test_parse_struct",
+            "fn:test::test_value_into_deserializer"
+          ],
+          "time_share": -0.0
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 1,
+          "missed_visible": [
+            "fn:test::test_missing_option_field",
+            "fn:test::test_missing_renamed_field",
+            "fn:test::test_parse_option",
+            "fn:test::test_parse_struct",
+            "fn:test::test_value_into_deserializer"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 6,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::de::<SeqDeserializer as SeqAccess<'de>>::next_element_seed",
+      "failing": 4,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_parse_enum",
+            "fn:test::test_parse_list",
+            "fn:test::test_parse_struct",
+            "fn:test::test_parse_trailing_whitespace"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_parse_enum",
+            "fn:test::test_parse_list",
+            "fn:test::test_parse_struct",
+            "fn:test::test_parse_trailing_whitespace"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_parse_enum",
+            "fn:test::test_parse_list",
+            "fn:test::test_parse_struct",
+            "fn:test::test_parse_trailing_whitespace"
+          ],
+          "time_share": -0.0
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_parse_enum",
+            "fn:test::test_parse_list",
+            "fn:test::test_parse_struct",
+            "fn:test::test_parse_trailing_whitespace"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 4,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::index::<usize as Index>::index_into",
+      "failing": 1,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "ambiguous_callers",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_negative_zero_value"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 24,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.391
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_negative_zero_value"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 1,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::ser::<MapKeySerializer as serde::Serializer>::serialize_tuple",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::ser::<RawValueEmitter as serde::ser::Serializer>::serialize_i32",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::ser::<Serializer as serde::Serializer>::collect_str",
+      "failing": 0,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::ser::<Serializer as serde::Serializer>::serialize_u64",
+      "failing": 10,
+      "failing_invisible": 0,
+      "selective": false,
+      "reasons": [
+        "test_macros",
+        "external_trait",
+        "external_trait",
+        "ambiguous_callers",
+        "external_trait",
+        "external_trait"
+      ],
+      "outcomes": {
+        "changed-package": {
+          "selected": 143,
+          "true_positives": 10,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "codeatlas": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_parse_enum",
+            "fn:test::test_parse_list",
+            "fn:test::test_parse_object",
+            "fn:test::test_parse_struct",
+            "fn:test::test_parse_trailing_whitespace",
+            "fn:test::test_parse_u64",
+            "fn:test::test_partialeq_number",
+            "fn:test::test_write_enum",
+            "fn:test::test_write_newtype_struct",
+            "fn:test::test_write_u64"
+          ],
+          "time_share": -0.0
+        },
+        "codeatlas-ambiguous": {
+          "selected": 47,
+          "true_positives": 9,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_partialeq_number"
+          ],
+          "time_share": 0.682
+        },
+        "codeatlas-conservative": {
+          "selected": 143,
+          "true_positives": 10,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        },
+        "file-dependency": {
+          "selected": 100,
+          "true_positives": 10,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 0.936
+        },
+        "name-mention": {
+          "selected": 0,
+          "true_positives": 0,
+          "missed_invisible": 0,
+          "missed_visible": [
+            "fn:test::test_parse_enum",
+            "fn:test::test_parse_list",
+            "fn:test::test_parse_object",
+            "fn:test::test_parse_struct",
+            "fn:test::test_parse_trailing_whitespace",
+            "fn:test::test_parse_u64",
+            "fn:test::test_partialeq_number",
+            "fn:test::test_write_enum",
+            "fn:test::test_write_newtype_struct",
+            "fn:test::test_write_u64"
+          ],
+          "time_share": -0.0
+        },
+        "run-all": {
+          "selected": 143,
+          "true_positives": 10,
+          "missed_invisible": 0,
+          "missed_visible": [],
+          "time_share": 1.0
+        }
+      }
+    }
+  ]
+}

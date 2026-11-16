@@ -777,6 +777,15 @@ ripgrep; there are no automated end-to-end browser tests yet.
 
 ## Test-impact quality
 
+The external evaluation in
+[benchmarks/external](benchmarks/external/README.md) supersedes the
+ripgrep rows below for judging whether tests can be left out: four
+repositories, a frozen protocol, baselines, and whole-suite recall as the
+primary measure. Pooled over 107 executed probes, `codeatlas` reached
+whole-suite recall 0.076 and `codeatlas-ambiguous` 0.238, against 1.000
+for running the changed package's tests. The rows below are kept as
+recorded.
+
 Measured with `probe-tests` and `evaluate-tests` (method in
 [docs/impact-analysis.md](docs/impact-analysis.md#measuring-selection-against-reality)).
 Precision: share of selected tests that executed the probed function.

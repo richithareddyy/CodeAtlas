@@ -1,0 +1,947 @@
+{
+  "repository": "json",
+  "commit": "20572a6d066958542d79cdd6cf1a7cd9f0c8e1f8",
+  "source_hash": "c51d9173a2e020ef",
+  "method": "panic-on-entry",
+  "toolchain": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "tests": [
+    "fn:debug::error",
+    "fn:debug::indented",
+    "fn:debug::number",
+    "fn:debug::value_array",
+    "fn:debug::value_bool",
+    "fn:debug::value_null",
+    "fn:debug::value_number",
+    "fn:debug::value_object",
+    "fn:debug::value_string",
+    "fn:lexical::algorithm::double_fast_path_test",
+    "fn:lexical::algorithm::float_fast_path_test",
+    "fn:lexical::algorithm::moderate_path_test",
+    "fn:lexical::exponent::mantissa_exponent_test",
+    "fn:lexical::exponent::scientific_exponent_test",
+    "fn:lexical::float::from_float",
+    "fn:lexical::float::imul_test",
+    "fn:lexical::float::mul_test",
+    "fn:lexical::float::normalize_test",
+    "fn:lexical::float::round_to_f32_test",
+    "fn:lexical::float::round_to_f64_test",
+    "fn:lexical::float::to_f32_test",
+    "fn:lexical::float::to_f64_test",
+    "fn:lexical::math::bit_length_test",
+    "fn:lexical::math::compare_test",
+    "fn:lexical::math::hi64_test",
+    "fn:lexical::math::iadd_small_test",
+    "fn:lexical::math::imul_small_test",
+    "fn:lexical::math::shl_test",
+    "fn:lexical::num::as_primitive_test",
+    "fn:lexical::num::float_test",
+    "fn:lexical::num::integer_test",
+    "fn:lexical::num::number_test",
+    "fn:lexical::parse::parse_f32_test",
+    "fn:lexical::parse::parse_f64_test",
+    "fn:lexical::rounding::avoid_overflow_test",
+    "fn:lexical::rounding::internal_n_mask_test",
+    "fn:lexical::rounding::lower_n_halfway_test",
+    "fn:lexical::rounding::lower_n_mask_test",
+    "fn:lexical::rounding::nth_bit_test",
+    "fn:lexical::rounding::round_downward_test",
+    "fn:lexical::rounding::round_nearest_test",
+    "fn:lexical::rounding::round_nearest_tie_even_test",
+    "fn:lexical::rounding::round_to_float_test",
+    "fn:lexical::rounding::round_to_native_test",
+    "fn:map::test_append",
+    "fn:map::test_preserve_order",
+    "fn:map::test_retain",
+    "fn:stream::test_error",
+    "fn:stream::test_json_stream_empty",
+    "fn:stream::test_json_stream_invalid_literal",
+    "fn:stream::test_json_stream_invalid_number",
+    "fn:stream::test_json_stream_newlines",
+    "fn:stream::test_json_stream_primitive",
+    "fn:stream::test_json_stream_trailing_whitespaces",
+    "fn:stream::test_json_stream_truncated",
+    "fn:stream::test_json_stream_truncated_decimal",
+    "fn:stream::test_json_stream_truncated_exponent",
+    "fn:stream::test_json_stream_truncated_negative",
+    "fn:test::hash_positive_and_negative_zero",
+    "fn:test::issue_220",
+    "fn:test::null_invalid_type",
+    "fn:test::test_boolean_key",
+    "fn:test::test_borrow",
+    "fn:test::test_borrow_in_map_key",
+    "fn:test::test_borrowed_key",
+    "fn:test::test_byte_buf_de",
+    "fn:test::test_byte_buf_de_invalid_surrogates",
+    "fn:test::test_byte_buf_de_multiple",
+    "fn:test::test_byte_buf_de_surrogate_pair",
+    "fn:test::test_byte_buf_ser",
+    "fn:test::test_bytes_ser",
+    "fn:test::test_category",
+    "fn:test::test_control_character_search",
+    "fn:test::test_deny_non_finite_f32_key",
+    "fn:test::test_deny_non_finite_f64_key",
+    "fn:test::test_deserialize_from_stream",
+    "fn:test::test_deserialize_number_to_untagged_enum",
+    "fn:test::test_effectively_string_keys",
+    "fn:test::test_encode_nonfinite_float_yields_null",
+    "fn:test::test_float_key",
+    "fn:test::test_integer128",
+    "fn:test::test_integer128_key",
+    "fn:test::test_integer128_to_value",
+    "fn:test::test_integer_key",
+    "fn:test::test_into_io_error",
+    "fn:test::test_json_macro",
+    "fn:test::test_json_pointer",
+    "fn:test::test_json_pointer_mut",
+    "fn:test::test_missing_nonoption_field",
+    "fn:test::test_missing_option_field",
+    "fn:test::test_missing_renamed_field",
+    "fn:test::test_multiline_errors",
+    "fn:test::test_negative_zero_value",
+    "fn:test::test_parse_bool",
+    "fn:test::test_parse_char",
+    "fn:test::test_parse_enum",
+    "fn:test::test_parse_enum_errors",
+    "fn:test::test_parse_f64",
+    "fn:test::test_parse_i64",
+    "fn:test::test_parse_list",
+    "fn:test::test_parse_negative_zero",
+    "fn:test::test_parse_null",
+    "fn:test::test_parse_number",
+    "fn:test::test_parse_number_errors",
+    "fn:test::test_parse_object",
+    "fn:test::test_parse_option",
+    "fn:test::test_parse_string",
+    "fn:test::test_parse_struct",
+    "fn:test::test_parse_trailing_whitespace",
+    "fn:test::test_parse_u64",
+    "fn:test::test_partialeq_bool",
+    "fn:test::test_partialeq_f32_out_of_range",
+    "fn:test::test_partialeq_number",
+    "fn:test::test_partialeq_string",
+    "fn:test::test_roundtrip_f32",
+    "fn:test::test_serialize_char",
+    "fn:test::test_serialize_map_with_no_len",
+    "fn:test::test_serialize_rejects_adt_keys",
+    "fn:test::test_serialize_seq_with_no_len",
+    "fn:test::test_stack_overflow",
+    "fn:test::test_value_as_f64",
+    "fn:test::test_value_into_deserializer",
+    "fn:test::test_write_bool",
+    "fn:test::test_write_char",
+    "fn:test::test_write_enum",
+    "fn:test::test_write_f64",
+    "fn:test::test_write_i64",
+    "fn:test::test_write_list",
+    "fn:test::test_write_newtype_struct",
+    "fn:test::test_write_null",
+    "fn:test::test_write_object",
+    "fn:test::test_write_option",
+    "fn:test::test_write_str",
+    "fn:test::test_write_tuple",
+    "fn:test::test_write_u64",
+    "unmapped:regression::regression::issue1083::invalid_utf8_after_escape_reports_the_bad_byte",
+    "unmapped:regression::regression::issue1083::invalid_utf8_at_start_of_string",
+    "unmapped:regression::regression::issue1083::invalid_utf8_inside_string_reports_the_bad_byte",
+    "unmapped:regression::regression::issue520::test",
+    "unmapped:regression::regression::issue795::test",
+    "unmapped:regression::regression::issue845::test",
+    "unmapped:regression::regression::issue953::test",
+    "unmapped:regression::regression::issue979::test"
+  ],
+  "baseline_failures": [],
+  "flaky": [],
+  "test_seconds": {
+    "fn:debug::error": 0.0000200835,
+    "fn:debug::indented": 0.000020313,
+    "fn:debug::number": 7.5835e-6,
+    "fn:debug::value_array": 1.1665e-6,
+    "fn:debug::value_bool": 1.5630000000000001e-6,
+    "fn:debug::value_null": 1.2285e-6,
+    "fn:debug::value_number": 7.9795e-6,
+    "fn:debug::value_object": 1.2914999999999998e-6,
+    "fn:debug::value_string": 1.604e-6,
+    "fn:lexical::algorithm::double_fast_path_test": 3.917e-6,
+    "fn:lexical::algorithm::float_fast_path_test": 1.583e-6,
+    "fn:lexical::algorithm::moderate_path_test": 5.354499999999999e-6,
+    "fn:lexical::exponent::mantissa_exponent_test": 1.0625e-6,
+    "fn:lexical::exponent::scientific_exponent_test": 7.915e-7,
+    "fn:lexical::float::from_float": 3.896e-6,
+    "fn:lexical::float::imul_test": 1.479e-6,
+    "fn:lexical::float::mul_test": 9.165e-7,
+    "fn:lexical::float::normalize_test": 7.289999999999999e-7,
+    "fn:lexical::float::round_to_f32_test": 1.0835e-6,
+    "fn:lexical::float::round_to_f64_test": 1.2499999999999999e-6,
+    "fn:lexical::float::to_f32_test": 2.9375000000000003e-6,
+    "fn:lexical::float::to_f64_test": 3.9165e-6,
+    "fn:lexical::math::bit_length_test": 3.083e-6,
+    "fn:lexical::math::compare_test": 3.7285e-6,
+    "fn:lexical::math::hi64_test": 2.0205e-6,
+    "fn:lexical::math::iadd_small_test": 2.479e-6,
+    "fn:lexical::math::imul_small_test": 2.375e-6,
+    "fn:lexical::math::shl_test": 2.6459999999999997e-6,
+    "fn:lexical::num::as_primitive_test": 6.875e-7,
+    "fn:lexical::num::float_test": 4.375e-7,
+    "fn:lexical::num::integer_test": 2.085e-7,
+    "fn:lexical::num::number_test": 4.17e-7,
+    "fn:lexical::parse::parse_f32_test": 0.0000194585,
+    "fn:lexical::parse::parse_f64_test": 0.000485583,
+    "fn:lexical::rounding::avoid_overflow_test": 8.125000000000001e-7,
+    "fn:lexical::rounding::internal_n_mask_test": 6.875e-7,
+    "fn:lexical::rounding::lower_n_halfway_test": 5.420000000000001e-7,
+    "fn:lexical::rounding::lower_n_mask_test": 4.1649999999999995e-7,
+    "fn:lexical::rounding::nth_bit_test": 2.505e-7,
+    "fn:lexical::rounding::round_downward_test": 4.79e-7,
+    "fn:lexical::rounding::round_nearest_test": 5.005e-7,
+    "fn:lexical::rounding::round_nearest_tie_even_test": 7.709999999999999e-7,
+    "fn:lexical::rounding::round_to_float_test": 7.71e-7,
+    "fn:lexical::rounding::round_to_native_test": 1.3955e-6,
+    "fn:map::test_append": 0.000016667,
+    "fn:map::test_preserve_order": 0.000010375,
+    "fn:map::test_retain": 0.0000106875,
+    "fn:stream::test_error": 0.000029020499999999998,
+    "fn:stream::test_json_stream_empty": 2.875e-6,
+    "fn:stream::test_json_stream_invalid_literal": 0.000012521000000000001,
+    "fn:stream::test_json_stream_invalid_number": 0.0000114375,
+    "fn:stream::test_json_stream_newlines": 0.000061125,
+    "fn:stream::test_json_stream_primitive": 0.00003725,
+    "fn:stream::test_json_stream_trailing_whitespaces": 0.0000106455,
+    "fn:stream::test_json_stream_truncated": 0.0000184375,
+    "fn:stream::test_json_stream_truncated_decimal": 9.6665e-6,
+    "fn:stream::test_json_stream_truncated_exponent": 9.083499999999999e-6,
+    "fn:stream::test_json_stream_truncated_negative": 9.604e-6,
+    "fn:test::hash_positive_and_negative_zero": 0.0001733125,
+    "fn:test::issue_220": 0.0001251665,
+    "fn:test::null_invalid_type": 0.0000941255,
+    "fn:test::test_boolean_key": 0.000268917,
+    "fn:test::test_borrow": 0.0000185415,
+    "fn:test::test_borrow_in_map_key": 0.0000208125,
+    "fn:test::test_borrowed_key": 0.00008158349999999999,
+    "fn:test::test_byte_buf_de": 6.354e-6,
+    "fn:test::test_byte_buf_de_invalid_surrogates": 0.0000168955,
+    "fn:test::test_byte_buf_de_multiple": 0.000012875000000000001,
+    "fn:test::test_byte_buf_de_surrogate_pair": 3.7294999999999996e-6,
+    "fn:test::test_byte_buf_ser": 5.7915e-6,
+    "fn:test::test_bytes_ser": 4.375e-6,
+    "fn:test::test_category": 0.000039666500000000004,
+    "fn:test::test_control_character_search": 0.000896916,
+    "fn:test::test_deny_non_finite_f32_key": 0.0000138755,
+    "fn:test::test_deny_non_finite_f64_key": 0.0000107915,
+    "fn:test::test_deserialize_from_stream": 0.002387646,
+    "fn:test::test_deserialize_number_to_untagged_enum": 2.4585000000000003e-6,
+    "fn:test::test_effectively_string_keys": 0.00017904200000000002,
+    "fn:test::test_encode_nonfinite_float_yields_null": 2.8124999999999998e-6,
+    "fn:test::test_float_key": 0.0000753955,
+    "fn:test::test_integer128": 0.00012375,
+    "fn:test::test_integer128_key": 0.000021686999999999998,
+    "fn:test::test_integer128_to_value": 0.000015208500000000002,
+    "fn:test::test_integer_key": 0.0001620625,
+    "fn:test::test_into_io_error": 0.000013063,
+    "fn:test::test_json_macro": 0.0000109795,
+    "fn:test::test_json_pointer": 0.0000508545,
+    "fn:test::test_json_pointer_mut": 0.0000587495,
+    "fn:test::test_missing_nonoption_field": 0.000014333500000000001,
+    "fn:test::test_missing_option_field": 0.000012167,
+    "fn:test::test_missing_renamed_field": 9.25e-6,
+    "fn:test::test_multiline_errors": 0.000021271,
+    "fn:test::test_negative_zero_value": 0.000021333499999999998,
+    "fn:test::test_parse_bool": 0.000045646,
+    "fn:test::test_parse_char": 0.000096563,
+    "fn:test::test_parse_enum": 0.0008455835,
+    "fn:test::test_parse_enum_errors": 0.00016958350000000001,
+    "fn:test::test_parse_f64": 0.0002471455,
+    "fn:test::test_parse_i64": 0.0000184375,
+    "fn:test::test_parse_list": 0.00024150050000000002,
+    "fn:test::test_parse_negative_zero": 6.8745e-6,
+    "fn:test::test_parse_null": 0.0000163755,
+    "fn:test::test_parse_number": 0.0000211255,
+    "fn:test::test_parse_number_errors": 0.0000707915,
+    "fn:test::test_parse_object": 0.0003762915,
+    "fn:test::test_parse_option": 0.0000711455,
+    "fn:test::test_parse_string": 0.000124125,
+    "fn:test::test_parse_struct": 0.001046896,
+    "fn:test::test_parse_trailing_whitespace": 0.0000662915,
+    "fn:test::test_parse_u64": 0.000012167,
+    "fn:test::test_partialeq_bool": 1.0205e-6,
+    "fn:test::test_partialeq_f32_out_of_range": 4.1665e-6,
+    "fn:test::test_partialeq_number": 0.0000299585,
+    "fn:test::test_partialeq_string": 2.229e-6,
+    "fn:test::test_roundtrip_f32": 5.604e-6,
+    "fn:test::test_serialize_char": 6.2295e-6,
+    "fn:test::test_serialize_map_with_no_len": 0.0000270835,
+    "fn:test::test_serialize_rejects_adt_keys": 0.000010895500000000001,
+    "fn:test::test_serialize_seq_with_no_len": 0.000012104499999999999,
+    "fn:test::test_stack_overflow": 0.0003435,
+    "fn:test::test_value_as_f64": 2.063e-6,
+    "fn:test::test_value_into_deserializer": 0.0000135415,
+    "fn:test::test_write_bool": 5.687499999999999e-6,
+    "fn:test::test_write_char": 0.00002325,
+    "fn:test::test_write_enum": 0.0000613335,
+    "fn:test::test_write_f64": 0.0000228745,
+    "fn:test::test_write_i64": 0.000011125,
+    "fn:test::test_write_list": 0.0000763545,
+    "fn:test::test_write_newtype_struct": 0.0000239165,
+    "fn:test::test_write_null": 4.9585e-6,
+    "fn:test::test_write_object": 0.00025014600000000003,
+    "fn:test::test_write_option": 0.0000174375,
+    "fn:test::test_write_str": 6.062999999999999e-6,
+    "fn:test::test_write_tuple": 0.0000191875,
+    "fn:test::test_write_u64": 7.8125e-6,
+    "unmapped:regression::regression::issue1083::invalid_utf8_after_escape_reports_the_bad_byte": 0.000035541000000000004,
+    "unmapped:regression::regression::issue1083::invalid_utf8_at_start_of_string": 9.125e-6,
+    "unmapped:regression::regression::issue1083::invalid_utf8_inside_string_reports_the_bad_byte": 9.0835e-6,
+    "unmapped:regression::regression::issue520::test": 0.0000141245,
+    "unmapped:regression::regression::issue795::test": 0.0000201665,
+    "unmapped:regression::regression::issue845::test": 8.479e-6,
+    "unmapped:regression::regression::issue953::test": 5.7705e-6,
+    "unmapped:regression::regression::issue979::test": 5.604e-6
+  },
+  "test_packages": {
+    "fn:debug::error": "serde_json",
+    "fn:debug::indented": "serde_json",
+    "fn:debug::number": "serde_json",
+    "fn:debug::value_array": "serde_json",
+    "fn:debug::value_bool": "serde_json",
+    "fn:debug::value_null": "serde_json",
+    "fn:debug::value_number": "serde_json",
+    "fn:debug::value_object": "serde_json",
+    "fn:debug::value_string": "serde_json",
+    "fn:lexical::algorithm::double_fast_path_test": "serde_json",
+    "fn:lexical::algorithm::float_fast_path_test": "serde_json",
+    "fn:lexical::algorithm::moderate_path_test": "serde_json",
+    "fn:lexical::exponent::mantissa_exponent_test": "serde_json",
+    "fn:lexical::exponent::scientific_exponent_test": "serde_json",
+    "fn:lexical::float::from_float": "serde_json",
+    "fn:lexical::float::imul_test": "serde_json",
+    "fn:lexical::float::mul_test": "serde_json",
+    "fn:lexical::float::normalize_test": "serde_json",
+    "fn:lexical::float::round_to_f32_test": "serde_json",
+    "fn:lexical::float::round_to_f64_test": "serde_json",
+    "fn:lexical::float::to_f32_test": "serde_json",
+    "fn:lexical::float::to_f64_test": "serde_json",
+    "fn:lexical::math::bit_length_test": "serde_json",
+    "fn:lexical::math::compare_test": "serde_json",
+    "fn:lexical::math::hi64_test": "serde_json",
+    "fn:lexical::math::iadd_small_test": "serde_json",
+    "fn:lexical::math::imul_small_test": "serde_json",
+    "fn:lexical::math::shl_test": "serde_json",
+    "fn:lexical::num::as_primitive_test": "serde_json",
+    "fn:lexical::num::float_test": "serde_json",
+    "fn:lexical::num::integer_test": "serde_json",
+    "fn:lexical::num::number_test": "serde_json",
+    "fn:lexical::parse::parse_f32_test": "serde_json",
+    "fn:lexical::parse::parse_f64_test": "serde_json",
+    "fn:lexical::rounding::avoid_overflow_test": "serde_json",
+    "fn:lexical::rounding::internal_n_mask_test": "serde_json",
+    "fn:lexical::rounding::lower_n_halfway_test": "serde_json",
+    "fn:lexical::rounding::lower_n_mask_test": "serde_json",
+    "fn:lexical::rounding::nth_bit_test": "serde_json",
+    "fn:lexical::rounding::round_downward_test": "serde_json",
+    "fn:lexical::rounding::round_nearest_test": "serde_json",
+    "fn:lexical::rounding::round_nearest_tie_even_test": "serde_json",
+    "fn:lexical::rounding::round_to_float_test": "serde_json",
+    "fn:lexical::rounding::round_to_native_test": "serde_json",
+    "fn:map::test_append": "serde_json",
+    "fn:map::test_preserve_order": "serde_json",
+    "fn:map::test_retain": "serde_json",
+    "fn:stream::test_error": "serde_json",
+    "fn:stream::test_json_stream_empty": "serde_json",
+    "fn:stream::test_json_stream_invalid_literal": "serde_json",
+    "fn:stream::test_json_stream_invalid_number": "serde_json",
+    "fn:stream::test_json_stream_newlines": "serde_json",
+    "fn:stream::test_json_stream_primitive": "serde_json",
+    "fn:stream::test_json_stream_trailing_whitespaces": "serde_json",
+    "fn:stream::test_json_stream_truncated": "serde_json",
+    "fn:stream::test_json_stream_truncated_decimal": "serde_json",
+    "fn:stream::test_json_stream_truncated_exponent": "serde_json",
+    "fn:stream::test_json_stream_truncated_negative": "serde_json",
+    "fn:test::hash_positive_and_negative_zero": "serde_json",
+    "fn:test::issue_220": "serde_json",
+    "fn:test::null_invalid_type": "serde_json",
+    "fn:test::test_boolean_key": "serde_json",
+    "fn:test::test_borrow": "serde_json",
+    "fn:test::test_borrow_in_map_key": "serde_json",
+    "fn:test::test_borrowed_key": "serde_json",
+    "fn:test::test_byte_buf_de": "serde_json",
+    "fn:test::test_byte_buf_de_invalid_surrogates": "serde_json",
+    "fn:test::test_byte_buf_de_multiple": "serde_json",
+    "fn:test::test_byte_buf_de_surrogate_pair": "serde_json",
+    "fn:test::test_byte_buf_ser": "serde_json",
+    "fn:test::test_bytes_ser": "serde_json",
+    "fn:test::test_category": "serde_json",
+    "fn:test::test_control_character_search": "serde_json",
+    "fn:test::test_deny_non_finite_f32_key": "serde_json",
+    "fn:test::test_deny_non_finite_f64_key": "serde_json",
+    "fn:test::test_deserialize_from_stream": "serde_json",
+    "fn:test::test_deserialize_number_to_untagged_enum": "serde_json",
+    "fn:test::test_effectively_string_keys": "serde_json",
+    "fn:test::test_encode_nonfinite_float_yields_null": "serde_json",
+    "fn:test::test_float_key": "serde_json",
+    "fn:test::test_integer128": "serde_json",
+    "fn:test::test_integer128_key": "serde_json",
+    "fn:test::test_integer128_to_value": "serde_json",
+    "fn:test::test_integer_key": "serde_json",
+    "fn:test::test_into_io_error": "serde_json",
+    "fn:test::test_json_macro": "serde_json",
+    "fn:test::test_json_pointer": "serde_json",
+    "fn:test::test_json_pointer_mut": "serde_json",
+    "fn:test::test_missing_nonoption_field": "serde_json",
+    "fn:test::test_missing_option_field": "serde_json",
+    "fn:test::test_missing_renamed_field": "serde_json",
+    "fn:test::test_multiline_errors": "serde_json",
+    "fn:test::test_negative_zero_value": "serde_json",
+    "fn:test::test_parse_bool": "serde_json",
+    "fn:test::test_parse_char": "serde_json",
+    "fn:test::test_parse_enum": "serde_json",
+    "fn:test::test_parse_enum_errors": "serde_json",
+    "fn:test::test_parse_f64": "serde_json",
+    "fn:test::test_parse_i64": "serde_json",
+    "fn:test::test_parse_list": "serde_json",
+    "fn:test::test_parse_negative_zero": "serde_json",
+    "fn:test::test_parse_null": "serde_json",
+    "fn:test::test_parse_number": "serde_json",
+    "fn:test::test_parse_number_errors": "serde_json",
+    "fn:test::test_parse_object": "serde_json",
+    "fn:test::test_parse_option": "serde_json",
+    "fn:test::test_parse_string": "serde_json",
+    "fn:test::test_parse_struct": "serde_json",
+    "fn:test::test_parse_trailing_whitespace": "serde_json",
+    "fn:test::test_parse_u64": "serde_json",
+    "fn:test::test_partialeq_bool": "serde_json",
+    "fn:test::test_partialeq_f32_out_of_range": "serde_json",
+    "fn:test::test_partialeq_number": "serde_json",
+    "fn:test::test_partialeq_string": "serde_json",
+    "fn:test::test_roundtrip_f32": "serde_json",
+    "fn:test::test_serialize_char": "serde_json",
+    "fn:test::test_serialize_map_with_no_len": "serde_json",
+    "fn:test::test_serialize_rejects_adt_keys": "serde_json",
+    "fn:test::test_serialize_seq_with_no_len": "serde_json",
+    "fn:test::test_stack_overflow": "serde_json",
+    "fn:test::test_value_as_f64": "serde_json",
+    "fn:test::test_value_into_deserializer": "serde_json",
+    "fn:test::test_write_bool": "serde_json",
+    "fn:test::test_write_char": "serde_json",
+    "fn:test::test_write_enum": "serde_json",
+    "fn:test::test_write_f64": "serde_json",
+    "fn:test::test_write_i64": "serde_json",
+    "fn:test::test_write_list": "serde_json",
+    "fn:test::test_write_newtype_struct": "serde_json",
+    "fn:test::test_write_null": "serde_json",
+    "fn:test::test_write_object": "serde_json",
+    "fn:test::test_write_option": "serde_json",
+    "fn:test::test_write_str": "serde_json",
+    "fn:test::test_write_tuple": "serde_json",
+    "fn:test::test_write_u64": "serde_json",
+    "unmapped:regression::regression::issue1083::invalid_utf8_after_escape_reports_the_bad_byte": "serde_json",
+    "unmapped:regression::regression::issue1083::invalid_utf8_at_start_of_string": "serde_json",
+    "unmapped:regression::regression::issue1083::invalid_utf8_inside_string_reports_the_bad_byte": "serde_json",
+    "unmapped:regression::regression::issue520::test": "serde_json",
+    "unmapped:regression::regression::issue795::test": "serde_json",
+    "unmapped:regression::regression::issue845::test": "serde_json",
+    "unmapped:regression::regression::issue953::test": "serde_json",
+    "unmapped:regression::regression::issue979::test": "serde_json"
+  },
+  "packages": [
+    {
+      "name": "serde_json",
+      "dependencies": []
+    }
+  ],
+  "baseline_seconds": {
+    "build": 7.184272003,
+    "run": 0.1748385
+  },
+  "probes": [
+    {
+      "symbol": "fn:serde_json::de::from_slice",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_boolean_key",
+        "fn:test::test_borrow",
+        "fn:test::test_control_character_search",
+        "fn:test::test_effectively_string_keys",
+        "fn:test::test_float_key",
+        "fn:test::test_integer128",
+        "fn:test::test_integer_key",
+        "fn:test::test_missing_nonoption_field",
+        "fn:test::test_multiline_errors",
+        "fn:test::test_parse_bool",
+        "fn:test::test_parse_char",
+        "fn:test::test_parse_enum",
+        "fn:test::test_parse_enum_errors",
+        "fn:test::test_parse_f64",
+        "fn:test::test_parse_i64",
+        "fn:test::test_parse_list",
+        "fn:test::test_parse_null",
+        "fn:test::test_parse_number",
+        "fn:test::test_parse_number_errors",
+        "fn:test::test_parse_object",
+        "fn:test::test_parse_option",
+        "fn:test::test_parse_string",
+        "fn:test::test_parse_struct",
+        "fn:test::test_parse_trailing_whitespace",
+        "fn:test::test_parse_u64",
+        "fn:test::test_stack_overflow",
+        "unmapped:regression::regression::issue1083::invalid_utf8_after_escape_reports_the_bad_byte",
+        "unmapped:regression::regression::issue1083::invalid_utf8_at_start_of_string",
+        "unmapped:regression::regression::issue1083::invalid_utf8_inside_string_reports_the_bad_byte"
+      ],
+      "seconds": {
+        "build": 1.321157584,
+        "run": 0.1705015
+      }
+    },
+    {
+      "symbol": "fn:serde_json::lexical::math::large::karatsuba_uneven_mul",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 1.46217425,
+        "run": 0.168848292
+      }
+    },
+    {
+      "symbol": "fn:serde_json::lexical::math::scalar::sub",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.23146725,
+        "run": 0.173668667
+      }
+    },
+    {
+      "symbol": "fn:serde_json::lexical::math::small::ishl_limbs",
+      "status": "ok",
+      "failing": [
+        "fn:lexical::parse::parse_f64_test"
+      ],
+      "seconds": {
+        "build": 0.183765083,
+        "run": 0.171727292
+      }
+    },
+    {
+      "symbol": "fn:serde_json::lexical::rounding::internal_n_mask",
+      "status": "ok",
+      "failing": [
+        "fn:lexical::float::round_to_f32_test",
+        "fn:lexical::float::to_f32_test",
+        "fn:lexical::float::to_f64_test",
+        "fn:lexical::parse::parse_f64_test",
+        "fn:lexical::rounding::avoid_overflow_test",
+        "fn:lexical::rounding::internal_n_mask_test"
+      ],
+      "seconds": {
+        "build": 0.198113917,
+        "run": 0.167921459
+      }
+    },
+    {
+      "symbol": "fn:serde_json::value::from_value",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_boolean_key",
+        "fn:test::test_effectively_string_keys",
+        "fn:test::test_float_key",
+        "fn:test::test_integer_key",
+        "fn:test::test_missing_option_field",
+        "fn:test::test_missing_renamed_field",
+        "fn:test::test_negative_zero_value",
+        "fn:test::test_parse_bool",
+        "fn:test::test_parse_char",
+        "fn:test::test_parse_enum",
+        "fn:test::test_parse_f64",
+        "fn:test::test_parse_i64",
+        "fn:test::test_parse_list",
+        "fn:test::test_parse_null",
+        "fn:test::test_parse_number",
+        "fn:test::test_parse_object",
+        "fn:test::test_parse_option",
+        "fn:test::test_parse_string",
+        "fn:test::test_parse_struct",
+        "fn:test::test_parse_trailing_whitespace",
+        "fn:test::test_parse_u64",
+        "unmapped:regression::regression::issue520::test",
+        "unmapped:regression::regression::issue795::test"
+      ],
+      "seconds": {
+        "build": 2.749710501,
+        "run": 0.172938125
+      }
+    },
+    {
+      "symbol": "fn:serde_json::value::partial_eq::eq_u64",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_partialeq_number"
+      ],
+      "seconds": {
+        "build": 2.290533876,
+        "run": 0.17193425
+      }
+    },
+    {
+      "symbol": "fn:serde_json::value::ser::key_must_be_a_string",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 2.943395251,
+        "run": 0.155198375
+      }
+    },
+    {
+      "symbol": "method:serde_json::de::<UnitVariantAccess as de::VariantAccess<'de>>::struct_variant",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 1.973105043,
+        "run": 0.175286667
+      }
+    },
+    {
+      "symbol": "method:serde_json::iter::LineColIterator::byte_offset",
+      "status": "ok",
+      "failing": [
+        "fn:stream::test_error",
+        "fn:stream::test_json_stream_empty",
+        "fn:stream::test_json_stream_invalid_literal",
+        "fn:stream::test_json_stream_invalid_number",
+        "fn:stream::test_json_stream_newlines",
+        "fn:stream::test_json_stream_primitive",
+        "fn:stream::test_json_stream_trailing_whitespaces",
+        "fn:stream::test_json_stream_truncated",
+        "fn:stream::test_json_stream_truncated_decimal",
+        "fn:stream::test_json_stream_truncated_exponent",
+        "fn:stream::test_json_stream_truncated_negative"
+      ],
+      "seconds": {
+        "build": 2.312561834,
+        "run": 0.158311917
+      }
+    },
+    {
+      "symbol": "method:serde_json::lexical::num::Float::exponent",
+      "status": "ok",
+      "failing": [
+        "fn:lexical::float::from_float",
+        "fn:lexical::parse::parse_f32_test",
+        "fn:lexical::parse::parse_f64_test"
+      ],
+      "seconds": {
+        "build": 1.926953584,
+        "run": 0.168168583
+      }
+    },
+    {
+      "symbol": "method:serde_json::map::<Map as de::Deserialize<'de>>::deserialize::<Visitor as de::Visitor<'de>>::expecting",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 1.550151125,
+        "run": 0.170430458
+      }
+    },
+    {
+      "symbol": "method:serde_json::map::Map::keys",
+      "status": "ok",
+      "failing": [
+        "fn:map::test_append",
+        "fn:map::test_preserve_order",
+        "fn:map::test_retain"
+      ],
+      "seconds": {
+        "build": 1.047358209,
+        "run": 0.165645375
+      }
+    },
+    {
+      "symbol": "method:serde_json::number::<Number as Deserialize<'de>>::deserialize::<NumberVisitor as Visitor<'de>>::visit_u128",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 1.002504625,
+        "run": 0.168997875
+      }
+    },
+    {
+      "symbol": "method:serde_json::number::Number::as_i128",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 1.278602459,
+        "run": 0.179789083
+      }
+    },
+    {
+      "symbol": "method:serde_json::number::Number::from_f32",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_encode_nonfinite_float_yields_null",
+        "fn:test::test_partialeq_number",
+        "unmapped:regression::regression::issue520::test"
+      ],
+      "seconds": {
+        "build": 2.242117251,
+        "run": 0.179699167
+      }
+    },
+    {
+      "symbol": "method:serde_json::number::Number::from_string_unchecked",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 2.171081793,
+        "run": 0.191212042
+      }
+    },
+    {
+      "symbol": "method:serde_json::raw::<&'de RawValue as Deserializer<'de>>::deserialize_byte_buf",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 1.765112667,
+        "run": 0.170565209
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<Compound as ser::SerializeSeq>::end",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_serialize_seq_with_no_len",
+        "fn:test::test_write_enum",
+        "fn:test::test_write_list",
+        "fn:test::test_write_object",
+        "fn:test::test_write_option",
+        "fn:test::test_write_tuple"
+      ],
+      "seconds": {
+        "build": 1.128097625,
+        "run": 0.170713333
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::collect_str",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.938489083,
+        "run": 0.169978583
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::serialize_f64",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_deny_non_finite_f64_key"
+      ],
+      "seconds": {
+        "build": 1.096743792,
+        "run": 0.170810292
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::serialize_newtype_struct",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_effectively_string_keys"
+      ],
+      "seconds": {
+        "build": 1.041538459,
+        "run": 0.167319084
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::serialize_tuple",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.96772675,
+        "run": 0.169173
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<MapKeySerializer as ser::Serializer>::serialize_u32",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.951794834,
+        "run": 0.173496
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<NumberStrEmitter as ser::Serializer>::serialize_f32",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.772199126,
+        "run": 0.166606209
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<NumberStrEmitter as ser::Serializer>::serialize_i8",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.7867585,
+        "run": 0.172542042
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<NumberStrEmitter as ser::Serializer>::serialize_newtype_variant",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.751767334,
+        "run": 0.163689792
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<RawValueStrEmitter as ser::Serializer>::serialize_f32",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.736349251,
+        "run": 0.1715215
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::<RawValueStrEmitter as ser::Serializer>::serialize_i16",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.743398833,
+        "run": 0.17231275
+      }
+    },
+    {
+      "symbol": "method:serde_json::ser::Formatter::write_null",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_integer128_key",
+        "fn:test::test_write_list",
+        "fn:test::test_write_null",
+        "fn:test::test_write_object",
+        "fn:test::test_write_option"
+      ],
+      "seconds": {
+        "build": 0.951825209,
+        "run": 0.168427458
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::<Value as From<&[T]>>::from",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.883010208,
+        "run": 0.232957625
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::de::<&'de Map<String, Value> as serde::Deserializer<'de>>::deserialize_ignored_any",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.908552417,
+        "run": 0.166060875
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::de::<&'de Value as serde::Deserializer<'de>>::deserialize_ignored_any",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.935164334,
+        "run": 0.168324042
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::de::<KeyClass as serde::Deserializer<'de>>::deserialize_struct",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_missing_option_field",
+        "fn:test::test_missing_renamed_field",
+        "fn:test::test_parse_option",
+        "fn:test::test_parse_struct",
+        "fn:test::test_value_into_deserializer",
+        "unmapped:regression::regression::issue520::test"
+      ],
+      "seconds": {
+        "build": 1.072026084,
+        "run": 0.1744765
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::de::<SeqDeserializer as SeqAccess<'de>>::next_element_seed",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_parse_enum",
+        "fn:test::test_parse_list",
+        "fn:test::test_parse_struct",
+        "fn:test::test_parse_trailing_whitespace"
+      ],
+      "seconds": {
+        "build": 1.07021675,
+        "run": 0.166267208
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::index::<usize as Index>::index_into",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_negative_zero_value"
+      ],
+      "seconds": {
+        "build": 0.928569626,
+        "run": 0.16812375
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::ser::<MapKeySerializer as serde::Serializer>::serialize_tuple",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.850340958,
+        "run": 0.171441458
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::ser::<RawValueEmitter as serde::ser::Serializer>::serialize_i32",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.897246834,
+        "run": 0.170387042
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::ser::<Serializer as serde::Serializer>::collect_str",
+      "status": "ok",
+      "failing": [],
+      "seconds": {
+        "build": 0.881311167,
+        "run": 0.166983541
+      }
+    },
+    {
+      "symbol": "method:serde_json::value::ser::<Serializer as serde::Serializer>::serialize_u64",
+      "status": "ok",
+      "failing": [
+        "fn:test::test_parse_enum",
+        "fn:test::test_parse_list",
+        "fn:test::test_parse_object",
+        "fn:test::test_parse_struct",
+        "fn:test::test_parse_trailing_whitespace",
+        "fn:test::test_parse_u64",
+        "fn:test::test_partialeq_number",
+        "fn:test::test_write_enum",
+        "fn:test::test_write_newtype_struct",
+        "fn:test::test_write_u64"
+      ],
+      "seconds": {
+        "build": 0.914206209,
+        "run": 0.172648667
+      }
+    }
+  ]
+}

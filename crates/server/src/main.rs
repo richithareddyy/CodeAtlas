@@ -28,9 +28,9 @@ async fn main() -> Result<()> {
     if config.allow_indexing && !config.addr.ip().is_loopback() {
         tracing::warn!(
             addr = %config.addr,
-            "indexing mutations are enabled on a non-loopback address; anyone who can reach \
-             the server can make it read local paths or clone URLs \
-             (set CODEATLAS_ALLOW_INDEXING=false to disable)"
+            "indexing mutations were enabled explicitly on a non-loopback address; anyone \
+             who can reach the server can make it read local paths or clone URLs. The server \
+             has no authentication and is meant to run next to the developer"
         );
     }
 
