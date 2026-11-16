@@ -215,7 +215,7 @@ async fn repositories_symbols_and_paginated_search() {
         )
         .await;
     assert_eq!(data["repository"]["name"], "duplicate-symbols");
-    assert_eq!(data["repository"]["formatVersion"], 2);
+    assert_eq!(data["repository"]["formatVersion"], 3);
 
     let missing = api
         .data("{ repository(id: \"nope\") { id } }", json!({}))
@@ -966,6 +966,41 @@ async fn explain_impact_returns_cited_facts() {
         api.error_code(query, json!({ "repo": api.repos[0], "id": "fn:missing" }))
             .await,
         "NOT_FOUND"
+    );
+    api.finish().await;
+}
+
+#[tokio::test]
+async fn test_impact_says_when_selective_execution_is_unsafe() {
+    let Some(api) = Api::start(&["test-impact"], true).await else {
+        return;
+    };
+    let query = r#"query($repo: ID!, $ids: [ID!]!) {
+        testImpact(repoId: $repo, symbolIds: $ids) {
+            safety { selective reasons { kind symbol count sites { file line detail } } }
+        } }"#;
+    let safety = |data: Value| data["testImpact"]["safety"].clone();
+    let ok = api
+        .data(
+            query,
+            json!({ "repo": api.repos[0], "ids": ["fn:ledger::pricing::subtotal"] }),
+        )
+        .await;
+    assert_eq!(safety(ok), json!({ "selective": true, "reasons": [] }));
+
+    // `number` is only called by `pair`, which is passed as a value.
+    let unsafe_ = api
+        .data(
+            query,
+            json!({ "repo": api.repos[0], "ids": ["fn:ledger::parse::number"] }),
+        )
+        .await;
+    assert_eq!(
+        safety(unsafe_),
+        json!({ "selective": false, "reasons": [{
+            "kind": "HIDDEN_MENTIONS", "symbol": "fn:ledger::parse::pair", "count": 1,
+            "sites": [{ "file": "src/store.rs", "line": 36, "detail": "value" }]
+        }] })
     );
     api.finish().await;
 }

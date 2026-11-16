@@ -4,7 +4,7 @@
 //! blocks and call sites with their textual callee paths. Deciding what a
 //! callee path refers to is the resolver's job.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use tree_sitter::{Node, Tree};
 
@@ -16,8 +16,9 @@ use super::use_tree::flatten_use;
 use crate::ingest::discovery::count_loc;
 use crate::ingest::fnv1a;
 use crate::model::{
-    BindingSource, CallSite, Callee, FieldDecl, FileAnalysis, ImplBlock, Import, LocalBinding,
-    ModuleDecl, Receiver, Span, Symbol, SymbolId, SymbolKind, TypeAlias, TypeRef, Visibility,
+    BindingSource, CallSite, Callee, FieldDecl, FileAnalysis, ImplBlock, Import, ItemMacro,
+    LocalBinding, MentionKind, ModuleDecl, NameMention, Receiver, Span, Symbol, SymbolId,
+    SymbolKind, TypeAlias, TypeRef, Visibility,
 };
 use crate::parser::{count_syntax_errors, RustParser};
 
@@ -43,6 +44,7 @@ pub fn extract_file(
         file: ctx.path,
         parser,
         seen_ids: HashMap::new(),
+        values: Vec::new(),
         out: FileAnalysis {
             path: ctx.path.to_string(),
             crate_name: ctx.crate_name.to_string(),
@@ -53,6 +55,7 @@ pub fn extract_file(
         },
     };
     extractor.file_module(ctx, tree.root_node(), src);
+    extractor.finish_mentions();
     extractor.out
 }
 
@@ -60,6 +63,9 @@ struct Extractor<'a> {
     file: &'a str,
     parser: &'a mut RustParser,
     seen_ids: HashMap<SymbolId, u32>,
+    /// Value mentions with the scope they occur in, filtered against local
+    /// bindings once the file is done.
+    values: Vec<(SymbolId, NameMention)>,
     out: FileAnalysis,
 }
 
@@ -194,9 +200,43 @@ impl Extractor<'_> {
                 self.call(node, scope, t);
                 self.visit_children(node, scope, t);
             }
-            "macro_invocation" => self.macro_invocation(node, scope, t),
-            "macro_definition"
-            | "attribute_item"
+            "macro_invocation" => {
+                // At file level `m!(..);` parses as an expression statement.
+                let container = node
+                    .parent()
+                    .filter(|p| p.kind() == "expression_statement")
+                    .map_or(node.parent(), |p| p.parent());
+                let item_level = container
+                    .is_some_and(|p| matches!(p.kind(), "source_file" | "declaration_list"));
+                if item_level && !t.in_macro() {
+                    if let Some(name) = node.child_by_field_name("macro") {
+                        self.out.item_macros.push(ItemMacro {
+                            name: text(name, t.src).to_string(),
+                            line: t.line(node),
+                            cfg_test: scope.cfg_test,
+                        });
+                    }
+                }
+                self.macro_invocation(node, scope, t);
+            }
+            "macro_definition" => self.macro_tokens(node, t),
+            "identifier" | "scoped_identifier" if in_value_position(node) => {
+                let name = match node.kind() {
+                    "scoped_identifier" => node.child_by_field_name("name"),
+                    _ => Some(node),
+                };
+                if let Some(name) = name {
+                    self.values.push((
+                        scope.owner.clone(),
+                        NameMention {
+                            name: text(name, t.src).to_string(),
+                            line: t.line(node),
+                            kind: MentionKind::Value,
+                        },
+                    ));
+                }
+            }
+            "attribute_item"
             | "inner_attribute_item"
             | "line_comment"
             | "block_comment"
@@ -590,9 +630,6 @@ impl Extractor<'_> {
     /// of `(..)` / `[..]` macros are re-parsed as an array expression so that
     /// calls inside `assert_eq!(f(x), 1)` or `vec![g(); n]` are not lost.
     fn macro_invocation(&mut self, node: Node<'_>, scope: &Scope, t: Text<'_>) {
-        if t.macro_depth >= MAX_MACRO_DEPTH {
-            return;
-        }
         let mut cursor = node.walk();
         let Some(tokens) = node
             .named_children(&mut cursor)
@@ -602,7 +639,11 @@ impl Extractor<'_> {
             return;
         };
         let raw = text(tokens, t.src);
-        if !(raw.starts_with('(') || raw.starts_with('[')) || raw.len() < 2 {
+        if t.macro_depth >= MAX_MACRO_DEPTH
+            || !(raw.starts_with('(') || raw.starts_with('['))
+            || raw.len() < 2
+        {
+            self.macro_tokens(tokens, t);
             return;
         }
         // The wrapper prefix contains no newline, so row N of the wrapped
@@ -626,6 +667,41 @@ impl Extractor<'_> {
         self.visit_children(body, scope, inner);
     }
 
+    /// Identifiers in tokens the extractor does not parse as code.
+    fn macro_tokens(&mut self, node: Node<'_>, t: Text<'_>) {
+        let mut stack = vec![node];
+        while let Some(n) = stack.pop() {
+            if n.kind() == "identifier" {
+                self.out.mentions.push(NameMention {
+                    name: text(n, t.src).to_string(),
+                    line: t.line(n),
+                    kind: MentionKind::Macro,
+                });
+                continue;
+            }
+            let mut cursor = n.walk();
+            stack.extend(n.named_children(&mut cursor));
+        }
+    }
+
+    /// Value mentions of names that are not local bindings of their scope.
+    fn finish_mentions(&mut self) {
+        let bound: HashSet<(&SymbolId, &str)> = self
+            .out
+            .bindings
+            .iter()
+            .map(|b| (&b.scope, b.name.as_str()))
+            .collect();
+        let values: Vec<NameMention> = std::mem::take(&mut self.values)
+            .into_iter()
+            .filter(|(owner, m)| !bound.contains(&(owner, m.name.as_str())))
+            .map(|(_, m)| m)
+            .collect();
+        self.out.mentions.extend(values);
+        self.out.mentions.sort();
+        self.out.mentions.dedup();
+    }
+
     /// Registers a symbol, giving duplicate IDs a deterministic `#N` suffix.
     fn add_symbol(&mut self, mut symbol: Symbol) -> SymbolId {
         let base = symbol.id.clone();
@@ -637,6 +713,25 @@ impl Extractor<'_> {
         let id = symbol.id.clone();
         self.out.symbols.push(symbol);
         id
+    }
+}
+
+/// A bare path whose value is used: `f(parse)`, `[a, b]`, `let x = f;`.
+fn in_value_position(node: Node<'_>) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        "arguments"
+        | "array_expression"
+        | "tuple_expression"
+        | "return_expression"
+        | "shorthand_field_initializer" => true,
+        "let_declaration" | "field_initializer" => {
+            parent.child_by_field_name("value") == Some(node)
+        }
+        "assignment_expression" => parent.child_by_field_name("right") == Some(node),
+        _ => false,
     }
 }
 

@@ -20,12 +20,63 @@ use super::impact::{
     analyze_impact, AffectedSymbol, Confidence, DependencyKind, EvidenceStep, ImpactError,
     ImpactOptions, SymbolRef,
 };
-use super::CodeGraph;
+use super::{CodeGraph, Relation, Site};
 use crate::model::SymbolId;
 
 /// Above this many changed symbols, `reaches` and `untested` are not
 /// computed (one traversal per changed symbol).
 const MAX_PER_SYMBOL_TRAVERSALS: usize = 500;
+/// Sites listed per reason.
+const MAX_EXAMPLES: usize = 5;
+
+/// Whether running only the selected tests can be recommended.
+///
+/// `selective` is false when the analysis shows a way in which affected
+/// tests could be missing from the selection; the full suite should then
+/// run. True only means none of these checks fired. It is not a proof that
+/// the selection is complete.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SelectionSafety {
+    pub selective: bool,
+    pub reasons: Vec<UnsafeReason>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum UnsafeReason {
+    /// Test code invokes macros at item level; they can generate tests
+    /// that the analysis cannot see.
+    TestMacros { count: u32, examples: Vec<Site> },
+    /// The changed symbol is a candidate of ambiguous calls.
+    AmbiguousCallers {
+        symbol: SymbolId,
+        callers: Vec<SymbolId>,
+    },
+    /// Unresolved or dynamic calls name the changed symbol.
+    UnresolvedCalls { symbol: SymbolId, sites: Vec<Site> },
+    /// The name is used where no call is recorded: macro tokens or a
+    /// function passed as a value.
+    HiddenMentions { symbol: SymbolId, sites: Vec<Site> },
+    /// The changed method implements a trait from outside the repository,
+    /// so it may be called from code that is not analysed.
+    ExternalTrait { symbol: SymbolId },
+    /// The traversal stopped at the node limit.
+    Truncated,
+}
+
+impl UnsafeReason {
+    /// The serialized `kind`, e.g. `hidden_mentions`.
+    pub fn kind(&self) -> &'static str {
+        match self {
+            UnsafeReason::TestMacros { .. } => "test_macros",
+            UnsafeReason::AmbiguousCallers { .. } => "ambiguous_callers",
+            UnsafeReason::UnresolvedCalls { .. } => "unresolved_calls",
+            UnsafeReason::HiddenMentions { .. } => "hidden_mentions",
+            UnsafeReason::ExternalTrait { .. } => "external_trait",
+            UnsafeReason::Truncated => "truncated",
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SelectedTest {
@@ -59,6 +110,7 @@ pub struct TestSelection {
     /// Whether `reaches` and `untested` were computed.
     pub per_symbol: bool,
     pub truncated: bool,
+    pub safety: SelectionSafety,
 }
 
 impl TestSelection {
@@ -115,6 +167,17 @@ pub fn select_tests(
         }
     }
 
+    // A blind spot anywhere between a test and the change can hide that
+    // test, so the dependents are checked as well as the changed symbols.
+    let checked: Vec<usize> = report
+        .changed
+        .iter()
+        .map(|c| &c.id)
+        .chain(report.certain().map(|a| &a.symbol.id))
+        .filter_map(|id| graph.node(id))
+        .collect();
+    let safety = assess(graph, &checked, truncated);
+
     let (mut direct, mut transitive, mut possible) = (Vec::new(), Vec::new(), Vec::new());
     for a in report.affected.into_iter().filter(|a| a.symbol.is_test) {
         let selected = selected(a, &reaches);
@@ -142,7 +205,88 @@ pub fn select_tests(
         total_tests,
         per_symbol,
         truncated,
+        safety,
     })
+}
+
+/// Checks a selection against the graph's blind spots, for `nodes`: the
+/// changed symbols and everything that depends on them. A heuristic: it
+/// lists known ways of missing tests, not all ways.
+pub fn assess(graph: &CodeGraph, nodes: &[usize], truncated: bool) -> SelectionSafety {
+    let spots = graph.blind_spots();
+    let mut reasons = Vec::new();
+    if !spots.test_macros.is_empty() {
+        reasons.push(UnsafeReason::TestMacros {
+            count: spots.test_macros.len() as u32,
+            examples: spots
+                .test_macros
+                .iter()
+                .take(MAX_EXAMPLES)
+                .cloned()
+                .collect(),
+        });
+    }
+    let checked: BTreeSet<usize> = nodes.iter().copied().collect();
+    for &node in &checked {
+        let symbol = graph.symbol(node);
+        if !symbol.kind.is_callable() || symbol.is_test {
+            continue;
+        }
+        let callers: BTreeSet<SymbolId> = graph
+            .incoming(node)
+            .iter()
+            .map(|&e| graph.edge(e))
+            .filter(|e| e.relation == Relation::CallsCandidate && !checked.contains(&e.from))
+            .map(|e| graph.symbol(e.from).id.clone())
+            .collect();
+        if !callers.is_empty() {
+            reasons.push(UnsafeReason::AmbiguousCallers {
+                symbol: symbol.id.clone(),
+                callers: callers.into_iter().take(MAX_EXAMPLES).collect(),
+            });
+        }
+        let name = symbol.name.as_str();
+        let sites: Vec<Site> = spots
+            .unresolved_calls
+            .iter()
+            .filter(|s| tokens(&s.detail).any(|t| t == name))
+            .take(MAX_EXAMPLES)
+            .cloned()
+            .collect();
+        if !sites.is_empty() {
+            reasons.push(UnsafeReason::UnresolvedCalls {
+                symbol: symbol.id.clone(),
+                sites,
+            });
+        }
+        if let Some(sites) = spots.mentions.get(name) {
+            reasons.push(UnsafeReason::HiddenMentions {
+                symbol: symbol.id.clone(),
+                sites: sites.iter().take(MAX_EXAMPLES).cloned().collect(),
+            });
+        }
+        let implements_repo_trait = graph
+            .outgoing(node)
+            .iter()
+            .any(|&e| graph.edge(e).relation == Relation::Implements);
+        if symbol.qualified_name.contains(" as ") && !implements_repo_trait {
+            reasons.push(UnsafeReason::ExternalTrait {
+                symbol: symbol.id.clone(),
+            });
+        }
+    }
+    if truncated {
+        reasons.push(UnsafeReason::Truncated);
+    }
+    SelectionSafety {
+        selective: reasons.is_empty(),
+        reasons,
+    }
+}
+
+fn tokens(text: &str) -> impl Iterator<Item = &str> {
+    text.split(|c: char| !(c.is_alphanumeric() || c == '_'))
+        .filter(|t| !t.is_empty())
 }
 
 fn selected(a: AffectedSymbol, reaches: &BTreeMap<SymbolId, Vec<SymbolId>>) -> SelectedTest {

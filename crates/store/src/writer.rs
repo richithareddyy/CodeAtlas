@@ -21,7 +21,7 @@ use crate::snapshot::{to_bolt, GraphDelta, GraphSnapshot, NodeKind, Props, RelKe
 /// Version of the stored graph layout. Bump it whenever the writer stores
 /// new facts that readers depend on; graphs with another version are
 /// rejected by `load_graph` instead of producing silently wrong results.
-pub const GRAPH_FORMAT_VERSION: i64 = 2;
+pub const GRAPH_FORMAT_VERSION: i64 = 3;
 
 /// Rows sent per `UNWIND` statement.
 const BATCH_SIZE: usize = 1_000;

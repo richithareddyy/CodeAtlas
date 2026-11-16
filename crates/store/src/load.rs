@@ -2,7 +2,7 @@
 //! analyzer's algorithms and impact engine run on exactly what is stored.
 
 use codeatlas_analyzer::dependencies::{Dependencies, Dependency, DependencyEvidence};
-use codeatlas_analyzer::graph::{CodeGraph, GraphSymbol, Relation, SymbolEdge};
+use codeatlas_analyzer::graph::{BlindSpots, CodeGraph, GraphSymbol, Relation, Site, SymbolEdge};
 use codeatlas_analyzer::model::{EdgeKind, ResolutionMethod, SymbolId, SymbolKind};
 use neo4rs::query;
 
@@ -99,7 +99,76 @@ impl GraphStore {
                 .await?,
         };
 
-        Ok(CodeGraph::new(symbols, edges, dependencies))
+        let blind_spots = self.blind_spots(repo).await?;
+        Ok(CodeGraph::new(symbols, edges, dependencies).with_blind_spots(blind_spots))
+    }
+
+    async fn blind_spots(&self, repo: &str) -> Result<BlindSpots> {
+        let mut spots = BlindSpots::default();
+        let rows = self
+            .rows(
+                query(
+                    "MATCH (f:File {repo_id: $repo}) \
+                     RETURN f.path AS path, f.test_macros AS macros, f.mentions AS mentions",
+                )
+                .param("repo", repo),
+            )
+            .await?;
+        for row in &rows {
+            let file: String = row.get("path")?;
+            for text in row.get::<Vec<String>>("macros").unwrap_or_default() {
+                if let Some((line_text, name)) = text.split_once('|') {
+                    spots.test_macros.push(Site {
+                        file: file.clone(),
+                        line: line_text.parse().unwrap_or(0),
+                        detail: name.to_string(),
+                    });
+                }
+            }
+            for text in row.get::<Vec<String>>("mentions").unwrap_or_default() {
+                let mut parts = text.rsplitn(3, '|');
+                let (Some(kind), Some(line_text), Some(name)) =
+                    (parts.next(), parts.next(), parts.next())
+                else {
+                    continue;
+                };
+                spots
+                    .mentions
+                    .entry(name.to_string())
+                    .or_default()
+                    .push(Site {
+                        file: file.clone(),
+                        line: line_text.parse().unwrap_or(0),
+                        detail: kind.to_string(),
+                    });
+            }
+        }
+        // Unresolved calls are stored on their callers as `line|callee|reason`.
+        let rows = self
+            .rows(
+                query(
+                    "MATCH (s:Symbol {repo_id: $repo}) WHERE size(s.unresolved_calls) > 0 \
+                     RETURN s.file AS file, s.unresolved_calls AS calls",
+                )
+                .param("repo", repo),
+            )
+            .await?;
+        for row in &rows {
+            let file: String = row.get("file")?;
+            for text in row.get::<Vec<String>>("calls")? {
+                let mut parts = text.splitn(2, '|');
+                let (Some(line_text), Some(rest)) = (parts.next(), parts.next()) else {
+                    continue;
+                };
+                let callee = rest.rsplit_once('|').map_or(rest, |(callee, _)| callee);
+                spots.unresolved_calls.push(Site {
+                    file: file.clone(),
+                    line: line_text.parse().unwrap_or(0),
+                    detail: callee.to_string(),
+                });
+            }
+        }
+        Ok(spots)
     }
 
     async fn stored_dependencies(&self, repo: &str, cypher: &str) -> Result<Vec<Dependency>> {

@@ -20,7 +20,7 @@ use crate::module_tree::ModDecl;
 
 /// Version of the cached per-file data. Bump it whenever extraction or the
 /// model types change, so that results of an older analyzer are not reused.
-pub const CACHE_VERSION: u32 = 1;
+pub const CACHE_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AnalysisCache {

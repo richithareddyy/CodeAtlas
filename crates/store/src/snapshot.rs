@@ -9,6 +9,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use codeatlas_analyzer::dependencies::{derive_dependencies, locate_symbols, Dependency};
+use codeatlas_analyzer::graph::BlindSpots;
 use codeatlas_analyzer::model::{EdgeKind, Symbol, SymbolKind, Visibility};
 use codeatlas_analyzer::RepositoryAnalysis;
 use neo4rs::BoltType;
@@ -213,7 +214,26 @@ impl GraphSnapshot {
         }
     }
 
+    /// Files carry the analysis's blind spots in them: test macros as
+    /// `line|macro` and hidden name mentions as `name|line|kind`.
     fn add_files(&mut self, a: &RepositoryAnalysis) {
+        let spots = BlindSpots::from_analysis(a);
+        let mut macros: HashMap<&str, Vec<Prop>> = HashMap::new();
+        for site in &spots.test_macros {
+            macros
+                .entry(site.file.as_str())
+                .or_default()
+                .push(format!("{}|{}", site.line, site.detail).into());
+        }
+        let mut mentions: HashMap<&str, Vec<Prop>> = HashMap::new();
+        for (name, sites) in &spots.mentions {
+            for site in sites {
+                mentions
+                    .entry(site.file.as_str())
+                    .or_default()
+                    .push(format!("{name}|{}|{}", site.line, site.detail).into());
+            }
+        }
         for f in &a.files {
             self.files.insert(
                 f.path.clone(),
@@ -223,6 +243,14 @@ impl GraphSnapshot {
                     ("loc", f.loc.into()),
                     ("syntax_errors", f.syntax_errors.into()),
                     ("content_hash", f.content_hash.as_str().into()),
+                    (
+                        "test_macros",
+                        Prop::List(macros.remove(f.path.as_str()).unwrap_or_default()),
+                    ),
+                    (
+                        "mentions",
+                        Prop::List(mentions.remove(f.path.as_str()).unwrap_or_default()),
+                    ),
                 ]),
             );
         }

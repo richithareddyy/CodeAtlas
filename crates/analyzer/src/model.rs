@@ -356,6 +356,30 @@ pub struct ModuleDecl {
     pub cfg_test: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ItemMacro {
+    /// Macro path as written, e.g. `proptest` or `crate::rgtest`.
+    pub name: String,
+    pub line: u32,
+    pub cfg_test: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MentionKind {
+    /// In a `macro_rules!` definition or a macro body that is not re-parsed.
+    Macro,
+    /// A bare path used as a value, e.g. `iter.map(parse)`.
+    Value,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct NameMention {
+    pub name: String,
+    pub line: u32,
+    pub kind: MentionKind,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FileAnalysis {
     pub path: String,
@@ -370,6 +394,14 @@ pub struct FileAnalysis {
     pub bindings: Vec<LocalBinding>,
     pub fields: Vec<FieldDecl>,
     pub type_aliases: Vec<TypeAlias>,
+    /// Macro invocations at item level, which may expand to items (tests
+    /// included) that the analysis never sees.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub item_macros: Vec<ItemMacro>,
+    /// Names used where no call site is recorded: inside macro definitions
+    /// and unparsed macro bodies, or as a bare path in value position.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mentions: Vec<NameMention>,
     /// Number of ERROR / MISSING nodes tree-sitter produced for this file.
     pub syntax_errors: u32,
     pub loc: u32,

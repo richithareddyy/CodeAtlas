@@ -70,6 +70,15 @@ type ArchitectureNode {
 	inCycle: Boolean!
 }
 
+type BlindSpotSite {
+	file: String!
+	line: Int!
+	"""
+	Macro name, callee as written, or `macro` / `value` for mentions.
+	"""
+	detail: String!
+}
+
 enum ChangeKind {
 	MODIFIED
 	ADDED
@@ -363,6 +372,10 @@ type GitImpactReport {
 	"""
 	untested: [SymbolRef!]!
 	truncated: Boolean!
+	"""
+	Whether running only `tests` can be recommended for this change.
+	"""
+	selection: SelectionSafety!
 	summary: DiffSummary!
 	"""
 	Time to analyse both revisions and compare them.
@@ -780,6 +793,19 @@ type SelectedTest {
 	reaches: [ID!]!
 }
 
+"""
+Whether running only the selected tests can be recommended.
+"""
+type SelectionSafety {
+	"""
+	False when the analysis shows a way affected tests could be missing
+	from the selection: run the full suite. True only means none of the
+	checks fired; it is not a guarantee.
+	"""
+	selective: Boolean!
+	reasons: [UnsafeReason!]!
+}
+
 type SignatureChange {
 	before: String!
 	after: String!
@@ -902,6 +928,7 @@ type TestSelection {
 	untested: [SymbolRef!]!
 	totalTests: Int!
 	truncated: Boolean!
+	safety: SelectionSafety!
 }
 
 enum TextSource {
@@ -925,6 +952,45 @@ type UnresolvedCall {
 	e.g. `name_not_in_scope`, `dynamic_call`.
 	"""
 	reason: String!
+}
+
+type UnsafeReason {
+	kind: UnsafeReasonKind!
+	symbol: ID
+	callers: [ID!]!
+	"""
+	Number of sites; `sites` lists up to five.
+	"""
+	count: Int!
+	sites: [BlindSpotSite!]!
+}
+
+enum UnsafeReasonKind {
+	"""
+	Test code invokes item-level macros, which can generate tests the
+	analysis cannot see.
+	"""
+	TEST_MACROS
+	"""
+	`symbol` is a candidate of ambiguous calls from `callers`.
+	"""
+	AMBIGUOUS_CALLERS
+	"""
+	Unresolved or dynamic calls (`sites`) may target `symbol`.
+	"""
+	UNRESOLVED_CALLS
+	"""
+	`symbol` is used where no call is recorded: macro tokens or a value.
+	"""
+	HIDDEN_MENTIONS
+	"""
+	`symbol` implements a trait from outside the repository.
+	"""
+	EXTERNAL_TRAIT
+	"""
+	The traversal stopped at the node limit.
+	"""
+	TRUNCATED
 }
 
 """

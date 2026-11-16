@@ -276,3 +276,46 @@ fn trait_fingerprints_exclude_their_methods_and_modules_have_none() {
     );
     assert_eq!(symbol(&fa, "mod:app::m").fingerprint, None);
 }
+
+#[test]
+fn records_item_macros_and_names_hidden_from_call_sites() {
+    let fa = extract(
+        "fn parse(s: &str) -> u32 { 0 }
+fn all(v: &[&str]) -> Vec<u32> { let parse_all = 1; v.iter().copied().map(parse).collect() }
+macro_rules! make { ($n:ident) => { fn $n() { helper() } } }
+make!(generated);
+#[cfg(test)]
+mod tests {
+    proptest! { fn checks(x in 0..1) { super::parse(x); } }
+    #[test] fn by_value() { let f = super::helper; let n = 1; drop(n); f(); }
+}",
+    );
+    let macros: Vec<(&str, u32, bool)> = fa
+        .item_macros
+        .iter()
+        .map(|m| (m.name.as_str(), m.line, m.cfg_test))
+        .collect();
+    assert_eq!(macros, [("make", 4, false), ("proptest", 7, true)]);
+
+    let mentions: Vec<String> = fa
+        .mentions
+        .iter()
+        .map(|m| format!("{} {} {:?}", m.name, m.line, m.kind))
+        .collect();
+    // Passed as a value, or only inside macro tokens; `n` is a local binding.
+    for expected in [
+        "parse 2 Value",
+        "helper 3 Macro",
+        "parse 7 Macro",
+        "helper 8 Value",
+    ] {
+        assert!(
+            mentions.iter().any(|m| m == expected),
+            "{expected}: {mentions:?}"
+        );
+    }
+    assert!(
+        !mentions.iter().any(|m| m.starts_with("n ")),
+        "{mentions:?}"
+    );
+}

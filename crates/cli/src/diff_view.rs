@@ -7,7 +7,7 @@ use codeatlas_analyzer::git::FileStatus;
 use codeatlas_analyzer::graph::impact::Confidence;
 use codeatlas_analyzer::model::SymbolKind;
 
-use crate::views::{short, short_sha, step_text};
+use crate::views::{safety_text, short, short_sha, step_text};
 
 fn revisions(report: &DiffReport) -> String {
     let sha = |sha: &Option<String>| match sha {
@@ -248,6 +248,7 @@ pub fn text(report: &DiffReport, limit: usize) -> String {
         let _ = writeln!(out, "\nPossibly affected (through ambiguous calls)");
         downstream_lines(&mut out, &possible[..possible.len().min(limit)]);
     }
+    let _ = writeln!(out, "\n{}", safety_text(&report.impact.selection));
     if !report.impact.tests.is_empty() {
         let _ = writeln!(out, "\nTests to run");
         for t in report.impact.tests.iter().take(limit) {
@@ -470,6 +471,16 @@ pub fn markdown(report: &DiffReport, limit: usize) -> String {
             let _ = writeln!(out, "\n{} more not shown.", certain.len() - limit);
         }
         let _ = writeln!(out, "\n</details>");
+    }
+    let safety = safety_text(&report.impact.selection);
+    let mut lines = safety.lines();
+    let headline = lines
+        .next()
+        .unwrap_or_default()
+        .trim_start_matches("Recommendation  ");
+    let _ = writeln!(out, "\n> **Recommendation:** {}", escape_html(headline));
+    for reason in lines {
+        let _ = writeln!(out, "> {}", escape_html(reason.trim_start()));
     }
     if !report.impact.tests.is_empty() {
         let _ = writeln!(out, "\n### Tests to run\n");

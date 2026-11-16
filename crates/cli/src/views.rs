@@ -1,5 +1,7 @@
 //! Text rendering for impact reports and architecture analyses.
 
+use codeatlas_analyzer::graph::test_selection::{SelectionSafety, UnsafeReason};
+use codeatlas_analyzer::graph::Site;
 use std::fmt::Write as _;
 
 use clap::ValueEnum;
@@ -239,4 +241,64 @@ pub fn explanation(x: &codeatlas_explain::Explanation) -> String {
         let _ = writeln!(out, "Rejected model answer: {rejected}");
     }
     out.trim_end().to_string()
+}
+
+/// The recommendation that goes with a test selection.
+pub(crate) fn safety_text(s: &SelectionSafety) -> String {
+    if s.selective {
+        return "Recommendation  run the selected tests (no known blind spot applies; \
+                this is a heuristic, not a guarantee)"
+            .to_string();
+    }
+    let mut out = String::from(
+        "Recommendation  run the full test suite: selective execution is unsafe here, \
+         because CodeAtlas cannot rule out affected tests outside the selection",
+    );
+    let at = |site: &Site| format!("{}:{}", site.file, site.line);
+    for reason in &s.reasons {
+        let line = match reason {
+            UnsafeReason::TestMacros { count, examples } => format!(
+                "test code has {count} item-level macro invocation(s), which can generate tests CodeAtlas cannot see{}",
+                examples
+                    .first()
+                    .map(|e| format!(" (e.g. {}! at {})", e.detail, at(e)))
+                    .unwrap_or_default()
+            ),
+            UnsafeReason::AmbiguousCallers { symbol, callers } => format!(
+                "{} is a candidate of ambiguous calls from {}",
+                short(symbol.as_str()),
+                callers
+                    .iter()
+                    .map(|c| short(c.as_str()))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+            UnsafeReason::UnresolvedCalls { symbol, sites } => format!(
+                "unresolved calls may target {} ({})",
+                short(symbol.as_str()),
+                sites
+                    .iter()
+                    .map(|s| format!("{} at {}", s.detail, at(s)))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+            UnsafeReason::HiddenMentions { symbol, sites } => format!(
+                "{} is used where no call is recorded ({})",
+                short(symbol.as_str()),
+                sites
+                    .iter()
+                    .map(|s| format!("{} at {}", s.detail, at(s)))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+            UnsafeReason::ExternalTrait { symbol } => format!(
+                "{} implements a trait from outside the repository; its callers there are not analysed",
+                short(symbol.as_str())
+            ),
+            UnsafeReason::Truncated => "the traversal stopped at the node limit".to_string(),
+        };
+        out.push_str("\n  - ");
+        out.push_str(&line);
+    }
+    out
 }

@@ -18,6 +18,7 @@ use codeatlas_analyzer::graph::CodeGraph;
 use codeatlas_analyzer::ingest::{default_clone_dir, ingest, DiscoveryOptions, IngestOptions};
 use codeatlas_analyzer::model::SymbolKind;
 use codeatlas_analyzer::parser::RustParser;
+use codeatlas_analyzer::strategy_evaluation::compare_strategies;
 use codeatlas_analyzer::test_evaluation::{evaluate_tests, source_hash, TestGroundTruth};
 use codeatlas_analyzer::{analyze_source, RepoSource, RepositoryAnalysis};
 use codeatlas_store::{prepare, StateDir};
@@ -144,6 +145,25 @@ enum Command {
         /// Also select tests reached only through ambiguous calls.
         #[arg(long)]
         include_ambiguous: bool,
+        /// Print JSON instead of text.
+        #[arg(long)]
+        json: bool,
+        /// Also write the JSON result to this file.
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+    },
+    /// Compare test-selection strategies on a ground truth from
+    /// `probe-tests`: CodeAtlas (resolved, with ambiguous calls, and
+    /// conservative) against run-all, changed-package, file-dependency and
+    /// name-mention baselines. Reports whole-suite recall, precision,
+    /// selected tests, test time saved and every miss.
+    CompareTests {
+        /// Repository path (the same state the ground truth was made from).
+        source: PathBuf,
+        #[arg(long)]
+        truth: PathBuf,
+        #[arg(long, default_value_t = 8)]
+        depth: u32,
         /// Print JSON instead of text.
         #[arg(long)]
         json: bool,
@@ -400,6 +420,40 @@ async fn main() -> Result<()> {
                 rendered
             } else {
                 test_view::evaluation(&evaluation)
+            };
+            writeln!(std::io::stdout(), "{text}")?;
+        }
+        Command::CompareTests {
+            source,
+            truth,
+            depth,
+            json,
+            output,
+        } => {
+            let truth: TestGroundTruth = serde_json::from_str(
+                &fs::read_to_string(&truth)
+                    .with_context(|| format!("failed to read {}", truth.display()))?,
+            )
+            .context("invalid ground truth")?;
+            let analysis = analyze_source(
+                &RepoSource::Local(source.clone()),
+                &IngestOptions::default(),
+            )
+            .with_context(|| format!("failed to analyse {}", source.display()))?;
+            if truth.source_hash != source_hash(&analysis) {
+                eprintln!(
+                    "warning: the sources differ from those the ground truth was recorded on"
+                );
+            }
+            let comparison = compare_strategies(&analysis, &truth, depth)?;
+            let rendered = serde_json::to_string_pretty(&comparison)?;
+            if let Some(path) = output {
+                write_file(&path, &(rendered.clone() + "\n"))?;
+            }
+            let text = if json {
+                rendered
+            } else {
+                test_view::comparison(&comparison)
             };
             writeln!(std::io::stdout(), "{text}")?;
         }

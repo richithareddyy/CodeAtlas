@@ -16,6 +16,7 @@ import type {
 	Neighborhood,
 	Relation,
 	Repository,
+	SelectionSafety,
 	SearchPage,
 	SourceSnippet,
 	Symbol,
@@ -28,6 +29,7 @@ const SYMBOL = `id kind name qualifiedName file crateName startLine endLine visi
 const EDGE = `from to relation resolution lines`;
 const REPOSITORY = `id name root originUrl branch headSha indexedSha indexedAt sourceFiles loc languages`;
 const SYMBOL_REF = `id kind qualifiedName file line isTest`;
+const SAFETY = `selective reasons { kind symbol callers count sites { file line detail } }`;
 
 export async function repositories(): Promise<Repository[]> {
 	const data = await request<{ repositories: Repository[] }>(`{ repositories { ${REPOSITORY} } }`);
@@ -229,6 +231,21 @@ export async function gitRefs(repoId: string): Promise<GitRefs> {
 	return data.gitRefs;
 }
 
+/** Whether only the tests selected for `symbolId` may be run. */
+export async function selectionSafety(
+	repoId: string,
+	symbolId: string,
+	maxDepth: number
+): Promise<SelectionSafety> {
+	const data = await request<{ testImpact: { safety: SelectionSafety } }>(
+		`query($repo: ID!, $id: ID!, $depth: Int!) {
+			testImpact(repoId: $repo, symbolIds: [$id], maxDepth: $depth) { safety { ${SAFETY} } }
+		}`,
+		{ repo: repoId, id: symbolId, depth: maxDepth }
+	);
+	return data.testImpact.safety;
+}
+
 /** `head` null compares with the working tree. */
 export async function gitImpact(
 	repoId: string,
@@ -249,6 +266,7 @@ export async function gitImpact(
 				cosmetic { ${SYMBOL_REF} }
 				maxDepth includeAmbiguous truncated analysisMs tests
 				untested { ${SYMBOL_REF} }
+				selection { ${SAFETY} }
 				downstream {
 					depth confidence revision symbol { ${SYMBOL_REF} }
 					path { source target kind file lines resolution }

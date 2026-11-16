@@ -11,13 +11,13 @@ pub mod architecture;
 pub mod impact;
 pub mod test_selection;
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
 use crate::analysis::RepositoryAnalysis;
 use crate::dependencies::{derive_dependencies, locate_symbols, Dependencies};
-use crate::model::{EdgeKind, ResolutionMethod, SymbolId, SymbolKind};
+use crate::model::{EdgeKind, MentionKind, ResolutionMethod, SymbolId, SymbolKind, TargetKind};
 use algorithms::Digraph;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -97,6 +97,104 @@ pub struct IndexedEdge {
     pub lines: Vec<u32>,
 }
 
+/// What the analysis could not see. Selection uses it to tell whether
+/// leaving tests out can be trusted.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BlindSpots {
+    /// Item-level macro invocations in test code; they can generate tests.
+    pub test_macros: Vec<Site>,
+    /// Unresolved and dynamic call sites; `detail` is the callee as written.
+    pub unresolved_calls: Vec<Site>,
+    /// Names used outside recorded call sites (macro tokens, values), by
+    /// name; `detail` is `macro` or `value`.
+    pub mentions: BTreeMap<String, Vec<Site>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct Site {
+    pub file: String,
+    pub line: u32,
+    pub detail: String,
+}
+
+impl BlindSpots {
+    pub fn from_analysis(analysis: &RepositoryAnalysis) -> Self {
+        let production: HashSet<&str> = analysis
+            .crates
+            .iter()
+            .filter(|c| {
+                matches!(
+                    c.kind,
+                    TargetKind::Lib | TargetKind::Bin | TargetKind::BuildScript
+                )
+            })
+            .map(|c| c.name.as_str())
+            .collect();
+        let files: HashMap<&SymbolId, &str> = analysis
+            .files
+            .iter()
+            .flat_map(|f| f.symbols.iter().map(move |s| (&s.id, f.path.as_str())))
+            .collect();
+        let mut spots = BlindSpots::default();
+        for file in &analysis.files {
+            let test_crate = !production.contains(file.crate_name.as_str());
+            for m in &file.item_macros {
+                if test_crate || m.cfg_test {
+                    spots.test_macros.push(Site {
+                        file: file.path.clone(),
+                        line: m.line,
+                        detail: m.name.clone(),
+                    });
+                }
+            }
+            for m in &file.mentions {
+                spots
+                    .mentions
+                    .entry(m.name.clone())
+                    .or_default()
+                    .push(Site {
+                        file: file.path.clone(),
+                        line: m.line,
+                        detail: mention_kind(m.kind).to_string(),
+                    });
+            }
+        }
+        for call in &analysis.resolution.unresolved_calls {
+            spots.unresolved_calls.push(Site {
+                file: files
+                    .get(&call.caller)
+                    .copied()
+                    .unwrap_or_default()
+                    .to_string(),
+                line: call.line,
+                detail: call.callee.clone(),
+            });
+        }
+        spots.normalize();
+        spots
+    }
+
+    /// Canonical order, so that spots built from the analysis and from the
+    /// store compare equal.
+    pub fn normalize(&mut self) {
+        self.test_macros.sort();
+        self.test_macros.dedup();
+        self.unresolved_calls.sort();
+        self.unresolved_calls.dedup();
+        for sites in self.mentions.values_mut() {
+            sites.sort();
+            sites.dedup();
+        }
+    }
+}
+
+pub fn mention_kind(kind: MentionKind) -> &'static str {
+    match kind {
+        MentionKind::Macro => "macro",
+        MentionKind::Value => "value",
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct CodeGraph {
     symbols: Vec<GraphSymbol>,
@@ -106,6 +204,7 @@ pub struct CodeGraph {
     incoming: Vec<Vec<usize>>,
     children: Vec<Vec<usize>>,
     dependencies: Dependencies,
+    blind_spots: BlindSpots,
 }
 
 impl CodeGraph {
@@ -172,7 +271,18 @@ impl CodeGraph {
             incoming,
             children,
             dependencies,
+            blind_spots: BlindSpots::default(),
         }
+    }
+
+    pub fn with_blind_spots(mut self, mut spots: BlindSpots) -> Self {
+        spots.normalize();
+        self.blind_spots = spots;
+        self
+    }
+
+    pub fn blind_spots(&self) -> &BlindSpots {
+        &self.blind_spots
     }
 
     pub fn from_analysis(analysis: &RepositoryAnalysis) -> Self {
@@ -230,6 +340,7 @@ impl CodeGraph {
 
         let dependencies = derive_dependencies(&analysis.files, &analysis.resolution.edges);
         Self::new(symbols, edges, dependencies)
+            .with_blind_spots(BlindSpots::from_analysis(analysis))
     }
 
     pub fn len(&self) -> usize {

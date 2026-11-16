@@ -19,6 +19,7 @@ pub mod model;
 pub mod module_tree;
 pub mod parser;
 pub mod resolver;
+pub mod strategy_evaluation;
 pub mod symbols;
 pub mod test_evaluation;
 

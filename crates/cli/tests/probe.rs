@@ -32,18 +32,31 @@ fn committed_ground_truth_is_reproducible() {
             serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
         };
         let (recorded, committed) = (read(&output), read(&fixture.join("expected-tests.json")));
-        // The toolchain and the enclosing repository's commit may differ.
-        for field in [
-            "source_hash",
-            "method",
-            "tests",
-            "baseline_failures",
-            "probes",
-        ] {
+        // The toolchain, the enclosing repository's commit and timings may
+        // differ.
+        for field in ["source_hash", "method", "tests", "baseline_failures"] {
             assert_eq!(
                 recorded[field], committed[field],
                 "{name}: `{field}` differs"
             );
         }
+        let outcomes = |truth: &Value| -> Vec<Value> {
+            truth["probes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| serde_json::json!([p["symbol"], p["status"], p["failing"]]))
+                .collect()
+        };
+        assert_eq!(
+            outcomes(&recorded),
+            outcomes(&committed),
+            "{name}: probes differ"
+        );
+        assert_eq!(
+            recorded["flaky"],
+            serde_json::json!([]),
+            "{name}: flaky tests"
+        );
     }
 }

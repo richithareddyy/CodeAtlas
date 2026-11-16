@@ -3,7 +3,7 @@
 //! crates do not depend on.
 
 use async_graphql::{Enum, SimpleObject, ID};
-use codeatlas_analyzer::graph::{architecture, impact, test_selection};
+use codeatlas_analyzer::graph::{architecture, impact, test_selection, Site};
 use codeatlas_analyzer::{diff, git};
 use codeatlas_explain as explain;
 use codeatlas_store as store;
@@ -533,6 +533,120 @@ pub struct TestSelection {
     pub untested: Vec<SymbolRef>,
     pub total_tests: i32,
     pub truncated: bool,
+    pub safety: SelectionSafety,
+}
+
+/// Whether running only the selected tests can be recommended.
+#[derive(SimpleObject)]
+pub struct SelectionSafety {
+    /// False when the analysis shows a way affected tests could be missing
+    /// from the selection: run the full suite. True only means none of the
+    /// checks fired; it is not a guarantee.
+    pub selective: bool,
+    pub reasons: Vec<UnsafeReason>,
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum UnsafeReasonKind {
+    /// Test code invokes item-level macros, which can generate tests the
+    /// analysis cannot see.
+    TestMacros,
+    /// `symbol` is a candidate of ambiguous calls from `callers`.
+    AmbiguousCallers,
+    /// Unresolved or dynamic calls (`sites`) may target `symbol`.
+    UnresolvedCalls,
+    /// `symbol` is used where no call is recorded: macro tokens or a value.
+    HiddenMentions,
+    /// `symbol` implements a trait from outside the repository.
+    ExternalTrait,
+    /// The traversal stopped at the node limit.
+    Truncated,
+}
+
+#[derive(SimpleObject)]
+pub struct UnsafeReason {
+    pub kind: UnsafeReasonKind,
+    pub symbol: Option<ID>,
+    pub callers: Vec<ID>,
+    /// Number of sites; `sites` lists up to five.
+    pub count: i32,
+    pub sites: Vec<BlindSpotSite>,
+}
+
+#[derive(SimpleObject)]
+pub struct BlindSpotSite {
+    pub file: String,
+    pub line: i32,
+    /// Macro name, callee as written, or `macro` / `value` for mentions.
+    pub detail: String,
+}
+
+impl From<test_selection::SelectionSafety> for SelectionSafety {
+    fn from(s: test_selection::SelectionSafety) -> Self {
+        use test_selection::UnsafeReason as Unsafe;
+        let site = |s: Site| BlindSpotSite {
+            file: s.file,
+            line: int(s.line),
+            detail: s.detail,
+        };
+        let reason =
+            |kind, symbol: Option<String>, callers: Vec<ID>, count: usize, sites: Vec<Site>| {
+                UnsafeReason {
+                    kind,
+                    symbol: symbol.map(ID),
+                    callers,
+                    count: int(count),
+                    sites: sites.into_iter().map(site).collect(),
+                }
+            };
+        Self {
+            selective: s.selective,
+            reasons: s
+                .reasons
+                .into_iter()
+                .map(|r| match r {
+                    Unsafe::TestMacros { count, examples } => reason(
+                        UnsafeReasonKind::TestMacros,
+                        None,
+                        Vec::new(),
+                        count as usize,
+                        examples,
+                    ),
+                    Unsafe::AmbiguousCallers { symbol, callers } => reason(
+                        UnsafeReasonKind::AmbiguousCallers,
+                        Some(symbol.to_string()),
+                        callers.iter().map(|c| ID(c.to_string())).collect(),
+                        callers.len(),
+                        Vec::new(),
+                    ),
+                    Unsafe::UnresolvedCalls { symbol, sites } => reason(
+                        UnsafeReasonKind::UnresolvedCalls,
+                        Some(symbol.to_string()),
+                        Vec::new(),
+                        sites.len(),
+                        sites,
+                    ),
+                    Unsafe::HiddenMentions { symbol, sites } => reason(
+                        UnsafeReasonKind::HiddenMentions,
+                        Some(symbol.to_string()),
+                        Vec::new(),
+                        sites.len(),
+                        sites,
+                    ),
+                    Unsafe::ExternalTrait { symbol } => reason(
+                        UnsafeReasonKind::ExternalTrait,
+                        Some(symbol.to_string()),
+                        Vec::new(),
+                        0,
+                        Vec::new(),
+                    ),
+                    Unsafe::Truncated => {
+                        reason(UnsafeReasonKind::Truncated, None, Vec::new(), 0, Vec::new())
+                    }
+                })
+                .collect(),
+        }
+    }
 }
 
 impl From<test_selection::TestSelection> for TestSelection {
@@ -546,6 +660,7 @@ impl From<test_selection::TestSelection> for TestSelection {
             untested: s.untested.into_iter().map(Into::into).collect(),
             total_tests: int(s.total_tests),
             truncated: s.truncated,
+            safety: s.safety.into(),
         }
     }
 }
@@ -953,6 +1068,8 @@ pub struct GitImpactReport {
     /// Modified functions and methods that no test reaches.
     pub untested: Vec<SymbolRef>,
     pub truncated: bool,
+    /// Whether running only `tests` can be recommended for this change.
+    pub selection: SelectionSafety,
     pub summary: DiffSummary,
     /// Time to analyse both revisions and compare them.
     pub analysis_ms: f64,
@@ -1047,6 +1164,7 @@ impl From<diff::DiffReport> for GitImpactReport {
                 .collect(),
             untested: r.impact.untested.into_iter().map(Into::into).collect(),
             truncated: r.impact.truncated,
+            selection: r.impact.selection.into(),
             summary: DiffSummary {
                 files_changed: int(s.files_changed),
                 files_added: int(s.files_added),

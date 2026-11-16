@@ -29,7 +29,7 @@ use crate::graph::impact::{
     analyze_impact, expand_change, AffectedGroup, AffectedSymbol, Confidence, ImpactOptions,
     SymbolRef,
 };
-use crate::graph::test_selection::select_tests;
+use crate::graph::test_selection::{assess, select_tests, SelectionSafety, UnsafeReason};
 use crate::graph::CodeGraph;
 use crate::ingest::{ingest, ingest_snapshot, IngestOptions, RepoSource};
 use crate::model::{Symbol, SymbolId, SymbolKind, TargetKind};
@@ -92,6 +92,8 @@ pub struct DiffImpact {
     /// through resolved relationships in the head revision.
     pub untested: Vec<SymbolRef>,
     pub truncated: bool,
+    /// Whether running only `tests` can be recommended for this change.
+    pub selection: SelectionSafety,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -401,21 +403,29 @@ fn diff_impact(
         .filter(|c| c.change == ChangeKind::Modified)
         .map(|c| &c.symbol.id)
         .collect();
-    let untested = select_tests(
+    let (untested, selection) = match select_tests(
         head,
         &seeds(head, ChangeKind::Modified),
         ImpactOptions {
             include_ambiguous: false,
             ..options
         },
-    )
-    .map(|s| {
-        s.untested
-            .into_iter()
-            .filter(|u| modified.contains(&u.id))
-            .collect()
-    })
-    .unwrap_or_default();
+    ) {
+        Ok(s) => (
+            s.untested
+                .into_iter()
+                .filter(|u| modified.contains(&u.id))
+                .collect(),
+            s.safety,
+        ),
+        // Nothing modified: only repository-wide blind spots apply.
+        Err(_) => (Vec::new(), assess(head, &[], false)),
+    };
+    let mut selection = selection;
+    if truncated && !selection.reasons.contains(&UnsafeReason::Truncated) {
+        selection.reasons.push(UnsafeReason::Truncated);
+        selection.selective = false;
+    }
 
     DiffImpact {
         max_depth: options.max_depth,
@@ -426,6 +436,7 @@ fn diff_impact(
         tests,
         untested,
         truncated,
+        selection,
     }
 }
 

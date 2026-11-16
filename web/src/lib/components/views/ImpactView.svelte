@@ -6,6 +6,9 @@
 	import EmptyState from '../EmptyState.svelte';
 	import EvidencePath from '../EvidencePath.svelte';
 	import Explanation from '../Explanation.svelte';
+	import SafetyNotice from '../SafetyNotice.svelte';
+	import { selectionSafety } from '../../api/queries';
+	import type { SelectionSafety } from '../../api/types';
 	import GraphCanvas from '../GraphCanvas.svelte';
 	import KindBadge from '../KindBadge.svelte';
 	import Segmented from '../Segmented.svelte';
@@ -21,6 +24,19 @@
 	$effect(() => {
 		void report;
 		explained = {};
+	});
+
+	let safety = $state.raw<SelectionSafety | null>(null);
+	$effect(() => {
+		const repo = workspace.repoId;
+		safety = null;
+		if (tab !== 'tests' || !report || !subject || !repo) return;
+		const depth = report.maxDepth;
+		selectionSafety(repo, subject, depth)
+			.then((s) => {
+				if (workspace.impactSubject === subject) safety = s;
+			})
+			.catch(() => {});
 	});
 	const data = $derived(report ? fromImpact(report) : EMPTY);
 	const tests = $derived(report?.affected.filter((a) => a.symbol.isTest) ?? []);
@@ -184,6 +200,7 @@
 					{#if tab === 'affected'}
 						{@render affectedList(report.affected)}
 					{:else if tab === 'tests'}
+						{#if safety}<SafetyNotice {safety} />{/if}
 						{#if tests.length}
 							<h4 class="label">Direct ({directTests.length})</h4>
 							<p class="faint intro">The test calls the changed code.</p>

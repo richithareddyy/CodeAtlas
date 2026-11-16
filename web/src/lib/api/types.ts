@@ -277,6 +277,7 @@ export interface GitImpactReport {
 	affectedModules: AffectedGroup[];
 	tests: string[];
 	untested: SymbolRef[];
+	selection: SelectionSafety;
 	truncated: boolean;
 	summary: DiffSummary;
 	analysisMs: number;
@@ -330,4 +331,26 @@ export interface Explanation {
 	} | null;
 	rejectedText: string | null;
 	notes: string[];
+}
+
+export type UnsafeReasonKind =
+	| 'TEST_MACROS'
+	| 'AMBIGUOUS_CALLERS'
+	| 'UNRESOLVED_CALLS'
+	| 'HIDDEN_MENTIONS'
+	| 'EXTERNAL_TRAIT'
+	| 'TRUNCATED';
+
+export interface UnsafeReason {
+	kind: UnsafeReasonKind;
+	symbol: string | null;
+	callers: string[];
+	count: number;
+	sites: { file: string; line: number; detail: string }[];
+}
+
+/** `selective` false: run the full suite. True is not a guarantee. */
+export interface SelectionSafety {
+	selective: boolean;
+	reasons: UnsafeReason[];
 }

@@ -20,7 +20,8 @@ use anyhow::{bail, Context, Result};
 use codeatlas_analyzer::model::{SymbolKind, TargetKind};
 use codeatlas_analyzer::parser::RustParser;
 use codeatlas_analyzer::test_evaluation::{
-    source_hash, Probe, ProbeStatus, TestGroundTruth, PROBE_METHOD, UNMAPPED,
+    source_hash, Probe, ProbeStatus, RunSeconds, TestGroundTruth, WorkspacePackage, PROBE_METHOD,
+    UNMAPPED,
 };
 use codeatlas_analyzer::RepositoryAnalysis;
 use serde_json::Value;
@@ -43,11 +44,23 @@ struct TestBinary {
     src_path: PathBuf,
     manifest_dir: PathBuf,
     target: String,
+    package: String,
 }
 
 struct BinaryRun {
     /// Test name to whether it passed (ignored tests are left out).
     results: BTreeMap<String, bool>,
+    /// Test name to its time in seconds, where libtest reported one.
+    seconds: BTreeMap<String, f64>,
+    complete: bool,
+}
+
+/// One run of every test binary, by test ID.
+struct SuiteRun {
+    results: BTreeMap<String, bool>,
+    seconds: BTreeMap<String, f64>,
+    /// Test ID to the Cargo package of its binary.
+    packages: BTreeMap<String, String>,
     complete: bool,
 }
 
@@ -61,29 +74,50 @@ pub fn probe(analysis: &RepositoryAnalysis, options: &ProbeOptions) -> Result<Te
     copy_tree(root, &work)?;
     let target_dir = scratch.path().join("target");
     let started = Instant::now();
+    let packages = workspace_packages(&work)?;
 
-    eprintln!("Building and running the test suite (baseline)...");
-    let Some(binaries) = build(&work, &target_dir)? else {
+    eprintln!("Building and running the test suite twice (baseline)...");
+    let build_started = Instant::now();
+    let Some(binaries) = build(&work, &target_dir, &packages)? else {
         bail!("the repository's tests do not build; see the cargo output above");
     };
+    let build_seconds = build_started.elapsed().as_secs_f64();
     let mapper = TestIds::new(analysis, &work);
+    let run_started = Instant::now();
+    let first = run_suite(&binaries, &mapper, options.timeout)?;
+    let run_seconds = run_started.elapsed().as_secs_f64();
+    let second = run_suite(&binaries, &mapper, options.timeout)?;
+    if !first.complete || !second.complete {
+        bail!("a test binary did not complete in the baseline runs");
+    }
+    let ids: BTreeSet<&String> = first.results.keys().chain(second.results.keys()).collect();
     let mut baseline: BTreeMap<String, bool> = BTreeMap::new();
-    for binary in &binaries {
-        let run = run_binary(binary, options.timeout)?;
-        if !run.complete {
-            bail!(
-                "{} did not complete in the baseline run",
-                binary.executable.display()
-            );
-        }
-        for (name, passed) in run.results {
-            baseline.insert(mapper.id(binary, &name), passed);
+    let mut flaky = Vec::new();
+    for id in ids {
+        match (first.results.get(id), second.results.get(id)) {
+            (Some(a), Some(b)) if a == b => {
+                baseline.insert(id.clone(), *a);
+            }
+            _ => flaky.push(id.clone()),
         }
     }
+    let test_seconds: BTreeMap<String, f64> = baseline
+        .keys()
+        .filter_map(|id| {
+            let times: Vec<f64> = [&first, &second]
+                .iter()
+                .filter_map(|run| run.seconds.get(id).copied())
+                .collect();
+            (!times.is_empty())
+                .then(|| (id.clone(), times.iter().sum::<f64>() / times.len() as f64))
+        })
+        .collect();
+    let test_packages = first.packages.clone();
     eprintln!(
-        "Baseline: {} tests in {} binaries ({:.0} s)",
+        "Baseline: {} tests in {} binaries, {} flaky ({:.0} s)",
         baseline.len(),
         binaries.len(),
+        flaky.len(),
         started.elapsed().as_secs_f64()
     );
 
@@ -97,33 +131,36 @@ pub fn probe(analysis: &RepositoryAnalysis, options: &ProbeOptions) -> Result<Te
         mutated.insert_str(target.offset, PROBE);
         fs::write(&path, &mutated)?;
         let outcome = (|| -> Result<Probe> {
-            let Some(binaries) = build(&work, &target_dir)? else {
+            let build_started = Instant::now();
+            let Some(binaries) = build(&work, &target_dir, &packages)? else {
                 return Ok(Probe {
                     symbol: target.symbol.clone(),
                     status: ProbeStatus::BuildFailed,
                     failing: Vec::new(),
+                    seconds: None,
                 });
             };
-            let mut failing = BTreeSet::new();
-            let mut complete = true;
-            for binary in &binaries {
-                let run = run_binary(binary, options.timeout)?;
-                complete &= run.complete;
-                for (name, passed) in run.results {
-                    let id = mapper.id(binary, &name);
-                    if !passed && baseline.get(&id) == Some(&true) {
-                        failing.insert(id);
-                    }
-                }
-            }
+            let build = build_started.elapsed().as_secs_f64();
+            let run_started = Instant::now();
+            let run = run_suite(&binaries, &mapper, options.timeout)?;
+            let failing = run
+                .results
+                .iter()
+                .filter(|(id, passed)| !**passed && baseline.get(*id) == Some(&true))
+                .map(|(id, _)| id.clone())
+                .collect();
             Ok(Probe {
                 symbol: target.symbol.clone(),
-                status: if complete {
+                status: if run.complete {
                     ProbeStatus::Ok
                 } else {
                     ProbeStatus::Incomplete
                 },
-                failing: failing.into_iter().collect(),
+                failing,
+                seconds: Some(RunSeconds {
+                    build,
+                    run: run_started.elapsed().as_secs_f64(),
+                }),
             })
         })();
         fs::write(&path, &original)?;
@@ -151,9 +188,99 @@ pub fn probe(analysis: &RepositoryAnalysis, options: &ProbeOptions) -> Result<Te
             .filter(|(_, passed)| !**passed)
             .map(|(id, _)| id.clone())
             .collect(),
-        tests: baseline.into_keys().collect(),
+        tests: baseline
+            .keys()
+            .chain(flaky.iter())
+            .cloned()
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect(),
+        flaky,
+        test_seconds,
+        test_packages,
+        packages: packages
+            .iter()
+            .map(|p| WorkspacePackage {
+                name: p.name.clone(),
+                dependencies: p.dependencies.clone(),
+            })
+            .collect(),
+        baseline_seconds: Some(RunSeconds {
+            build: build_seconds,
+            run: run_seconds,
+        }),
         probes,
     })
+}
+
+fn run_suite(binaries: &[TestBinary], mapper: &TestIds, timeout: Duration) -> Result<SuiteRun> {
+    let mut suite = SuiteRun {
+        results: BTreeMap::new(),
+        seconds: BTreeMap::new(),
+        packages: BTreeMap::new(),
+        complete: true,
+    };
+    for binary in binaries {
+        let run = run_binary(binary, timeout)?;
+        suite.complete &= run.complete;
+        for (name, passed) in run.results {
+            let id = mapper.id(binary, &name);
+            suite.packages.insert(id.clone(), binary.package.clone());
+            suite.results.insert(id, passed);
+        }
+        for (name, seconds) in run.seconds {
+            suite.seconds.insert(mapper.id(binary, &name), seconds);
+        }
+    }
+    Ok(suite)
+}
+
+struct Package {
+    name: String,
+    manifest_dir: PathBuf,
+    /// Workspace packages this one depends on.
+    dependencies: Vec<String>,
+}
+
+fn workspace_packages(work: &Path) -> Result<Vec<Package>> {
+    let output = Command::new("cargo")
+        .args(["metadata", "--format-version", "1", "--no-deps"])
+        .current_dir(work)
+        .output()
+        .context("cannot run cargo metadata")?;
+    if !output.status.success() {
+        bail!(
+            "cargo metadata failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        );
+    }
+    let metadata: Value = serde_json::from_slice(&output.stdout)?;
+    let empty = Vec::new();
+    let members = metadata["packages"].as_array().unwrap_or(&empty);
+    let names: HashSet<&str> = members.iter().filter_map(|p| p["name"].as_str()).collect();
+    Ok(members
+        .iter()
+        .map(|p| {
+            let mut dependencies: Vec<String> = p["dependencies"]
+                .as_array()
+                .unwrap_or(&empty)
+                .iter()
+                .filter_map(|d| d["name"].as_str())
+                .filter(|d| names.contains(d))
+                .map(str::to_string)
+                .collect();
+            dependencies.sort();
+            dependencies.dedup();
+            Package {
+                name: p["name"].as_str().unwrap_or_default().to_string(),
+                manifest_dir: Path::new(p["manifest_path"].as_str().unwrap_or_default())
+                    .parent()
+                    .map(Path::to_path_buf)
+                    .unwrap_or_default(),
+                dependencies,
+            }
+        })
+        .collect())
 }
 
 /// Maps a test binary's test names to symbol IDs.
@@ -183,14 +310,18 @@ impl TestIds {
         }
     }
 
-    fn id(&self, binary: &TestBinary, name: &str) -> String {
-        let crate_name = binary
+    fn crate_name(&self, binary: &TestBinary) -> String {
+        binary
             .src_path
             .strip_prefix(&self.work)
             .ok()
             .and_then(|rel| self.crates.get(&rel.to_string_lossy().replace('\\', "/")))
             .cloned()
-            .unwrap_or_else(|| binary.target.replace('-', "_"));
+            .unwrap_or_else(|| binary.target.replace('-', "_"))
+    }
+
+    fn id(&self, binary: &TestBinary, name: &str) -> String {
+        let crate_name = self.crate_name(binary);
         let id = format!("fn:{crate_name}::{name}");
         if self.tests.contains(&id) {
             id
@@ -299,7 +430,7 @@ fn body_offset(
 }
 
 /// Builds the tests; `None` when the build fails.
-fn build(work: &Path, target_dir: &Path) -> Result<Option<Vec<TestBinary>>> {
+fn build(work: &Path, target_dir: &Path, packages: &[Package]) -> Result<Option<Vec<TestBinary>>> {
     let output = Command::new("cargo")
         .args(["test", "--workspace", "--no-run", "--message-format=json"])
         .current_dir(work)
@@ -333,7 +464,14 @@ fn build(work: &Path, target_dir: &Path) -> Result<Option<Vec<TestBinary>>> {
             continue;
         }
         let manifest = PathBuf::from(message["manifest_path"].as_str().unwrap_or_default());
+        let manifest_dir = manifest.parent().map(Path::to_path_buf).unwrap_or_default();
+        let package = packages
+            .iter()
+            .find(|p| p.manifest_dir == manifest_dir)
+            .map(|p| p.name.clone())
+            .unwrap_or_default();
         binaries.push(TestBinary {
+            package,
             executable: executable.into(),
             src_path: message["target"]["src_path"]
                 .as_str()
@@ -350,11 +488,96 @@ fn build(work: &Path, target_dir: &Path) -> Result<Option<Vec<TestBinary>>> {
     Ok(Some(binaries))
 }
 
+/// Runs a test binary with libtest's JSON output, which reports each test's
+/// time. A custom harness rejects those flags: it is run again plainly and
+/// its text output read, and if it lists no tests it counts as one test
+/// that passes or fails with its exit status.
 fn run_binary(binary: &TestBinary, timeout: Duration) -> Result<BinaryRun> {
+    let json_args = [
+        "-Z",
+        "unstable-options",
+        "--format",
+        "json",
+        "--report-time",
+    ];
+    let (text, status) = execute(binary, &json_args, timeout)?;
+    let mut run = BinaryRun {
+        results: BTreeMap::new(),
+        seconds: BTreeMap::new(),
+        complete: completed(status),
+    };
+    let mut libtest = false;
+    for line in text.lines() {
+        let Ok(event) = serde_json::from_str::<Value>(line) else {
+            continue;
+        };
+        libtest |= event["type"] == "suite";
+        if event["type"] != "test" {
+            continue;
+        }
+        let Some(name) = event["name"].as_str() else {
+            continue;
+        };
+        let passed = match event["event"].as_str() {
+            Some("ok") => true,
+            Some("failed") => false,
+            _ => continue,
+        };
+        run.results.insert(name.to_string(), passed);
+        if let Some(seconds) = event["exec_time"].as_f64() {
+            run.seconds.insert(name.to_string(), seconds);
+        }
+    }
+    if libtest {
+        return Ok(run);
+    }
+
+    let (text, status) = execute(binary, &[], timeout)?;
+    run.complete = completed(status);
+    for line in text.lines() {
+        let Some(rest) = line.strip_prefix("test ") else {
+            continue;
+        };
+        let Some((name, outcome)) = rest.split_once(" ... ") else {
+            continue;
+        };
+        if outcome.starts_with("ok") {
+            run.results.insert(name.to_string(), true);
+        } else if outcome.starts_with("FAILED") {
+            run.results.insert(name.to_string(), false);
+        }
+    }
+    if run.results.is_empty() && status.is_some() {
+        run.results
+            .insert(HARNESS.to_string(), status.is_some_and(|s| s.success()));
+        run.complete = true;
+    }
+    Ok(run)
+}
+
+/// Name given to a custom-harness binary that lists no tests.
+const HARNESS: &str = "[harness]";
+
+/// libtest exits with 101 when tests fail; anything else (a signal, a
+/// timeout) means results may be missing.
+fn completed(status: Option<std::process::ExitStatus>) -> bool {
+    status.is_some_and(|s| s.success() || s.code() == Some(101))
+}
+
+/// Runs the binary with `args`; `None` as status after a timeout.
+fn execute(
+    binary: &TestBinary,
+    args: &[&str],
+    timeout: Duration,
+) -> Result<(String, Option<std::process::ExitStatus>)> {
     let mut child = Command::new(&binary.executable)
+        .args(args)
         .current_dir(&binary.manifest_dir)
         .env("CARGO_MANIFEST_DIR", &binary.manifest_dir)
         .env("RUST_BACKTRACE", "0")
+        // Enables libtest's JSON output and test times at run time; the
+        // code under test was compiled normally.
+        .env("RUSTC_BOOTSTRAP", "1")
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
@@ -377,25 +600,7 @@ fn run_binary(binary: &TestBinary, timeout: Duration) -> Result<BinaryRun> {
         }
         std::thread::sleep(Duration::from_millis(20));
     };
-    let text = reader.join().unwrap_or_default();
-    let mut results = BTreeMap::new();
-    for line in text.lines() {
-        let Some(rest) = line.strip_prefix("test ") else {
-            continue;
-        };
-        let Some((name, outcome)) = rest.split_once(" ... ") else {
-            continue;
-        };
-        if outcome.starts_with("ok") {
-            results.insert(name.to_string(), true);
-        } else if outcome.starts_with("FAILED") {
-            results.insert(name.to_string(), false);
-        }
-    }
-    // libtest exits with 101 when tests fail; anything else (a signal, a
-    // timeout) means results may be missing.
-    let complete = status.is_some_and(|s| s.success() || s.code() == Some(101));
-    Ok(BinaryRun { results, complete })
+    Ok((reader.join().unwrap_or_default(), status))
 }
 
 pub(crate) fn copy_tree(from: &Path, to: &Path) -> Result<()> {

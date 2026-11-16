@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SafetyNotice from '../SafetyNotice.svelte';
 	import type { ChangeKind, DownstreamSymbol, SymbolChange } from '../../api/types';
 	import { EMPTY, fromDiff } from '../../graph/elements';
 	import { count, shortSha } from '../../format';
@@ -336,6 +337,7 @@
 							</p>
 						{/if}
 					{:else if tab === 'tests'}
+						<SafetyNotice safety={report.selection} />
 						{#if tests.length}
 							<p class="faint intro">Unchanged tests whose call chain reaches a change:</p>
 							{@render downstreamList(tests)}

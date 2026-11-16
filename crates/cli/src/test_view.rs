@@ -3,9 +3,10 @@
 use std::fmt::Write as _;
 
 use codeatlas_analyzer::graph::test_selection::{SelectedTest, TestSelection};
+use codeatlas_analyzer::strategy_evaluation::StrategyComparison;
 use codeatlas_analyzer::test_evaluation::TestImpactEvaluation;
 
-use crate::views::{short, short_sha, step_text};
+use crate::views::{safety_text, short, short_sha, step_text};
 
 fn ratio(value: Option<f64>) -> String {
     value.map_or_else(|| "n/a".to_string(), |v| format!("{v:.3}"))
@@ -149,6 +150,7 @@ pub fn selection(s: &TestSelection) -> String {
             )
         }
     );
+    let _ = writeln!(out, "{}", safety_text(&s.safety));
     if !s.changed_tests.is_empty() {
         let _ = writeln!(out, "\nChanged tests");
         for t in &s.changed_tests {
@@ -173,6 +175,74 @@ pub fn selection(s: &TestSelection) -> String {
         let _ = writeln!(out, "\nNo test reaches");
         for u in &s.untested {
             let _ = writeln!(out, "  {:<64} {}:{}", u.qualified_name, u.file, u.line);
+        }
+    }
+    out.trim_end().to_string()
+}
+
+pub fn comparison(c: &StrategyComparison) -> String {
+    let mut out = String::new();
+    let p = &c.probes;
+    let _ = writeln!(
+        out,
+        "{} @ {}: {} tests ({} invisible to the analysis, {} flaky excluded)",
+        c.repository,
+        c.commit.as_deref().map_or("unknown commit", short_sha),
+        c.tests,
+        c.invisible_tests,
+        c.flaky_tests
+    );
+    let _ = writeln!(
+        out,
+        "Probes      {} ok, {} build failed, {} incomplete; {} executed by no test",
+        p.ok, p.build_failed, p.incomplete, p.not_executed
+    );
+    let r = &c.resolution;
+    let _ = writeln!(
+        out,
+        "Resolution  {} of {} call sites resolved ({} rate), {} ambiguous, {} unresolved",
+        r.resolved,
+        r.call_sites,
+        ratio(r.resolution_rate),
+        r.ambiguous,
+        r.unresolved
+    );
+    let _ = writeln!(
+        out,
+        "\n{:<24} {:>7} {:>6} {:>7} {:>9} {:>6} {:>10} {:>9} {:>8}",
+        "Strategy",
+        "recall",
+        "safe",
+        "precis.",
+        "selected",
+        "share",
+        "time saved",
+        "missed:inv",
+        "visible"
+    );
+    for s in &c.strategies {
+        let _ = writeln!(
+            out,
+            "{:<24} {:>7} {:>6} {:>7} {:>9.1} {:>6} {:>10} {:>9} {:>8}",
+            s.name,
+            ratio(s.recall),
+            format!("{}/{}", s.safe_probes, s.probes_with_failures),
+            ratio(s.precision),
+            s.mean_selected,
+            ratio(Some(s.mean_selected_share)),
+            ratio(s.mean_time_saved),
+            s.missed_invisible,
+            s.missed_visible
+        );
+    }
+    let _ = writeln!(
+        out,
+        "\nrecall: whole-suite, all failing tests; safe: probes with failures where none was missed"
+    );
+    if !c.reasons.is_empty() {
+        let _ = writeln!(out, "\nConservative rule fired (probes)");
+        for (reason, n) in &c.reasons {
+            let _ = writeln!(out, "  {n:>4}  {reason}");
         }
     }
     out.trim_end().to_string()

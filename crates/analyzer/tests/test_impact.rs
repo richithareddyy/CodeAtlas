@@ -228,3 +228,96 @@ fn recorded_results_on_the_other_fixtures() {
         );
     }
 }
+
+/// Every probe whose selection missed a failing test is flagged as unsafe
+/// for selective execution, for the reason behind the miss.
+#[test]
+fn incomplete_selections_are_flagged() {
+    let analysis = analysis();
+    let truth: TestGroundTruth = serde_json::from_str(
+        &std::fs::read_to_string(fixture_dir().join("expected-tests.json")).unwrap(),
+    )
+    .unwrap();
+    let graph = CodeGraph::from_analysis(&analysis);
+    let e = evaluate_tests(&graph, &truth, ImpactOptions::default());
+    let mut flagged = Vec::new();
+    for p in &e.probes {
+        let s = select_tests(&graph, &[node(&graph, &p.symbol)], ImpactOptions::default()).unwrap();
+        if s.safety.selective {
+            assert!(p.missed.is_empty(), "{} missed {:?}", p.symbol, p.missed);
+        } else {
+            let kinds: Vec<String> = s
+                .safety
+                .reasons
+                .iter()
+                .map(|r| {
+                    serde_json::to_value(r).unwrap()["kind"]
+                        .as_str()
+                        .unwrap()
+                        .to_string()
+                })
+                .collect();
+            flagged.push((p.symbol.clone(), kinds[0].clone()));
+        }
+    }
+    flagged.sort();
+    assert_eq!(
+        flagged,
+        [
+            (
+                "fn:ledger::parse::number".to_string(),
+                "hidden_mentions".to_string()
+            ),
+            ("fn:ledger::parse::pair".into(), "hidden_mentions".into()),
+            ("fn:ledger::util::validate".into(), "hidden_mentions".into()),
+            (
+                "method:ledger::store::<FileStore as Store>::get".into(),
+                "ambiguous_callers".into()
+            ),
+            (
+                "method:ledger::store::<MemoryStore as Store>::get".into(),
+                "ambiguous_callers".into()
+            ),
+            (
+                "method:ledger::store::FileStore::parse".into(),
+                "ambiguous_callers".into()
+            ),
+        ]
+    );
+}
+
+/// Strategies on the fixture's ground truth. It has no package data, so the
+/// changed-package baseline is left out.
+#[test]
+fn strategies_compared_on_the_fixture() {
+    let truth: TestGroundTruth = serde_json::from_str(
+        &std::fs::read_to_string(fixture_dir().join("expected-tests.json")).unwrap(),
+    )
+    .unwrap();
+    let c = codeatlas_analyzer::strategy_evaluation::compare_strategies(&analysis(), &truth, 8)
+        .unwrap();
+    let rows: Vec<(&str, Option<f64>, u32, u32)> = c
+        .strategies
+        .iter()
+        .map(|s| (s.name.as_str(), s.recall, s.safe_probes, s.missed_visible))
+        .collect();
+    assert_eq!(
+        rows,
+        [
+            ("run-all", Some(1.0), 18, 0),
+            ("file-dependency", Some(0.913), 16, 2),
+            ("name-mention", Some(0.522), 8, 11),
+            ("codeatlas", Some(0.826), 14, 4),
+            ("codeatlas-ambiguous", Some(0.87), 15, 3),
+            ("codeatlas-conservative", Some(1.0), 18, 0),
+        ]
+    );
+    // The resolved-call strategy agrees with `evaluate_tests`.
+    let graph = CodeGraph::from_analysis(&analysis());
+    let e = evaluate_tests(&graph, &truth, ImpactOptions::default());
+    assert_eq!(c.strategies[3].recall, e.summary.recall);
+    assert_eq!(
+        (c.tests, c.invisible_tests, c.probes.not_executed),
+        (9, 0, 2)
+    );
+}
