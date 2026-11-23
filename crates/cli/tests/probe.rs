@@ -1,7 +1,7 @@
 //! Re-records the ground truth of the fixtures with tests using
 //! `codeatlas probe-tests` and requires it to equal the committed
 //! `expected-tests.json` files. Builds and runs the fixture's tests, so it only
-//! runs with `CODEATLAS_RUN_PROBES=1` (CI sets it).
+//! runs with `CODEATLAS_RUN_PROBES=1` (required in CI).
 
 use std::path::Path;
 use std::process::Command;
@@ -11,6 +11,10 @@ use serde_json::Value;
 #[test]
 fn committed_ground_truth_is_reproducible() {
     if std::env::var("CODEATLAS_RUN_PROBES").as_deref() != Ok("1") {
+        assert!(
+            !matches!(std::env::var("CI").as_deref(), Ok("true" | "1")),
+            "CODEATLAS_RUN_PROBES must be 1 in CI"
+        );
         eprintln!("skipping: CODEATLAS_RUN_PROBES is not 1");
         return;
     }
