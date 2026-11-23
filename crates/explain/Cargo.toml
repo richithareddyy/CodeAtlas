@@ -4,6 +4,7 @@ description = "Optional explanations of CodeAtlas evidence by a local language m
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
 
 [dependencies]
 codeatlas-analyzer.workspace = true

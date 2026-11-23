@@ -6,6 +6,7 @@ members = ["crates/analyzer", "crates/cli", "crates/explain", "crates/server", "
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.90"
+license = "MIT"
 
 [workspace.dependencies]
 codeatlas-analyzer = { path = "crates/analyzer" }

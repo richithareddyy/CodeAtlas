@@ -4,6 +4,7 @@ description = "Static analysis core for CodeAtlas: ingestion, parsing, symbol ex
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
 
 [dependencies]
 chrono.workspace = true
