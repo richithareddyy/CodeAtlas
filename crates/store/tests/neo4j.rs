@@ -1,9 +1,10 @@
 //! Integration tests against a real Neo4j instance.
 //!
 //! They run when `CODEATLAS_NEO4J_PASSWORD` is set (directly or in the
-//! workspace `.env`) and are skipped otherwise. If Neo4j is configured but
-//! unreachable, they fail. Each test indexes under its own repository ID and
-//! deletes it afterwards, so tests can run in parallel against one database.
+//! workspace `.env`) and are skipped otherwise, except in CI, where a missing
+//! password is an error. If Neo4j is configured but unreachable, they fail.
+//! Each test indexes under its own repository ID and deletes it afterwards,
+//! so tests can run in parallel against one database.
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -19,15 +20,16 @@ fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+fn in_ci() -> bool {
+    matches!(std::env::var("CI").as_deref(), Ok("true" | "1"))
+}
+
 /// Repository for the equivalence checks. They are optional locally, but
 /// skipping them in CI would count as a pass, so there it is an error.
 fn equivalence_repo() -> Option<PathBuf> {
     let path = std::env::var_os("CODEATLAS_EQUIVALENCE_REPO").filter(|p| !p.is_empty());
     if path.is_none() {
-        assert!(
-            !matches!(std::env::var("CI").as_deref(), Ok("true" | "1")),
-            "CODEATLAS_EQUIVALENCE_REPO must be set in CI"
-        );
+        assert!(!in_ci(), "CODEATLAS_EQUIVALENCE_REPO must be set in CI");
         eprintln!("skipping: CODEATLAS_EQUIVALENCE_REPO not set");
     }
     path.map(PathBuf::from)
@@ -36,6 +38,7 @@ fn equivalence_repo() -> Option<PathBuf> {
 async fn store() -> Option<GraphStore> {
     let _ = dotenvy::from_path(workspace_root().join(".env"));
     let Ok(config) = StoreConfig::from_env() else {
+        assert!(!in_ci(), "CODEATLAS_NEO4J_PASSWORD must be set in CI");
         eprintln!("skipping: CODEATLAS_NEO4J_PASSWORD not set");
         return None;
     };

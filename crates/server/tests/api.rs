@@ -1,7 +1,8 @@
 //! End-to-end API tests: HTTP requests through the axum router against a
 //! real Neo4j. They run when `CODEATLAS_NEO4J_PASSWORD` is set (directly or
-//! in the workspace `.env`) and are skipped otherwise. Each test indexes
-//! fixtures under its own repository IDs and removes them afterwards.
+//! in the workspace `.env`) and are skipped otherwise, except in CI, where a
+//! missing password is an error. Each test indexes fixtures under its own
+//! repository IDs and removes them afterwards.
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -41,11 +42,16 @@ struct Api {
     repos: Vec<String>,
 }
 
+fn in_ci() -> bool {
+    matches!(std::env::var("CI").as_deref(), Ok("true" | "1"))
+}
+
 impl Api {
     /// Connects, indexes `fixtures` under fresh IDs, and builds the router.
     async fn start(fixtures: &[&str], allow_indexing: bool) -> Option<Self> {
         let _ = dotenvy::from_path(workspace_root().join(".env"));
         let Ok(store_config) = StoreConfig::from_env() else {
+            assert!(!in_ci(), "CODEATLAS_NEO4J_PASSWORD must be set in CI");
             eprintln!("skipping: CODEATLAS_NEO4J_PASSWORD not set");
             return None;
         };

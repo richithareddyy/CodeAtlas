@@ -1,6 +1,6 @@
 //! `codeatlas bench` on a small fixture: the report has every section and
 //! its numbers are consistent. Indexing and queries are included when
-//! Neo4j is configured (as in CI), otherwise `--no-database` is used.
+//! Neo4j is configured (required in CI), otherwise `--no-database` is used.
 
 use std::path::Path;
 use std::process::Command;
@@ -15,6 +15,10 @@ fn neo4j_configured(workspace: &Path) -> bool {
 fn bench_reports_every_measurement() {
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let database = neo4j_configured(&workspace);
+    assert!(
+        database || !matches!(std::env::var("CI").as_deref(), Ok("true" | "1")),
+        "CODEATLAS_NEO4J_PASSWORD must be set in CI"
+    );
     let tmp = tempfile::tempdir().unwrap();
     let output = tmp.path().join("bench.json");
     let mut command = Command::new(env!("CARGO_BIN_EXE_codeatlas"));
