@@ -36,7 +36,38 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
       - run: cargo clippy --all-targets -- -D warnings
+      # The equivalence tests need a real repository. The pin is the one the
+      # external evaluation uses; they compare HEAD with HEAD~10.
+      - name: Read the pinned ripgrep commit
+        id: ripgrep
+        run: |
+          commit=$(jq -er '.repositories[] | select(.name == "ripgrep") | .commit' benchmarks/external/repos.json)
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: ripgrep-cache
+        with:
+          path: ${{ runner.temp }}/ripgrep
+          key: ripgrep-depth11-${{ steps.ripgrep.outputs.commit }}
+      - name: Shallow-clone ripgrep
+        if: steps.ripgrep-cache.outputs.cache-hit != 'true'
+        env:
+          COMMIT: ${{ steps.ripgrep.outputs.commit }}
+        run: |
+          git init -q "$RUNNER_TEMP/ripgrep"
+          cd "$RUNNER_TEMP/ripgrep"
+          git remote add origin https://github.com/BurntSushi/ripgrep
+          git fetch -q --depth 11 origin "$COMMIT"
+          git checkout -q --detach FETCH_HEAD
+      - name: Check the ripgrep clone
+        env:
+          COMMIT: ${{ steps.ripgrep.outputs.commit }}
+        run: |
+          cd "$RUNNER_TEMP/ripgrep"
+          test "$(git rev-parse HEAD)" = "$COMMIT"
+          git rev-parse --verify --quiet 'HEAD~10^{commit}'
       - run: cargo test --all
+        env:
+          CODEATLAS_EQUIVALENCE_REPO: ${{ runner.temp }}/ripgrep
 
   web:
     runs-on: ubuntu-latest
