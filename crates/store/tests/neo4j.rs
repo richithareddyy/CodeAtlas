@@ -522,7 +522,12 @@ async fn loaded_graph_equals_analysis_graph_on_a_real_repository() {
     let Some(store) = store().await else { return };
     let mut analysis =
         analyze_source(&RepoSource::Local(path.into()), &IngestOptions::default()).unwrap();
-    analysis.repository.id = format!("test-equivalence-{}", std::process::id());
+    // Must contain `-<pid>-`, or another test's cleanup deletes it mid-run.
+    analysis.repository.id = format!(
+        "test-equivalence-{}-{}",
+        std::process::id(),
+        NEXT_ID.fetch_add(1, Ordering::Relaxed)
+    );
     let repo = analysis.repository.id.clone();
     store.index(&analysis).await.unwrap();
     let loaded = store.load_graph(&repo).await.unwrap();
