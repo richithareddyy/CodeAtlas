@@ -19,6 +19,20 @@ fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// Repository for the equivalence checks. They are optional locally, but
+/// skipping them in CI would count as a pass, so there it is an error.
+fn equivalence_repo() -> Option<PathBuf> {
+    let path = std::env::var_os("CODEATLAS_EQUIVALENCE_REPO").filter(|p| !p.is_empty());
+    if path.is_none() {
+        assert!(
+            !matches!(std::env::var("CI").as_deref(), Ok("true" | "1")),
+            "CODEATLAS_EQUIVALENCE_REPO must be set in CI"
+        );
+        eprintln!("skipping: CODEATLAS_EQUIVALENCE_REPO not set");
+    }
+    path.map(PathBuf::from)
+}
+
 async fn store() -> Option<GraphStore> {
     let _ = dotenvy::from_path(workspace_root().join(".env"));
     let Ok(config) = StoreConfig::from_env() else {
@@ -515,13 +529,11 @@ async fn loading_an_unknown_repository_fails() {
 /// Opt-in check on a real repository: `CODEATLAS_EQUIVALENCE_REPO=<path>`.
 #[tokio::test]
 async fn loaded_graph_equals_analysis_graph_on_a_real_repository() {
-    let Ok(path) = std::env::var("CODEATLAS_EQUIVALENCE_REPO") else {
-        eprintln!("skipping: CODEATLAS_EQUIVALENCE_REPO not set");
+    let Some(path) = equivalence_repo() else {
         return;
     };
     let Some(store) = store().await else { return };
-    let mut analysis =
-        analyze_source(&RepoSource::Local(path.into()), &IngestOptions::default()).unwrap();
+    let mut analysis = analyze_source(&RepoSource::Local(path), &IngestOptions::default()).unwrap();
     // Must contain `-<pid>-`, or another test's cleanup deletes it mid-run.
     analysis.repository.id = format!(
         "test-equivalence-{}-{}",
@@ -609,7 +621,7 @@ mod incremental {
     use codeatlas_analyzer::RepoSource;
     use codeatlas_store::{prepare, DeltaStats, FullReason, IndexMode, IndexReport, StateDir};
 
-    use super::{store, workspace_root, NEXT_ID};
+    use super::{equivalence_repo, store, workspace_root, NEXT_ID};
     use std::sync::atomic::Ordering;
 
     fn copy_dir(from: &Path, to: &Path) {
@@ -784,16 +796,15 @@ mod incremental {
     /// checkout is not touched.
     #[tokio::test]
     async fn incremental_index_matches_a_full_index_on_a_real_repository() {
-        let Ok(path) = std::env::var("CODEATLAS_EQUIVALENCE_REPO") else {
-            eprintln!("skipping: CODEATLAS_EQUIVALENCE_REPO not set");
+        let Some(path) = equivalence_repo() else {
             return;
         };
         let base = std::env::var("CODEATLAS_EQUIVALENCE_BASE").unwrap_or_else(|_| "HEAD~10".into());
         let Some(store) = store().await else { return };
-        let git = codeatlas_analyzer::git::Git::discover(Path::new(&path))
+        let git = codeatlas_analyzer::git::Git::discover(&path)
             .unwrap()
             .unwrap();
-        let prefix = codeatlas_analyzer::git::Git::prefix_of(Path::new(&path)).unwrap();
+        let prefix = codeatlas_analyzer::git::Git::prefix_of(&path).unwrap();
         let tmp = tempfile::tempdir().unwrap();
         let dir = tmp.path().join("repo");
         let export = |revision: &str| {
