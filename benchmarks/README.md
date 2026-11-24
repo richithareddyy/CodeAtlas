@@ -35,7 +35,9 @@ repository ID of their own, deleted afterwards. Medians, minima, maxima and
 
 All three: `--runs 5`, 20 query targets × 3 runs, seed 1, release build,
 Apple M5 (10 logical CPUs), macOS, Neo4j 5.26.31 community in Docker. A
-summary table is in the main [README](../GUIDE.md#benchmarks).
+summary table is in the main [README](../GUIDE.md#benchmarks). The
+CodeAtlas input `5de56d0` is not on `main`; `5eb6c4d`, which is, has an
+identical tree (as does its `HEAD~3`).
 
 ## Running
 
