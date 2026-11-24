@@ -845,7 +845,8 @@ Measured with `codeatlas bench` (method and result format in
 [benchmarks/README.md](benchmarks/README.md); every sample is in
 [benchmarks/results](benchmarks/results)). Medians of 5 runs (queries: 20
 symbols × 3 runs) on one machine: Apple M5, 10 logical CPUs, macOS, Neo4j
-5.26.31 community in Docker, release build.
+5.26.31 community in Docker, release build
+(measured October 6, 2026, v0.1.0).
 
 | | CodeAtlas | ripgrep | tokio |
 |---|---|---|---|
