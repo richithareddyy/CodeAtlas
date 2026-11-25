@@ -22,7 +22,7 @@ Changed symbols
 Recommendation  run the selected tests (no known blind spot applies; this is a heuristic, not a guarantee)
 ```
 
-(Trimmed output from the `pr-impact` fixture, which `scripts/make-pr-fixture.sh /tmp/pr-shop` builds.) There's also a SvelteKit workspace backed by Neo4j for exploring callers, impact, branch changes, cycles, and crate and module dependencies, and a GraphQL API that also answers dependency paths, hotspots, and layers. The server has no authentication and is meant for local use.
+(Trimmed output from the `pr-impact` fixture, which `scripts/make-pr-fixture.sh /tmp/pr-shop` builds.) There's also a SvelteKit workspace backed by Neo4j for exploring callers, impact, branch changes, cycles, and crate and module dependencies, and a GraphQL API that also answers dependency paths, hotspots, and layers. The server has no authentication and is meant for local use: by default it listens only on your own machine (`127.0.0.1:8080`), which `CODEATLAS_HTTP_ADDR` changes.
 
 ![Impact view on the change-impact fixture](docs/images/impact.png)
 
