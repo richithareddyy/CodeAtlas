@@ -50,7 +50,7 @@ For the interactive workspace, follow the [installation guide](GUIDE.md#installa
 
 ## Limits
 
-Macros, conditional compilation (`#[cfg]`), and indirect calls can hide connections from the analysis. A dependency path shows what might be affected; it does not prove that a change breaks anything. Analysis takes about 330 ms on ripgrep and 920 ms on tokio on an Apple M5, and incremental indexing is 4–8 times faster than a full index when nothing or one line in one file changed (measured October 6, 2026, v0.1.0) ([method and raw results](benchmarks/README.md)).
+Macros, conditional compilation (`#[cfg]`), and indirect calls can hide connections from the analysis. A dependency path shows what might be affected; it does not prove that a change breaks anything. Analysis takes about 330 ms on ripgrep and 920 ms on tokio on an Apple M5, and incremental indexing is 4.0–8.3 times faster than a full index when nothing or one line in one file changed, and 1.6–3.8 times faster over a commit range (measured October 6, 2026, v0.1.0) ([method and raw results](benchmarks/README.md)).
 
 Run `cargo test --workspace` for the Rust suite. Without a Neo4j password configured, the database tests are skipped but still reported as passed; in CI they fail instead.
 

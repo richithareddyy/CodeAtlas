@@ -224,9 +224,10 @@ behind each dependency.
 
 (This screenshot predates the Changes view and shows test, bench, and example crates, which are now hidden by default.)
 
-*Why?* for `test_checkout` in the same impact report. No model was running,
-so the explanation is built from the evidence, and the note says so. Each
-`E` citation opens the source line of its fact.
+*Why?* for `test_checkout` in the impact report for a different change,
+`validate_amount`. No model was running, so the explanation is built from
+the evidence, and the note says so. Each `E` citation opens the source line
+of its fact.
 
 ![Explanation in the Impact view](docs/images/explain.png)
 
