@@ -709,15 +709,28 @@ extractor):
 | `CODEATLAS_NEO4J_URI` | `bolt://localhost:7687` | Neo4j Bolt address |
 | `CODEATLAS_NEO4J_USER` | `neo4j` | Neo4j user |
 | `CODEATLAS_NEO4J_DATABASE` | `neo4j` | Neo4j database |
+| `CODEATLAS_NEO4J_HTTP_PORT` | 7474 | Host port for the Neo4j browser UI; read only by `docker-compose.yml` |
+| `CODEATLAS_NEO4J_BOLT_PORT` | 7687 | Host port for Bolt; read only by `docker-compose.yml`, so change `CODEATLAS_NEO4J_URI` to match |
 | `CODEATLAS_OLLAMA_URL` | `http://127.0.0.1:11434` | Ollama server used for explanations |
 | `CODEATLAS_OLLAMA_MODEL` | `llama3.2` | Model used for explanations |
 | `CODEATLAS_OLLAMA_TIMEOUT_SECS` | 120 | Time allowed for one model answer |
 | `CODEATLAS_EXPLAIN` | unset | `template` disables the model for explanations entirely |
-| `RUST_LOG` | `warn,codeatlas_analyzer=info,codeatlas_store=info` | Log filter; logs go to stderr |
+| `RUST_LOG` | `warn,codeatlas_analyzer=info,codeatlas_store=info` for the CLI; `info,tower_http=info,neo4rs=warn` for the server | Log filter; the CLI logs to stderr, the server to stdout |
 
 Variables are read from the environment and, if present, from `.env` in the
 working directory or its parents; real environment variables take
-precedence. `.env` is git-ignored.
+precedence. `.env` is git-ignored. The server's own variables (address,
+CORS, indexing, GraphiQL) are in [docs/api.md](docs/api.md#running).
+
+These are read only by the tests and scripts:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `CODEATLAS_EQUIVALENCE_REPO` | unset | Repository for the two equivalence tests in `crates/store/tests/neo4j.rs`; CI sets it to a pinned ripgrep clone |
+| `CODEATLAS_EQUIVALENCE_BASE` | `HEAD~10` | Revision that the incremental equivalence test indexes before `HEAD`, and returns to afterwards; CI does not set it, so the default applies |
+| `CODEATLAS_RUN_PROBES` | unset | `1` runs the test that re-records the fixtures' ground truth; CI sets it |
+| `CI` | unset | When `true` or `1`, tests fail instead of being skipped if `CODEATLAS_EQUIVALENCE_REPO`, `CODEATLAS_RUN_PROBES` or `CODEATLAS_NEO4J_PASSWORD` is missing |
+| `CODEATLAS_EVAL_WORK` | `~/.cache/codeatlas-eval` | Clones used by `benchmarks/external/run.sh` |
 
 ## Testing
 
