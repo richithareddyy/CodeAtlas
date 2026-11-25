@@ -254,7 +254,9 @@ docker compose up -d
 
 `docker-compose.yml` runs `neo4j:5.26-community` with the password from
 `.env`, a named data volume, and the browser UI on
-<http://localhost:7474>.
+<http://localhost:7474>. Both ports are reachable only from this machine by
+default; to change that, remove the `127.0.0.1:` prefix in
+`docker-compose.yml`.
 
 ## Usage
 
