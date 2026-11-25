@@ -154,7 +154,7 @@ facts; the evidence-built explanation is shown instead, with the rejected
 answer kept for inspection. When the graph has no chain that answers the
 question, nothing is sent to the model, and the explanation says what is
 missing (and if the dependency runs the other way). Details:
-[docs/architecture.md](docs/architecture.md#explanations).
+[docs/architecture.md](docs/architecture.md#explanations-cratesexplain).
 
 **Workspace UI.** A browser workspace over the API: an explorer of crates,
 modules and their symbols on the left, a graph in the centre and an
@@ -189,6 +189,8 @@ Impact of changing `<StripeGateway as Gateway>::charge` in the
 affected symbol lists the source lines connecting it to the change.
 
 ![Impact view](docs/images/impact.png)
+
+(This screenshot predates the Changes view, the *Why?* buttons, and the Explain tab.)
 
 <details>
 <summary>More screenshots: graph, cycles, changes, architecture, and explanations</summary>
@@ -368,6 +370,7 @@ Tests to run when symbols change (here on the `test-impact` fixture):
 ```
 Tests for   ledger::pricing::subtotal, ledger::util::unused_helper
 Selected    2 of 9 tests: 1 direct, 1 transitive
+Recommendation  run the selected tests (no known blind spot applies; this is a heuristic, not a guarantee)
 
 Direct (the test calls the changed code)
   ledger::pricing::tests::subtotal_adds_items                      src/pricing.rs:32
@@ -505,7 +508,7 @@ scripts/make-pr-fixture.sh /tmp/pr-shop
 ```
 
 ```
-PR impact   main..feature  (<base sha>..<head sha>)
+PR impact   main..feature  (...)
 Files       9 changed: 1 added, 1 removed, 6 modified, 1 renamed
 Functions   4 modified, 1 added, 1 removed
 Signatures  1 changed
@@ -525,9 +528,9 @@ Changed symbols
   ~ fn     pr_shop::payments::validate_amount                           src/payments.rs:25-26
   ~ fn     shop_tests::test_authorize_valid                             tests/shop_tests.rs:11
   + fn     pr_shop::currency::to_cents                                  src/currency.rs:1-7
-  …
+...
   - fn     pr_shop::legacy::legacy_fee                                  src/legacy.rs:1-3  (base revision)
-  …
+...
   > fn     pr_shop::reporting::format_cents                             src/reporting.rs:1  moved from pr_shop::reports::format_cents
   > fn     pr_shop::reporting::daily_total                              src/reporting.rs:5  moved from pr_shop::reports::daily_total
 
@@ -537,16 +540,18 @@ Whitespace or comment changes only (not treated as changes)
 Downstream symbols (depth, symbol, location, then why)
    1  pr_shop::invoice::print_invoice                                  src/invoice.rs:7
         pr_shop::invoice::print_invoice calls pr_shop::invoice::invoice_total  (src/invoice.rs:8)
-  …
+...
    2  shop_tests::test_print_invoice                                   tests/shop_tests.rs:26  [test]
         shop_tests::test_print_invoice calls pr_shop::invoice::print_invoice  (tests/shop_tests.rs:27)
         pr_shop::invoice::print_invoice calls pr_shop::invoice::invoice_total  (src/invoice.rs:8)
+
+Recommendation  run the selected tests (no known blind spot applies; this is a heuristic, not a guarantee)
 
 Tests to run
   shop_tests::test_checkout
   shop_tests::test_preauthorize
   shop_tests::test_print_invoice
-…
+...
 ```
 
 `--format markdown` writes a summary for a pull-request comment and
@@ -571,16 +576,74 @@ repository's code, so use it only on repositories you trust.
 
 ```
 Test selection compared with observed test failures (panic-on-entry probes)
+...
 Probes      20 evaluated, 0 skipped (did not build or did not finish)
 Tests       9 in the suite, 0 without a symbol (not selectable)
 Precision   0.864  (19 of 22 selections executed the probed function)
 Recall      0.826  (19 of 23 executing tests were selected); 0.826 counting only tests with a symbol
 ...
 Missed (executed the function, not selected)
+  ledger::parse::number
+      ledger_tests::file_store_parses_lines
   ledger::parse::pair
       ledger_tests::file_store_parses_lines
 ...
 ```
+
+### Comparing selection strategies
+
+`compare-tests` scores CodeAtlas's selection and simple baselines on one
+ground truth from `probe-tests`. It only analyses source code; it runs no
+tests.
+
+```bash
+./target/release/codeatlas compare-tests fixtures/test-impact --truth fixtures/test-impact/expected-tests.json
+```
+
+```
+test-impact @ 39c73e1ca1: 9 tests (0 invisible to the analysis, 0 flaky excluded)
+Probes      20 ok, 0 build failed, 0 incomplete; 2 executed by no test
+Resolution  20 of 49 call sites resolved (0.909 rate), 2 ambiguous, 0 unresolved
+
+Strategy                  recall   safe precis.  selected  share time saved missed:inv  visible
+run-all                    1.000  18/18   0.128       9.0  1.000        n/a         0        0
+file-dependency            0.913  16/18   0.171       6.2  0.683        n/a         0        2
+name-mention               0.522   8/18   0.118       5.1  0.567        n/a         0       11
+codeatlas                  0.826  14/18   0.864       1.1  0.122        n/a         0        4
+codeatlas-ambiguous        0.870  15/18   0.833       1.2  0.133        n/a         0        3
+codeatlas-conservative     1.000  18/18   0.324       3.5  0.394        n/a         0        0
+
+recall: whole-suite, all failing tests; safe: probes with failures where none was missed
+
+Conservative rule fired (probes)
+     3  ambiguous_callers
+     3  hidden_mentions
+```
+
+The first lines give the suite size, what happened to the probes, and how
+many call sites were resolved (the rate leaves out call sites that target
+external code, constructors and local closures). Then there is one row per
+strategy:
+
+* `recall`: share of all failing tests, over all probes, that the strategy
+  selected.
+* `safe`: probes in which no failing test was missed, out of the probes
+  with at least one failing test.
+* `precis.`: share of the selected tests that failed.
+* `selected`, `share`: tests selected per probe on average, as a count and
+  as a share of the suite.
+* `time saved`: average share of the suite's test time that the selection
+  leaves out. It is `n/a` here because this ground truth has no test times.
+* `missed:inv`, `visible`: failing tests that were missed, without and
+  with a symbol in the analysis.
+
+`codeatlas` follows resolved calls, `codeatlas-ambiguous` also ambiguous
+ones, and `codeatlas-conservative` is `codeatlas` unless the check reports
+selective execution as unsafe, when it selects the full suite. The last
+lines count the probes for which each of that check's reasons fired. A
+ground truth recorded with the current `probe-tests` also has test times
+and package data, which fill `time saved` and add a `changed-package` row.
+`--json` prints every probe.
 
 </details>
 
