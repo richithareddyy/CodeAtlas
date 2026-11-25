@@ -1,6 +1,7 @@
 # Graph model
 
-The Neo4j schema written by `crates/store` (`writer.rs`, `schema.rs`).
+The Neo4j schema written by `crates/store` (`snapshot.rs`, `writer.rs`,
+`schema.rs`).
 Every node except `Repository` carries `repo_id`, so any number of
 repositories can share one database; every query is scoped to one of them.
 
@@ -25,7 +26,7 @@ and `unresolved_calls`.
 |---|---|---|
 | `Repository` | Root of a graph; holds index metadata. | `id`, `format_version`, `index_token` (identifies the write, see [Writing](#writing)), `name`, `root`, `origin_url`, `branch`, `head_sha`, `indexed_sha`, `analyzed_at`, `indexed_at`, `languages` / `language_files` / `language_loc` (parallel lists), `source_files`, `loc`, `calls_total`, `calls_resolved`, `calls_ambiguous`, `calls_unresolved`, `resolution_rate` |
 | `Crate` | The *package* level of the architecture view. `id` is `crate:<package>:<name>`, because two packages may both have a test target named `integration`. | `name`, `package`, `target_kind`, `root_file` |
-| `File` | Unit of incremental re-indexing; anchors file-level dependencies. | `path`, `crate`, `loc`, `syntax_errors`, `content_hash` |
+| `File` | Unit of incremental re-indexing; anchors file-level dependencies. | `path`, `crate`, `loc`, `syntax_errors`, `content_hash`, `test_macros`, `mentions` |
 | `Module` | Rust namespace; module-level dependencies and cycles are computed here. | — |
 | `Struct`, `Enum`, `Trait` | Owners of methods and endpoints of `IMPLEMENTS`. | — |
 | `Function`, `Method` | Units of call-graph impact. | — |
@@ -36,14 +37,28 @@ and `unresolved_calls`.
 the function that contains them without creating a node per external call
 (`Vec::new`, `Option::unwrap`, …), which would dominate the graph.
 
+`test_macros` and `mentions` are lists of strings on each `File`, empty when
+there is nothing to record. They hold what the analysis cannot see, which
+the check for unsafe test selection uses (see
+[impact-analysis.md](impact-analysis.md#when-selective-execution-is-unsafe)):
+
+* `test_macros`: item-level macro invocations in test code (test, bench and
+  example crates, and `#[cfg(test)]` modules), which can generate tests.
+  Each is `line|macro`, for example `9|t`.
+* `mentions`: names used where no call site is recorded. Each is
+  `name|line|kind`, for example `parse|4|value`. `kind` is `macro` (inside
+  a `macro_rules!` definition or a macro body that is not re-parsed) or
+  `value` (a bare path used as a value, such as `iter.map(parse)`; names
+  bound locally are left out).
+
 ## Relationships
 
 | Type | Direction | Why it exists | Properties |
 |---|---|---|---|
 | `CONTAINS` | Repository→Crate, Crate→root Module, Module→Module, Module→File | Structural hierarchy for the explorer and architecture zoom. | — |
 | `DEFINES` | Module/Function→item, Struct/Enum/Trait→Method | Ownership of symbols (methods are owned by their self type, wherever their `impl` is written). | — |
-| `CALLS` | callable → callable | Resolved call. The primary impact edge. | `resolution`, `lines` |
-| `CALLS_CANDIDATE` | callable → callable | One edge per candidate of an ambiguous call. Never followed unless a query asks for it explicitly. | `reason`, `candidates` (total candidate count), `lines` |
+| `CALLS` | callable or Module → callable | Resolved call (from a Module for calls in item initializers). The primary impact edge. | `resolution`, `lines` |
+| `CALLS_CANDIDATE` | callable or Module → callable | One edge per candidate of an ambiguous call. Never followed unless a query asks for it explicitly. | `reason`, `candidates` (total candidate count), `lines` |
 | `IMPORTS` | Module/Function → Symbol | `use` declarations; module coupling. | `resolution`, `lines` |
 | `IMPLEMENTS` | Struct/Enum → Trait, Method → trait Method | A change to a trait method reaches every implementation. | `resolution`, `lines` |
 | `DEPENDS_ON` | File→File, Module→Module | Derived aggregation of `CALLS`, `IMPORTS` and `IMPLEMENTS` between symbols written in different files or modules (`analyzer/src/dependencies.rs`); input for cycle detection and the architecture view. | `weight` (number of underlying edges), `via` (their types), `evidence` (up to five `from\|to\|TYPE\|line` samples) |
@@ -78,6 +93,7 @@ CREATE INDEX symbol_repo IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id);
 CREATE INDEX symbol_name IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id, s.name);
 CREATE INDEX symbol_qualified_name IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id, s.qualified_name);
 CREATE INDEX symbol_file IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id, s.file);
+CREATE INDEX symbol_parent IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id, s.parent_id);
 CREATE INDEX file_repo IF NOT EXISTS FOR (f:File) ON (f.repo_id);
 CREATE INDEX crate_repo IF NOT EXISTS FOR (c:Crate) ON (c.repo_id);
 CREATE FULLTEXT INDEX symbol_search IF NOT EXISTS FOR (s:Symbol) ON EACH [s.name, s.qualified_name];
@@ -124,14 +140,16 @@ match, i.e. when the stored graph is exactly the one the state describes;
 after a write by another client (or a different state directory) the next
 run writes in full.
 
-`format_version` records the layout written (currently 2).
+`format_version` records the layout written (currently 3, the constant
+`GRAPH_FORMAT_VERSION` in `crates/store/src/writer.rs`).
 `GraphStore::load_graph` rejects other versions and asks for a re-index, so
 a graph written by an older CodeAtlas never yields silently wrong results.
 
 ## Loading for algorithms
 
-`GraphStore::load_graph` reads a repository's symbols, symbol relationships
-and `DEPENDS_ON` aggregates back into the analyzer's in-memory `CodeGraph`,
+`GraphStore::load_graph` reads a repository's symbols, symbol relationships,
+`DEPENDS_ON` aggregates, and the `test_macros`, `mentions` and
+`unresolved_calls` lists back into the analyzer's in-memory `CodeGraph`,
 where the impact engine and the architecture analyses run (see
 [impact-analysis.md](impact-analysis.md)). The loaded graph is tested to be
 identical to the one built directly from the analysis.
