@@ -12,7 +12,7 @@ Implementation milestones and evaluation details are documented in the [architec
 
 ## Try the analyzer first
 
-The smallest useful run needs Rust 1.90+ and Git, with no database or model:
+The smallest useful run needs Rust 1.90+, a C compiler (for tree-sitter), and Git, with no database or model:
 
 ```bash
 git clone https://github.com/richithareddyy/CodeAtlas.git
@@ -199,10 +199,14 @@ Callers of `RegexMatcherBuilder::build` in ripgrep (tests dashed):
 
 ![Graph view](docs/images/graph.png)
 
+(This screenshot predates the Changes view.)
+
 A module cycle in the `circular-dependency` fixture, with the calls and
 imports behind each hop:
 
 ![Cycles view](docs/images/cycles.png)
+
+(This screenshot predates the Changes view.)
 
 Impact of a branch (the `pr-impact` fixture, `main` → `feature`): changed
 symbols with the signature change, the graph from changed symbols (top
@@ -211,10 +215,14 @@ depend on them:
 
 ![Changes view](docs/images/changes.png)
 
+(This screenshot predates the folding of test crates in the explorer.)
+
 Crate dependencies in ripgrep. Edge numbers count the symbol references
 behind each dependency.
 
 ![Architecture view](docs/images/architecture.png)
+
+(This screenshot predates the Changes view and shows test, bench, and example crates, which are now hidden by default.)
 
 *Why?* for `test_checkout` in the same impact report. No model was running,
 so the explanation is built from the evidence, and the note says so. Each
@@ -229,9 +237,9 @@ repository's path on disk, is cropped.
 
 ## Installation
 
-Requirements: Rust 1.90+ (`rustup` recommended), `git` on `PATH`, Docker
-for the graph database (`analyze` and `evaluate` work without it), and
-Node.js 22.17+ for the web UI.
+Requirements: Rust 1.90+ (`rustup` recommended), a C compiler (for
+tree-sitter), `git` on `PATH`, Docker for the graph database (`analyze` and
+`evaluate` work without it), and Node.js 22.17+ for the web UI.
 
 ```bash
 git clone https://github.com/richithareddyy/CodeAtlas.git codeatlas
@@ -829,8 +837,9 @@ cargo test
   Neo4j equals the graph built from the analysis on every fixture. With
   `CODEATLAS_EQUIVALENCE_REPO=<path>` that equivalence check also runs on a
   real repository. Each test uses its own repository ID. They run when
-  `CODEATLAS_NEO4J_PASSWORD` is set (directly or via `.env`) and print
-  `skipping` otherwise; if Neo4j is configured but unreachable they fail.
+  `CODEATLAS_NEO4J_PASSWORD` is set (directly or via `.env`). Without it
+  they print `skipping` locally but count as passed; in CI they fail. If
+  Neo4j is configured but unreachable they fail.
   CI runs them against a Neo4j service container.
 
 </details>
@@ -953,8 +962,9 @@ symbols × 3 runs) on one machine: Apple M5, 10 logical CPUs, macOS, Neo4j
 | Load the whole graph for analyses | 42 ms | 93 ms | 410 ms |
 | Impact of a symbol, in memory | 0.01 ms | 0.07 ms | 0.02 ms |
 
-* Incremental indexing is 4–8 times faster than a full index when little
-  changes. It is bounded by discovery (every file is read and hashed),
+* Incremental indexing is 4–8 times faster than a full index when nothing
+  or one line in one file changed (4.0–8.3 times), and 1.6–3.8 times
+  faster over a commit range (measured October 6, 2026, v0.1.0). It is bounded by discovery (every file is read and hashed),
   re-resolution and diffing the two graphs, not by Neo4j, whose write
   shrinks from 0.2–2.6 s to 3–63 ms.
 * tokio stores many relationships because most of its 11,634 ambiguous
@@ -970,8 +980,8 @@ symbols × 3 runs) on one machine: Apple M5, 10 logical CPUs, macOS, Neo4j
 * Benchmarking tokio found a resolver defect: lookups in cycles of glob
   imports were recomputed exponentially, and a single analysis did not
   finish in minutes. It now takes under a second (see the commit
-  "Resolve glob-import cycles in polynomial time"); resolution output on
-  every other repository was unchanged.
+  "Stop repeated lookups through glob-import cycles", `78237fd`);
+  resolution output on every other repository was unchanged.
 
 Comparing ripgrep `HEAD~10` with `HEAD` with `codeatlas diff` (21 changed
 files, 137 downstream symbols) took 0.76–0.82 s end to end over two runs.
