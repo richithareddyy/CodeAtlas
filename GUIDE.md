@@ -697,6 +697,14 @@ extractor):
 ./target/release/codeatlas ast src/lib.rs
 ```
 
+### Other commands
+
+* Blast-radius score: `query impact` prints a 0–100 score of how much of the graph a change reaches, with its six weighted factors.
+* `bench <path>`: measures analysis, indexing and queries on a local repository; `-o` writes JSON, `--no-database` measures analysis only.
+* `evaluate-tests <path> --truth <file>`: precision, recall and every miss of the test selection against a `probe-tests` ground truth.
+* `index <Git URL>`: clones the repository into the clone directory, then indexes it.
+* Command palette: `⌘K` / `Ctrl+K` in the web UI searches symbols; choosing one opens it.
+
 ### Configuration
 
 | Variable / flag | Default | Purpose |
